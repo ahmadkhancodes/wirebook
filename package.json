@@ -1,5 +1,5 @@
 {
-  "name": "postslot",
+  "name": "wirebook",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -22,6 +22,7 @@
     "altcha": "^3.5.0",
     "altcha-lib": "^2.8.0",
     "better-auth": "^1.7.17",
+    "fast-xml-parser": "^5.12.0",
     "mongodb": "^7.8.0",
     "next": "16.4.5",
     "react": "19.3.0",

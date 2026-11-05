@@ -16,3 +16,11 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Before kit-v1:** build qbXML codec, QBWC SOAP handler and simulator as pure TS modules with tests, no UI. DB_DRIVER=memory until MONGODB_URI arrives.
 - **qbXML specs are hand-authored (5 Nov):** the Intuit XSD is login-gated and not redistributable, so `src/lib/qbxml/spec.ts` declares element order for customer (query/add/mod) and invoice (query/add) from the public reference. Golden fixtures prove self-consistency only. M2 adds `tools/gen-qbxml` to verify/extend the specs against an XSD the owner downloads from Intuit, and the remaining ~35 objects. Not claimed as verified against real QuickBooks.
 - **One job in flight per file** is enforced by the queue contract; Mongo driver must use a unique partial index on `(endUserId)` where `state='sent'` plus `findOneAndUpdate`. The memory driver's concurrency test caught a real check-then-set race, now fixed.
+
+## 5 Nov 2026 (M1-A kit adoption)
+- **Plan ids:** `free` (Developer), `production`, `starter_pack`, `volume`. Enterprise is custom and not a plan row. Volume has a monthly price only (brief publishes no annual). Rank order follows the list.
+- **Meter:** `MeterId = "files"` only (active company files). Limits are included files: Developer 3 (non-production), Production 1 (per-file, quantity billing comes with M1 billing work), Starter Pack 4, Volume 50.
+- **Annual price cents** are the yearly charge per Stripe unit (kit convention): per-file $19.99 x 12 = 23988; pack $82.99 x 12 = 99588. Monthly: 2499, 9799, 1699.
+- **Wall clock in qbwc tests:** `MemorySessions.get` checks expiry against the real clock, so the bridge test's fake clock now starts at real now (the fixed 2026-11-05T10:00Z date broke once the day passed 10:00 UTC). Logic untouched.
+- **Lint:** `no-explicit-any` is off for `tools/**`, `src/lib/qbxml/**`, `src/lib/qbwc/**` (prior modules kept as written).
+- **Fonts:** added a third font export `display` (Spectral) and its variable on `<html>` in layout.tsx; needed for the serif display face.

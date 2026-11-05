@@ -9,13 +9,13 @@ type Sub = {
 
 export function fakeStripe(nowSec = () => 1_800_000_000) {
   const prices = [
-    { id: "price_starter_y", lookup_key: "postslot_starter_annual", currency: "usd", unit_amount: 2400, recurring: { interval: "year" }, metadata: { app: "postslot" } },
-    { id: "price_pro_m", lookup_key: "postslot_pro_monthly", currency: "usd", unit_amount: 749, recurring: { interval: "month" }, metadata: { app: "postslot" } },
-    { id: "price_pro_y", lookup_key: "postslot_pro_annual", currency: "usd", unit_amount: 7400, recurring: { interval: "year" }, metadata: { app: "postslot" } },
-    { id: "price_agency_m", lookup_key: "postslot_agency_monthly", currency: "usd", unit_amount: 1949, recurring: { interval: "month" }, metadata: { app: "postslot" } },
-    { id: "price_agency_y", lookup_key: "postslot_agency_annual", currency: "usd", unit_amount: 19900, recurring: { interval: "year" }, metadata: { app: "postslot" } },
+    { id: "price_production_m", lookup_key: "wirebook_production_monthly", currency: "usd", unit_amount: 2499, recurring: { interval: "month" }, metadata: { app: "wirebook" } },
+    { id: "price_production_y", lookup_key: "wirebook_production_annual", currency: "usd", unit_amount: 23988, recurring: { interval: "year" }, metadata: { app: "wirebook" } },
+    { id: "price_pack_m", lookup_key: "wirebook_starter_pack_monthly", currency: "usd", unit_amount: 9799, recurring: { interval: "month" }, metadata: { app: "wirebook" } },
+    { id: "price_pack_y", lookup_key: "wirebook_starter_pack_annual", currency: "usd", unit_amount: 99588, recurring: { interval: "year" }, metadata: { app: "wirebook" } },
+    { id: "price_volume_m", lookup_key: "wirebook_volume_monthly", currency: "usd", unit_amount: 1699, recurring: { interval: "month" }, metadata: { app: "wirebook" } },
     // Another app's price that must never be used (C-28): same lookup key shape, wrong metadata.
-    { id: "price_other", lookup_key: "postslot_pro_monthly_x", currency: "usd", unit_amount: 999, recurring: { interval: "month" }, metadata: { app: "otherapp" } },
+    { id: "price_other", lookup_key: "wirebook_production_monthly_x", currency: "usd", unit_amount: 999, recurring: { interval: "month" }, metadata: { app: "otherapp" } },
   ];
   const customers = new Map<string, { id: string; metadata: Record<string, string>; email?: string }>();
   const subs: Sub[] = [];
@@ -25,7 +25,7 @@ export function fakeStripe(nowSec = () => 1_800_000_000) {
   const addSub = (customer: string, lookupKey: string, status = "active", extra: Partial<Sub> = {}) => {
     const now = nowSec();
     const s: Sub = {
-      id: `sub_${++n}`, customer, status, metadata: { app: "postslot" }, trial_start: null, trial_end: null,
+      id: `sub_${++n}`, customer, status, metadata: { app: "wirebook" }, trial_start: null, trial_end: null,
       cancel_at_period_end: false, items: { data: [{ current_period_end: now + 30 * 86400, price: { lookup_key: lookupKey } }] }, ...extra,
     };
     subs.push(s);
