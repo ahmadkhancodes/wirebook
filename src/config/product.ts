@@ -111,6 +111,12 @@ export const product = {
       trialDays: 0,
     },
   ] satisfies Plan[],
+  /** Data retention (docs/brief.md): payload bodies are purged after `payloadDays`; an org can only shorten it. */
+  retention: { payloadDays: 14, minPayloadDays: 1, metadataDays: 90 },
+  /** Connection health thresholds, measured from the last Web Connector poll. */
+  health: { asleepAfterMs: 2 * 60 * 60 * 1000, brokenAfterMs: 72 * 60 * 60 * 1000 },
+  /** Plan billing rules for the files meter. */
+  billing: { starterPackFiles: 4, volumeMinFiles: 50, developerFiles: 3 },
   /** Grace period after a failed payment (past_due keeps the plan, C-20) before limits fall to Free. */
   graceDays: 7,
   /** Remote flag defaults (overridden by APP_FLAGS env JSON and the Mongo `config` collection). */

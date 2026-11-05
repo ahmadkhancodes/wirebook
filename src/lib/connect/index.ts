@@ -55,6 +55,20 @@ export function qwcFor(user: EndUser, baseUrl: string): string {
   });
 }
 
+/** Mint a single use link for an existing end user (first connect, and the dashboard's "Send reconnect link"). */
+export async function issueLink(bridge: Bridge, baseUrl: string, user: EndUser, now = new Date()): Promise<{ id: string; url: string; expiresAt: Date }> {
+  const token = randomToken(24);
+  const link: ConnectLink = { id: newId('lnk'), tokenHash: await sha256(token), projectId: user.projectId, endUserId: user.id, createdAt: now, expiresAt: new Date(now.getTime() + CONNECT_LINK_TTL_MS) };
+  await bridge.links.create(link);
+  // a reconnect replays the four observed steps, so forget the earlier observations
+  if (user.firstSyncAt) await bridge.users.update(user.id, { qwcDownloadedAt: undefined, firstAuthAt: undefined, firstSessionAt: undefined, firstSyncAt: undefined });
+  // the first needs the first-sync probe again: queue one so the file proves it answers
+  if ((await bridge.queue.queuedCount(user.id)) === 0 && !(await bridge.queue.inFlight(user.id))) {
+    await bridge.queue.enqueue({ endUserId: user.id, op: 'customer.query', body: { maxReturned: 1 }, meta: { projectId: user.projectId, method: 'POST', path: '/v1/connect-links', objectType: 'connection' } });
+  }
+  return { id: link.id, url: `${baseUrl}/connect/${token}`, expiresAt: link.expiresAt };
+}
+
 export interface CreateLinkInput { externalId: string; companyName?: string }
 
 function parseInput(body: Record<string, unknown>): CreateLinkInput {
@@ -73,7 +87,8 @@ export async function createConnectLink(deps: V1Deps & { secret: string }, req: 
     const projectId = projectIdOf(auth);
     const now = (deps.now ?? (() => new Date()))();
     let user = await deps.bridge.users.getByExternalId(projectId, input.externalId);
-    if (user?.firstSyncAt) throw apiError('already_connected');
+    if (user?.firstSyncAt && user.status !== 'broken' && user.status !== 'asleep') throw apiError('already_connected');
+    await deps.checkFile?.(auth, user?.id ?? null);
     if (!user) {
       const id = newId('end');
       user = {
@@ -84,14 +99,8 @@ export async function createConnectLink(deps: V1Deps & { secret: string }, req: 
       };
       await deps.bridge.users.create(user);
     }
-    // the first sync is a real, cheap request: it proves the file answers
-    if ((await deps.bridge.queue.queuedCount(user.id)) === 0 && !(await deps.bridge.queue.inFlight(user.id))) {
-      await deps.bridge.queue.enqueue({ endUserId: user.id, op: 'customer.query', body: { maxReturned: 1 }, meta: { projectId, method: 'POST', path: '/v1/connect-links', objectType: 'connection' } });
-    }
-    const token = randomToken(24);
-    const link: ConnectLink = { id: newId('lnk'), tokenHash: await sha256(token), projectId, endUserId: user.id, createdAt: now, expiresAt: new Date(now.getTime() + CONNECT_LINK_TTL_MS) };
-    await deps.bridge.links.create(link);
-    return new Response(JSON.stringify({ id: link.id, object: 'connect_link', url: `${deps.baseUrl}/connect/${token}`, expiresAt: link.expiresAt.toISOString(), endUserId: user.id, externalId: input.externalId }), {
+    const issued = await issueLink(deps.bridge, deps.baseUrl, user, now);
+    return new Response(JSON.stringify({ id: issued.id, object: 'connect_link', url: issued.url, expiresAt: issued.expiresAt.toISOString(), endUserId: user.id, externalId: input.externalId }), {
       status: 201, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
     });
   });

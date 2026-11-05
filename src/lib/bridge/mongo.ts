@@ -1,7 +1,7 @@
 import type { Collection, Document } from 'mongodb';
 import { mongoClient } from '@/lib/db/mongo';
 import { uuidv7 } from '@/lib/ids';
-import type { EndUser, EndUserRepo, Job, JobQueue, ListFilter, Session, SessionStore } from '@/lib/qbwc';
+import type { EndUser, EndUserRepo, HealthEvent, HealthLog, Job, JobQueue, ListFilter, Session, SessionStore } from '@/lib/qbwc';
 import type { Bridge, ConnectLink, ConnectLinkStore, IdempotencyRecord, IdempotencyStore } from './store';
 
 /** Mongo drivers for the bridge. Collections: requests, endUsers, qbwcSessions, idempotencyKeys, connectLinks. Indexes: ensureBridgeIndexes. */
@@ -58,6 +58,19 @@ class MongoQueue implements JobQueue {
     const docs = await (await this.c()).find(q).sort({ createdAt: -1, _id: -1 }).limit(f.limit).toArray();
     return docs.map((d) => fromDoc<Job>(d as Doc<Job>)!);
   }
+  async purgePayloads(o: { before: Date; projectIds?: string[]; excludeProjectIds?: string[] }, now: Date) {
+    const q: Document = { createdAt: { $lt: o.before }, purgedAt: { $exists: false }, state: { $nin: ['queued', 'sent'] } };
+    const proj: Document = {};
+    if (o.projectIds) proj.$in = o.projectIds;
+    if (o.excludeProjectIds?.length) proj.$nin = o.excludeProjectIds;
+    if (Object.keys(proj).length) q['meta.projectId'] = proj;
+    const r = await (await this.c()).updateMany(q, { $set: { body: {}, purgedAt: now }, $unset: { result: '', rawResponse: '' } });
+    return r.modifiedCount;
+  }
+  async listForUser(endUserId: string, limit: number) {
+    const docs = await (await this.c()).find({ endUserId }).sort({ createdAt: -1, _id: -1 }).limit(limit).toArray();
+    return docs.map((d) => fromDoc<Job>(d as Doc<Job>)!);
+  }
   async expireSent(olderThanMs: number, now: Date) {
     const c = await this.c();
     const stale = await c.find({ state: 'sent', sentAt: { $lt: new Date(now.getTime() - olderThanMs) } }).toArray();
@@ -76,6 +89,10 @@ class MongoUsers implements EndUserRepo {
   async findByUsername(qbwcUsername: string) { return fromDoc<EndUser>(await (await this.c()).findOne({ qbwcUsername })); }
   async get(id: string) { return fromDoc<EndUser>(await (await this.c()).findOne({ _id: id })); }
   async getByExternalId(projectId: string, externalId: string) { return fromDoc<EndUser>(await (await this.c()).findOne({ projectId, externalId })); }
+  async list(o: { projectId?: string; limit: number }) {
+    const docs = await (await this.c()).find(o.projectId ? { projectId: o.projectId } : {}).sort({ createdAt: -1, _id: -1 }).limit(o.limit).toArray();
+    return docs.map((d) => fromDoc<EndUser>(d as Doc<EndUser>)!);
+  }
   async update(id: string, patch: Partial<EndUser>) {
     const set: Document = {};
     const unset: Document = {};
@@ -88,6 +105,16 @@ class MongoUsers implements EndUserRepo {
   async create(u: EndUser) {
     const { id, ...rest } = u;
     await (await this.c()).insertOne({ _id: id, ...rest } as never); // unique indexes reject duplicates
+  }
+}
+
+class MongoHealth implements HealthLog {
+  constructor(private cols: Cols) {}
+  private c() { return this.cols<Doc<HealthEvent>>('healthEvents'); }
+  async append(e: Omit<HealthEvent, 'id'>) { await (await this.c()).insertOne({ _id: `hev_${uuidv7().replace(/-/g, '')}`, ...e } as never); }
+  async list(endUserId: string, limit: number) {
+    const docs = await (await this.c()).find({ endUserId }).sort({ at: -1, _id: -1 }).limit(limit).toArray();
+    return docs.map((d) => fromDoc<HealthEvent>(d as Doc<HealthEvent>)!);
   }
 }
 
@@ -140,7 +167,7 @@ class MongoLinks implements ConnectLinkStore {
 
 export function createMongoBridge(uri: string, dbName: string): Bridge {
   const cols: Cols = async <T extends Document>(name: string) => (await mongoClient(uri)).db(dbName).collection<T>(name) as unknown as Collection<T>;
-  return { queue: new MongoQueue(cols), users: new MongoUsers(cols), sessions: new MongoSessions(cols), idempotency: new MongoIdempotency(cols), links: new MongoLinks(cols) };
+  return { queue: new MongoQueue(cols), users: new MongoUsers(cols), sessions: new MongoSessions(cols), idempotency: new MongoIdempotency(cols), links: new MongoLinks(cols), health: new MongoHealth(cols) };
 }
 
 /** One-off index creation (scripts/ensure-indexes.ts). The unique partial index on requests is what keeps one job in flight per file. */
@@ -157,6 +184,9 @@ export async function ensureBridgeIndexes(uri: string, dbName: string): Promise<
     { key: { fileGuid: 1 }, unique: true },
     { key: { projectId: 1, externalId: 1 }, unique: true, partialFilterExpression: { externalId: { $type: 'string' } } },
   ]);
+  await db.collection('healthEvents').createIndexes([{ key: { endUserId: 1, at: -1 }, name: 'by_file' }, { key: { at: 1 }, expireAfterSeconds: 90 * 24 * 3600, name: 'ttl_90d' }]);
+  await db.collection('endUsers').createIndex({ projectId: 1, createdAt: -1 });
+  await db.collection('requests').createIndex({ createdAt: 1 }, { name: 'purge' });
   await db.collection('qbwcSessions').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   await db.collection('idempotencyKeys').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   await db.collection('connectLinks').createIndexes([{ key: { tokenHash: 1 }, unique: true }, { key: { expiresAt: 1 }, expireAfterSeconds: 7 * 24 * 3600 }]);

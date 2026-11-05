@@ -4,9 +4,11 @@ import { planById } from "@/config/product";
 import { can } from "@/lib/auth/roles";
 import { requireOrg } from "@/lib/auth/session";
 import { effectivePlan } from "@/lib/billing/entitlement";
+import { usageSummary } from "@/lib/billing/metering";
 import { currentUsage } from "@/lib/billing/usage";
 import { getDb } from "@/lib/db";
 import { BillingClient } from "./billing-client";
+import { FilesPanel } from "./files-panel";
 
 export const metadata = { title: "Billing" };
 
@@ -20,11 +22,13 @@ export default async function BillingPage({ searchParams }: { searchParams: SP }
   const ent = await db.getEntitlement(ctx.org.id);
   const plan = effectivePlan(ent);
   const usage = await currentUsage(db, ctx.org.id, METERS_SHOWN);
+  const summary = await usageSummary(db, ctx.org.id);
   const want = one(sp.plan);
   const wanted = want ? planById(want) : undefined;
   return (
     <>
       <PageHeader title="Billing" description={`Plan, usage and invoices for ${ctx.org.name}.`} />
+      <div className="mb-6"><FilesPanel s={summary} /></div>
       <BillingClient
         canManage={can(ctx.role, "billing", "manage")}
         planId={plan.id}

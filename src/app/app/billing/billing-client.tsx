@@ -126,7 +126,7 @@ export function BillingClient(p: Props) {
             {p.cancelAtPeriodEnd ? <p className="body-6 text-text-subtle">Your subscription is set to cancel. You keep {plan.name} until that date, then move to Free.</p> : null}
           </dl>
           <div className="flex flex-col gap-4">
-            {live.usage.map((u) => <Meter key={u.meter} state={u} />)}
+            {live.planId === "production" ? <p className="body-6 text-text-subtle">Production bills every active file, so there is no included amount to run out of. See active files above.</p> : live.usage.map((u) => <Meter key={u.meter} state={u} />)}
           </div>
         </div>
       </Panel>

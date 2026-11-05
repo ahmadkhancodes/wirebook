@@ -209,6 +209,171 @@ export const PAYMENT_ADD: Spec = [
   ] },
 ];
 
+/** M3 objects. Same hand-authored caveat as above. */
+const saleLine = (tag: string): Field => ({ name: tag, kind: 'list', key: 'lines', children: [
+  { ...R('ItemRef'), required: true },
+  { name: 'Desc', kind: 'str', max: 4095 },
+  { name: 'Quantity', kind: 'quan' },
+  { name: 'UnitOfMeasure', kind: 'str', max: 31 },
+  { name: 'Rate', kind: 'price' },
+  R('ClassRef'),
+  { name: 'Amount', kind: 'amount' },
+] });
+export const ESTIMATE_QUERY: Spec = INVOICE_QUERY;
+export const SALES_ORDER_QUERY: Spec = INVOICE_QUERY;
+export const SALES_RECEIPT_QUERY: Spec = INVOICE_QUERY;
+export const CREDIT_MEMO_QUERY: Spec = INVOICE_QUERY;
+export const PURCHASE_ORDER_QUERY: Spec = INVOICE_QUERY;
+export const CLASS_QUERY: Spec = listQuery();
+export const EMPLOYEE_QUERY: Spec = listQuery();
+export const TERMS_QUERY: Spec = listQuery();
+
+export const ESTIMATE_ADD: Spec = [
+  { ...R('CustomerRef'), required: true },
+  R('ClassRef'),
+  R('TemplateRef'),
+  { name: 'TxnDate', kind: 'date' },
+  { name: 'RefNumber', kind: 'str', max: 11 },
+  { name: 'BillAddress', kind: 'obj', children: address },
+  { name: 'ShipAddress', kind: 'obj', children: address },
+  { name: 'IsActive', kind: 'bool' },
+  { name: 'PONumber', kind: 'str', max: 25 },
+  R('TermsRef'),
+  { name: 'DueDate', kind: 'date' },
+  R('SalesRepRef'),
+  { name: 'Memo', kind: 'str', max: 4095 },
+  { name: 'IsToBePrinted', kind: 'bool' },
+  { name: 'IsToBeEmailed', kind: 'bool' },
+  saleLine('EstimateLineAdd'),
+];
+export const SALES_ORDER_ADD: Spec = [
+  { ...R('CustomerRef'), required: true },
+  R('ClassRef'),
+  R('TemplateRef'),
+  { name: 'TxnDate', kind: 'date' },
+  { name: 'RefNumber', kind: 'str', max: 11 },
+  { name: 'BillAddress', kind: 'obj', children: address },
+  { name: 'ShipAddress', kind: 'obj', children: address },
+  { name: 'PONumber', kind: 'str', max: 25 },
+  R('TermsRef'),
+  { name: 'DueDate', kind: 'date' },
+  R('SalesRepRef'),
+  { name: 'ShipDate', kind: 'date' },
+  R('ShipMethodRef'),
+  { name: 'Memo', kind: 'str', max: 4095 },
+  { name: 'IsToBePrinted', kind: 'bool' },
+  { name: 'IsToBeEmailed', kind: 'bool' },
+  saleLine('SalesOrderLineAdd'),
+];
+export const SALES_RECEIPT_ADD: Spec = [
+  { ...R('CustomerRef'), required: true },
+  R('ClassRef'),
+  R('TemplateRef'),
+  { name: 'TxnDate', kind: 'date' },
+  { name: 'RefNumber', kind: 'str', max: 11 },
+  { name: 'BillAddress', kind: 'obj', children: address },
+  { name: 'ShipAddress', kind: 'obj', children: address },
+  { name: 'IsPending', kind: 'bool' },
+  { name: 'CheckNumber', kind: 'str', max: 25 },
+  R('PaymentMethodRef'),
+  { name: 'DueDate', kind: 'date' },
+  R('SalesRepRef'),
+  { name: 'ShipDate', kind: 'date' },
+  R('ShipMethodRef'),
+  { name: 'Memo', kind: 'str', max: 4095 },
+  R('DepositToAccountRef'),
+  { name: 'IsToBePrinted', kind: 'bool' },
+  { name: 'IsToBeEmailed', kind: 'bool' },
+  saleLine('SalesReceiptLineAdd'),
+];
+export const CREDIT_MEMO_ADD: Spec = [
+  { ...R('CustomerRef'), required: true },
+  R('ClassRef'),
+  R('ARAccountRef'),
+  R('TemplateRef'),
+  { name: 'TxnDate', kind: 'date' },
+  { name: 'RefNumber', kind: 'str', max: 11 },
+  { name: 'BillAddress', kind: 'obj', children: address },
+  { name: 'ShipAddress', kind: 'obj', children: address },
+  { name: 'IsPending', kind: 'bool' },
+  { name: 'PONumber', kind: 'str', max: 25 },
+  R('TermsRef'),
+  { name: 'DueDate', kind: 'date' },
+  R('SalesRepRef'),
+  { name: 'Memo', kind: 'str', max: 4095 },
+  { name: 'IsToBePrinted', kind: 'bool' },
+  { name: 'IsToBeEmailed', kind: 'bool' },
+  saleLine('CreditMemoLineAdd'),
+];
+export const PURCHASE_ORDER_ADD: Spec = [
+  { ...R('VendorRef'), required: true },
+  R('ClassRef'),
+  R('ShipToEntityRef'),
+  R('TemplateRef'),
+  { name: 'TxnDate', kind: 'date' },
+  { name: 'RefNumber', kind: 'str', max: 11 },
+  { name: 'VendorAddress', kind: 'obj', children: address },
+  { name: 'ShipAddress', kind: 'obj', children: address },
+  R('TermsRef'),
+  { name: 'DueDate', kind: 'date' },
+  { name: 'ExpectedDate', kind: 'date' },
+  R('ShipMethodRef'),
+  { name: 'Memo', kind: 'str', max: 4095 },
+  { name: 'IsToBePrinted', kind: 'bool' },
+  { name: 'IsToBeEmailed', kind: 'bool' },
+  { name: 'PurchaseOrderLineAdd', kind: 'list', key: 'lines', children: [
+    { ...R('ItemRef'), required: true },
+    { name: 'Desc', kind: 'str', max: 4095 },
+    { name: 'Quantity', kind: 'quan' },
+    { name: 'UnitOfMeasure', kind: 'str', max: 31 },
+    { name: 'Rate', kind: 'price' },
+    R('ClassRef'),
+    { name: 'Amount', kind: 'amount' },
+    R('CustomerRef'),
+  ] },
+];
+
+const classFields: Spec = [
+  { name: 'Name', kind: 'str', max: 31 },
+  { name: 'IsActive', kind: 'bool' },
+  R('ParentRef'),
+];
+export const CLASS_ADD: Spec = classFields.map((f) => (f.name === 'Name' ? { ...f, required: true } : f));
+export const CLASS_MOD: Spec = [
+  { name: 'ListID', kind: 'str', required: true },
+  { name: 'EditSequence', kind: 'str', key: 'revisionNumber', required: true },
+  ...classFields,
+];
+
+const employeeFields: Spec = [
+  { name: 'IsActive', kind: 'bool' },
+  { name: 'Salutation', kind: 'str', max: 15 },
+  { name: 'FirstName', kind: 'str', max: 25 },
+  { name: 'MiddleName', kind: 'str', max: 5 },
+  { name: 'LastName', kind: 'str', max: 25 },
+  { name: 'JobTitle', kind: 'str', max: 41 },
+  { name: 'EmployeeAddress', kind: 'obj', children: address },
+  { name: 'PrintAs', kind: 'str', max: 41 },
+  { name: 'Phone', kind: 'str', max: 21 },
+  { name: 'Mobile', kind: 'str', max: 21 },
+  { name: 'Email', kind: 'str', max: 1023 },
+];
+export const EMPLOYEE_ADD: Spec = employeeFields.map((f) => (f.name === 'FirstName' || f.name === 'LastName' ? { ...f, required: true } : f));
+export const EMPLOYEE_MOD: Spec = [
+  { name: 'ListID', kind: 'str', required: true },
+  { name: 'EditSequence', kind: 'str', key: 'revisionNumber', required: true },
+  ...employeeFields,
+];
+
+/** Standard terms only; date-driven terms (DateDrivenTermsAdd) are not supported yet. */
+export const STANDARD_TERMS_ADD: Spec = [
+  { name: 'Name', kind: 'str', max: 31, required: true },
+  { name: 'IsActive', kind: 'bool' },
+  { name: 'StdDueDays', kind: 'int' },
+  { name: 'StdDiscountDays', kind: 'int' },
+  { name: 'DiscountPct', kind: 'str', max: 8 },
+];
+
 export interface OpDef {
   /** e.g. CustomerQueryRq */
   rq: string;
@@ -238,5 +403,23 @@ export const OPS = {
   'bill.add': { rq: 'BillAddRq', wrapper: 'BillAdd', rs: 'BillAddRs', ret: 'BillRet', spec: BILL_ADD },
   'payment.query': { rq: 'ReceivePaymentQueryRq', rs: 'ReceivePaymentQueryRs', ret: 'ReceivePaymentRet', spec: PAYMENT_QUERY },
   'payment.add': { rq: 'ReceivePaymentAddRq', wrapper: 'ReceivePaymentAdd', rs: 'ReceivePaymentAddRs', ret: 'ReceivePaymentRet', spec: PAYMENT_ADD },
+  'estimate.query': { rq: 'EstimateQueryRq', rs: 'EstimateQueryRs', ret: 'EstimateRet', spec: ESTIMATE_QUERY },
+  'estimate.add': { rq: 'EstimateAddRq', wrapper: 'EstimateAdd', rs: 'EstimateAddRs', ret: 'EstimateRet', spec: ESTIMATE_ADD },
+  'salesOrder.query': { rq: 'SalesOrderQueryRq', rs: 'SalesOrderQueryRs', ret: 'SalesOrderRet', spec: SALES_ORDER_QUERY },
+  'salesOrder.add': { rq: 'SalesOrderAddRq', wrapper: 'SalesOrderAdd', rs: 'SalesOrderAddRs', ret: 'SalesOrderRet', spec: SALES_ORDER_ADD },
+  'salesReceipt.query': { rq: 'SalesReceiptQueryRq', rs: 'SalesReceiptQueryRs', ret: 'SalesReceiptRet', spec: SALES_RECEIPT_QUERY },
+  'salesReceipt.add': { rq: 'SalesReceiptAddRq', wrapper: 'SalesReceiptAdd', rs: 'SalesReceiptAddRs', ret: 'SalesReceiptRet', spec: SALES_RECEIPT_ADD },
+  'creditMemo.query': { rq: 'CreditMemoQueryRq', rs: 'CreditMemoQueryRs', ret: 'CreditMemoRet', spec: CREDIT_MEMO_QUERY },
+  'creditMemo.add': { rq: 'CreditMemoAddRq', wrapper: 'CreditMemoAdd', rs: 'CreditMemoAddRs', ret: 'CreditMemoRet', spec: CREDIT_MEMO_ADD },
+  'purchaseOrder.query': { rq: 'PurchaseOrderQueryRq', rs: 'PurchaseOrderQueryRs', ret: 'PurchaseOrderRet', spec: PURCHASE_ORDER_QUERY },
+  'purchaseOrder.add': { rq: 'PurchaseOrderAddRq', wrapper: 'PurchaseOrderAdd', rs: 'PurchaseOrderAddRs', ret: 'PurchaseOrderRet', spec: PURCHASE_ORDER_ADD },
+  'class.query': { rq: 'ClassQueryRq', rs: 'ClassQueryRs', ret: 'ClassRet', spec: CLASS_QUERY },
+  'class.add': { rq: 'ClassAddRq', wrapper: 'ClassAdd', rs: 'ClassAddRs', ret: 'ClassRet', spec: CLASS_ADD },
+  'class.mod': { rq: 'ClassModRq', wrapper: 'ClassMod', rs: 'ClassModRs', ret: 'ClassRet', spec: CLASS_MOD },
+  'employee.query': { rq: 'EmployeeQueryRq', rs: 'EmployeeQueryRs', ret: 'EmployeeRet', spec: EMPLOYEE_QUERY },
+  'employee.add': { rq: 'EmployeeAddRq', wrapper: 'EmployeeAdd', rs: 'EmployeeAddRs', ret: 'EmployeeRet', spec: EMPLOYEE_ADD },
+  'employee.mod': { rq: 'EmployeeModRq', wrapper: 'EmployeeMod', rs: 'EmployeeModRs', ret: 'EmployeeRet', spec: EMPLOYEE_MOD },
+  'terms.query': { rq: 'TermsQueryRq', rs: 'TermsQueryRs', ret: 'StandardTermsRet', spec: TERMS_QUERY },
+  'terms.add': { rq: 'StandardTermsAddRq', wrapper: 'StandardTermsAdd', rs: 'StandardTermsAddRs', ret: 'StandardTermsRet', spec: STANDARD_TERMS_ADD },
 } as const satisfies Record<string, OpDef>;
 export type OpName = keyof typeof OPS;

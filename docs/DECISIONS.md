@@ -50,3 +50,17 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Request log** is now `/app` (the kit's overview page is gone; plan and usage stay on `/app/billing`). Server rendered, filters via GET, detail pane via `?req=`, keyset paging via `?before=`.
 - **Connect page theme:** follows the site theme (light and dark both checked) instead of light only.
 - **E2E-only helper:** `/api/dev/seed-requests` (404 unless `E2E_OUTBOX=1`) fills the log for the screenshots.
+
+## 5 Nov 2026 (M3)
+- **Active file = a production-environment file with one successful sync in the calendar month (UTC).** Counted once via `markActiveFile` from the `/qbwc` success hook; test/sample files never count. The connect-flow probe counts too (it proves the file answers).
+- **Developer cap:** 3 active production files; the 4th is refused at request and connect-link time with 402 `file_limit_reached` (new catalogue entry). Paid plans are not capped, they are billed. Reading product.ts "3 non-production files" as 3 included files.
+- **Pricing math (`chargeFor`):** Production per file; Starter Pack = pack price for 4 files plus Production's per-file rate above 4; Volume = max(files, 50) x $16.99 (50 file floor, monthly only). Annual shown as 12 x per-file annual rate.
+- **Stripe quantity:** Production/Volume update the subscription item quantity; Starter Pack keeps the pack at 1 and puts extra files on a Production priced item added to the same subscription (quantity 0 when none). Only subscriptions with `metadata.app=wirebook`. Sync runs when a file first becomes active; billing errors never fail the SOAP reply.
+- **Health:** Asleep after 2 h without a poll, Broken after 72 h or on a Web Connector connection error (thresholds in `product.health`). Recovery happens in `authenticate`. `brokenNotifiedAt` gives one email per incident; only production files email. The list also applies the same rule at read time so it is right between ticks. No 2-check anti-flap yet (brief mentions it): the 2 h threshold is far above the poll interval.
+- **Reconnect:** `POST /v1/connect-links` now works for Asleep/Broken files (409 `already_connected` only when healthy); a reconnect replays the four observed steps. The dashboard action only creates the link (we hold no end-user email).
+- **Retention:** `product.retention`: payloads 14 days, metadata 90. The purge clears body, parsed result and raw response (not only raw), keeps metadata, writes an audit entry per sweep. Orgs can only shorten (1 to 14 days).
+- **Dashboard transport:** polling every 5 s instead of SSE (Vercel function limits); revisit on the VPS.
+- **`tools/gen-qbxml` skipped:** the new specs are ~15 lines each and the Intuit XSD is login-gated, so a generator would not remove work. Date-driven terms not done. Known wart: API keys `pONumber`/`aRAccountRef` from the camelCase rule.
+- **OpenAPI** is generated from the qbXML specs converted to Zod 4 (`z.toJSONSchema`), so new objects appear automatically. `info.license` is a placeholder.
+- **SDKs:** `@wirebook/sdk` (npm workspace, zero deps, MIT) and Python `wirebook` (stdlib only, MIT); no third-party libraries added. Python tests run with `python3 -m unittest discover -s tests` (Python 3.14 here). `revision_conflict` maps to ConflictError; a slow list throws `request_pending` rather than a truncated page.
+- **Playwright browser** had to be installed in CI (`npx playwright install chromium`).

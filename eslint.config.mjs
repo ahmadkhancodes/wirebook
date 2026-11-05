@@ -10,8 +10,8 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" }],
     },
   },
-  { files: ["tests/**", "tools/**", "src/lib/qbxml/**", "src/lib/qbwc/**"], rules: { "@typescript-eslint/no-explicit-any": "off" } },
-  globalIgnores(["playwright-report/**", "test-results/**", "infra/**"]),
+  { files: ["tests/**", "packages/*/test/**", "tools/**", "src/lib/qbxml/**", "src/lib/qbwc/**"], rules: { "@typescript-eslint/no-explicit-any": "off" } },
+  globalIgnores(["playwright-report/**", "test-results/**", "infra/**", "packages/*/dist/**"]),
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

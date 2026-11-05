@@ -16,7 +16,7 @@ export const api: DocPage = {
     {
       heading: "Objects",
       body: [
-        "customers, vendors, items, accounts, invoices, bills and payments. GET /v1/qbd/{object} lists, GET /v1/qbd/{object}/{id} retrieves, POST /v1/qbd/{object} creates and returns 201 with the created object. POST /v1/qbd/{object}/{id} updates customers and vendors; send the revisionNumber you read, and a stale one returns 409. Items are created as service items for now. Payments are customer payments (ReceivePayment).",
+        "customers, vendors, items, accounts, invoices, bills, payments, estimates, sales-orders, sales-receipts, credit-memos, purchase-orders, classes, terms and employees. GET /v1/qbd/{object} lists, GET /v1/qbd/{object}/{id} retrieves, POST /v1/qbd/{object} creates and returns 201 with the created object. POST /v1/qbd/{object}/{id} updates customers, vendors, classes and employees; send the revisionNumber you read, and a stale one returns 409. Terms are standard terms. Items are created as service items for now. Payments are customer payments (ReceivePayment).",
         "If QuickBooks has not answered within the wait (55 seconds), you get 202 with a request id and a Location header. Poll GET /v1/requests/{id}. Send Prefer: respond-async to get the 202 straight away.",
       ],
       code: { lang: "bash", code: `curl ${p.url}/v1/qbd/customers?limit=25 \

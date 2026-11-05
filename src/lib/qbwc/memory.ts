@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { EndUser, EndUserRepo, Job, JobQueue, ListFilter, Session, SessionStore } from './types';
+import type { EndUser, EndUserRepo, HealthEvent, HealthLog, Job, JobQueue, ListFilter, Session, SessionStore } from './types';
 
 /** In-memory drivers (DB_DRIVER=memory). Same contract the Mongo drivers must pass. */
 export class MemoryQueue implements JobQueue {
@@ -47,6 +47,20 @@ export class MemoryQueue implements JobQueue {
       .slice(0, f.limit)
       .map((j) => ({ ...j }));
   }
+  async purgePayloads(o: { before: Date; projectIds?: string[]; excludeProjectIds?: string[] }, now: Date) {
+    let n = 0;
+    for (const j of this.jobs.values()) {
+      const p = j.meta?.projectId ?? '';
+      if (j.purgedAt || j.createdAt >= o.before || j.state === 'queued' || j.state === 'sent') continue;
+      if (o.projectIds && !o.projectIds.includes(p)) continue;
+      if (o.excludeProjectIds?.includes(p)) continue;
+      j.body = {}; delete j.result; delete j.rawResponse; j.purgedAt = now; n++;
+    }
+    return n;
+  }
+  async listForUser(endUserId: string, limit: number) {
+    return [...this.jobs.values()].filter((j) => j.endUserId === endUserId).sort((a, b) => b.id.localeCompare(a.id)).slice(0, limit).map((j) => ({ ...j }));
+  }
   async expireSent(olderThanMs: number, now: Date) {
     const out: Job[] = [];
     for (const j of this.jobs.values()) {
@@ -72,6 +86,13 @@ export class MemoryEndUsers implements EndUserRepo {
     for (const u of this.users.values()) if (u.projectId === projectId && u.externalId === externalId) return { ...u };
     return null;
   }
+  async list(o: { projectId?: string; limit: number }) {
+    return [...this.users.values()]
+      .filter((u) => !o.projectId || u.projectId === o.projectId)
+      .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0) || b.id.localeCompare(a.id))
+      .slice(0, o.limit)
+      .map((u) => ({ ...u }));
+  }
   async findByUsername(username: string) {
     for (const u of this.users.values()) if (u.qbwcUsername === username) return { ...u };
     return null;
@@ -80,6 +101,15 @@ export class MemoryEndUsers implements EndUserRepo {
   async update(id: string, patch: Partial<EndUser>) {
     const u = this.users.get(id);
     if (u) Object.assign(u, patch);
+  }
+}
+
+export class MemoryHealthLog implements HealthLog {
+  private events: HealthEvent[] = [];
+  private seq = 0;
+  async append(e: Omit<HealthEvent, 'id'>) { this.events.push({ ...e, id: `hev_${String(++this.seq).padStart(6, '0')}` }); }
+  async list(endUserId: string, limit: number) {
+    return this.events.filter((e) => e.endUserId === endUserId).sort((a, b) => b.at.getTime() - a.at.getTime() || b.id.localeCompare(a.id)).slice(0, limit).map((e) => ({ ...e }));
   }
 }
 

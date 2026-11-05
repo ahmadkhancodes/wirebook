@@ -55,3 +55,9 @@ export function noticeEmail(opts: { title: string; body: string; actionUrl?: str
 ${opts.actionUrl ? button(opts.actionUrl, opts.actionLabel ?? "Open") : ""}`);
   return { subject: opts.title, text, html };
 }
+
+export function brokenConnectionEmail(opts: { company: string; reason: string; url: string }) {
+  const title = `${opts.company} lost its connection to QuickBooks`;
+  const body = `The Web Connector for ${opts.company} has stopped reaching Wirebook (${opts.reason}). Requests for this company file will fail until it reconnects. Open the file in your dashboard and send a reconnect link. We email you once per incident.`;
+  return noticeEmail({ title, body, actionUrl: opts.url, actionLabel: "Open the connection" });
+}

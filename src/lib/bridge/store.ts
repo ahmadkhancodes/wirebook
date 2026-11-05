@@ -1,4 +1,4 @@
-import { MemoryEndUsers, MemoryQueue, MemorySessions, type EndUserRepo, type JobQueue, type SessionStore } from '@/lib/qbwc';
+import { MemoryEndUsers, MemoryHealthLog, MemoryQueue, MemorySessions, type EndUserRepo, type HealthLog, type JobQueue, type SessionStore } from '@/lib/qbwc';
 
 export interface IdempotencyRecord {
   projectId: string;
@@ -43,6 +43,7 @@ export interface Bridge {
   sessions: SessionStore;
   idempotency: IdempotencyStore;
   links: ConnectLinkStore;
+  health: HealthLog;
 }
 
 export class MemoryIdempotency implements IdempotencyStore {
@@ -71,5 +72,5 @@ export class MemoryLinks implements ConnectLinkStore {
 }
 
 export function createMemoryBridge(): Bridge {
-  return { queue: new MemoryQueue(), users: new MemoryEndUsers(), sessions: new MemorySessions(), idempotency: new MemoryIdempotency(), links: new MemoryLinks() };
+  return { queue: new MemoryQueue(), users: new MemoryEndUsers(), sessions: new MemorySessions(), idempotency: new MemoryIdempotency(), links: new MemoryLinks(), health: new MemoryHealthLog() };
 }

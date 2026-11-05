@@ -44,6 +44,8 @@ export interface Job {
   result?: Record<string, unknown>[];
   /** iterator id and remaining count from the response, for cursor pagination */
   iteratorResult?: { id?: string; remaining: number };
+  /** set when the retention job removed body, result and rawResponse */
+  purgedAt?: Date;
   /** raw qbXML response, kept only for raw passthrough jobs (the caller gets it back) */
   rawResponse?: string;
   durationMs?: number;
@@ -62,6 +64,10 @@ export interface JobQueue {
   list(filter: ListFilter): Promise<Job[]>;
   /** sent for longer than olderThanMs -> outcome_unknown (reconciler). Returns changed jobs. */
   expireSent(olderThanMs: number, now: Date): Promise<Job[]>;
+  /** Retention: drop request bodies, parsed results and raw responses of jobs created before `before`. Metadata stays. Returns the number purged. */
+  purgePayloads(o: { before: Date; projectIds?: string[]; excludeProjectIds?: string[] }, now: Date): Promise<number>;
+  /** Jobs of one end user, newest first (used by the health detail page). */
+  listForUser(endUserId: string, limit: number): Promise<Job[]>;
 }
 
 export interface EndUser {
@@ -86,6 +92,23 @@ export interface EndUser {
   firstAuthAt?: Date;
   firstSessionAt?: Date;
   firstSyncAt?: Date;
+  /** Set when the Broken email for the current incident went out; cleared on recovery (one email per incident). */
+  brokenNotifiedAt?: Date;
+}
+
+export type HealthStatus = EndUser['status'];
+export interface HealthEvent {
+  id: string;
+  endUserId: string;
+  projectId: string;
+  at: Date;
+  status: HealthStatus;
+  reason: string;
+}
+export interface HealthLog {
+  append(e: Omit<HealthEvent, 'id'>): Promise<void>;
+  /** newest first */
+  list(endUserId: string, limit: number): Promise<HealthEvent[]>;
 }
 
 export interface EndUserRepo {
@@ -95,6 +118,8 @@ export interface EndUserRepo {
   /** Throws if the username, ownerGuid, fileGuid or (projectId, externalId) is already taken. */
   create(u: EndUser): Promise<void>;
   getByExternalId(projectId: string, externalId: string): Promise<EndUser | null>;
+  /** Newest first. Without projectId: every end user (health tick). */
+  list(o: { projectId?: string; limit: number }): Promise<EndUser[]>;
 }
 
 export interface Session {
