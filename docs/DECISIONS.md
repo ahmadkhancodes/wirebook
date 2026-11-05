@@ -12,3 +12,5 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **No real QuickBooks in build:** a spec faithful QBWC simulator + golden qbXML fixtures; real acceptance run is an owner item. Docs must not claim real world parity before it.
 - **Banned deps CI** kept for unapproved vendors; approved exceptions: Vercel, Mongo Atlas, Stripe, Resend (mailer), Cloudflare R2/Workers.
 - **Roadmap items** (webhooks, C#, MCP) are never shown as shipped on the site; "Coming in v1" line only.
+- **Primary colour (orchestrator review, 5 Nov):** near-black ledger ink (#14201A / dark #E4ECE4), not green, to stay distinct from DockCrate, Stepclimb and Hotrail. Green kept only as band tint and success state. Design approved otherwise.
+- **Before kit-v1:** build qbXML codec, QBWC SOAP handler and simulator as pure TS modules with tests, no UI. DB_DRIVER=memory until MONGODB_URI arrives.

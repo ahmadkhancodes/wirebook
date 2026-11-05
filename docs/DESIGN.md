@@ -37,7 +37,7 @@ Wordmark: "wirebook" in Spectral 600 lowercase on a thin green-bar band, "by Buf
 
 ## 5. Palette (CSS variables, role names; components never use raw hex)
 
-Raw ramp lives in `@theme`, roles switch on `data-theme` and `prefers-color-scheme`. One accent only (ledger green, saturation under 80%). Semantic red, amber, green for state only. Never colour alone: status always has a glyph and a word.
+Raw ramp lives in `@theme`, roles switch on `data-theme` and `prefers-color-scheme`. **Primary is near-black ledger ink, not green** (orchestrator review 5 Nov: sister products DockCrate #1F5C4A, Stepclimb #0B5D6B teal and Hotrail #14284B navy already own dark green, teal and navy, and all BufferSol products are seen side by side). Green survives only as the pale green-bar band tint and as the semantic success colour (ticks), so the page reads as paper and pencil, with carbon blue for links and red pencil for annotation. Semantic red, amber, green for state only. Never colour alone: status always has a glyph and a word.
 
 | Role | Light | Dark ("night terminal") | Use |
 |---|---|---|---|
@@ -48,19 +48,19 @@ Raw ramp lives in `@theme`, roles switch on `data-theme` and `prefers-color-sche
 | `ink-muted` | #4A5A50 | #9DB0A3 | Secondary text (4.5:1 on bg, verified below) |
 | `rule` | #C9D3C6 | #2A3A30 | Decorative hairlines, perforation, row dividers |
 | `border-strong` | #4A5A50 | #9DB0A3 | Input borders, control edges (3:1) |
-| `primary` | #0F5B3A | #4FBF85 | The one accent: buttons, ticks, active nav |
-| `primary-hover` | #0B4A2F | #6FD39A | |
-| `on-primary` | #FFFFFF | #0E1411 | Text on primary |
+| `primary` | #14201A | #E4ECE4 | Ledger ink: buttons, active nav, headings of record. Not a hue accent |
+| `primary-hover` | #2E4036 | #FFFFFF | |
+| `on-primary` | #F7F8F4 | #0E1411 | Text on primary |
 | `carbon` | #24489A | #8FB0FF | Links and focus ring |
 | `redpencil` / `redpencil-bg` | #B3261E / #FBE9E7 | #FF8A80 / #2A1614 | Errors, failure ticks, annotation circles |
 | `warn` / `warn-bg` | #7A5200 / #FFF3D6 | #F2C14E / #2A2210 | Asleep, outcome unknown |
 | `success` / `success-bg` | #1F7A45 / #E3F3E8 | #6FD39A / #13261B | Succeeded |
 | `highlight` | #FFF1A8 | #3B3A14 | Marker highlight for the changed value in diffs |
 
-Contrast checks (computed with the WCAG formula, 5 Nov 2026): light: ink on paper 15.7:1; ink-muted on paper 6.9:1 and on band 6.3:1; primary on paper 7.6:1; white on primary 8.1:1; carbon on paper 8.0:1; redpencil on redpencil-bg 5.6:1; warn on warn-bg 6.3:1; success on success-bg 4.6:1. Dark: ink on bg 15.5:1; ink-muted 8.1:1; primary 8.1:1 (and bg on primary 8.1:1); carbon 8.7:1; redpencil 8.2:1. `rule` is decorative only (1.4:1 on paper); anything that must be perceivable as a control edge (inputs, focus targets, table outer border of interactive tables) uses `border-strong` = ink-muted (#4A5A50 light, #9DB0A3 dark), which clears 3:1. Re-verified by axe in M5.
+Contrast checks (computed with the WCAG formula, 5 Nov 2026): light: ink on paper 15.7:1; ink-muted on paper 6.9:1 and on band 6.3:1; primary (ink) on paper 15.7:1; paper on primary 15.7:1, on primary-hover 10.3:1; carbon on paper 8.0:1; redpencil on redpencil-bg 5.6:1; warn on warn-bg 6.3:1; success on success-bg 4.6:1. Dark: ink on bg 15.5:1; ink-muted 8.1:1; primary (E4ECE4) on bg 15.5:1 and bg on primary 15.5:1; carbon 8.7:1; redpencil 8.2:1. `rule` is decorative only (1.4:1 on paper); anything that must be perceivable as a control edge (inputs, focus targets, table outer border of interactive tables) uses `border-strong` = ink-muted (#4A5A50 light, #9DB0A3 dark), which clears 3:1. Re-verified by axe in M5.
 
-Deliberate overrides vs the playbook, recorded per its override rule: dark-mode backgrounds are green-tinted (#0E1411 etc.) instead of the neutral-black whitelist, because the concept needs one family; no gradient fills or gradient text anywhere (the perforation dots are a CSS dot pattern, not a fill); no tints on the accent.
-Not used on purpose: QuickBooks green (#2CA01C) and Intuit logos, purple-blue gradients, glow blobs.
+Deliberate overrides vs the playbook, recorded per its override rule: dark-mode backgrounds carry a faint green tint (#0E1411 etc., chroma under 4%) instead of the neutral-black whitelist, to keep the green-bar family; no gradient fills or gradient text anywhere (the perforation dots are a CSS dot pattern, not a fill); the pale band green is a surface tint, never a button or link colour.
+Not used on purpose: dark forest green, teal or navy as primary (sister products own them), QuickBooks green (#2CA01C) and Intuit logos, purple-blue gradients, glow blobs.
 
 ## 6. Type
 
@@ -105,7 +105,7 @@ Headings use `text-wrap: balance`, body `pretty`. Sentence case everywhere. No h
 - **Icons:** Phosphor Icons (regular weight, 20px, one stroke weight sitewide), imported as SVG components, `currentColor`. The playbook's whitelist (Phosphor/Solar/Iconamoon) replaces the workbook's Tabler to keep one rule for all 7 products; logged in DECISIONS.md. Custom glyphs: tick, footing, perforation. No emoji, no icon-in-circle on every card, no AI sparkle.
 - **Imagery:** no stock photos, no illustrations of people. Real product UI built as React components with believable (not round) data, plus **annotated real QuickBooks and Web Connector screenshots with numbered red-pencil circles** in the connect flow and guides (taken from our own Windows test machine; until then, drawn faithfully as HTML mockups and labelled as such). Data viz: small multiples, green sparkline bars, red-pencil ticks for failures. Charts follow the dataviz skill's accessibility rules.
 - **Motion:** the playbook's easing `cubic-bezier(0.22,1,0.36,1)`; 120/160/200 ms for UI, tick draw 200 ms, scroll reveals once, 600 ms, 24px rise (transform and opacity only). `prefers-reduced-motion`: opacity only, ticks appear drawn. One orchestrated entrance (log rows tick in, 60ms stagger) and the **mandatory tagline reveal** (words 30% to 100% on scroll). No parallax, no cursor effects.
-- **Buttons:** primary (green fill), secondary (1px ink outline), tertiary (text with carbon underline), destructive (redpencil). States: default, hover, pressed (translate 1px), focus (2px carbon ring + 2px offset), disabled, loading (skeleton bar, no spinner).
+- **Buttons:** primary (ink fill, paper text), secondary (1px ink outline), tertiary (text with carbon underline), destructive (redpencil). States: default, hover, pressed (translate 1px), focus (2px carbon ring + 2px offset), disabled, loading (skeleton bar, no spinner).
 
 ## 9. Voice
 
