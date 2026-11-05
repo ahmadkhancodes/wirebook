@@ -1,0 +1,143 @@
+import { buildRequest, negotiateVersion, parseResponse, QbxmlParseError, QbxmlValidationError, type OpName } from '../qbxml';
+import { fromHresult, fromStatusCode, type QbError } from '../errors/qb-status';
+import { newTicket } from './memory';
+import { verifyPassword } from './password';
+import { arrayResponse, faultResponse, parseSoap, simpleResponse } from './soap';
+import type { EndUserRepo, JobQueue, SessionStore } from './types';
+
+export interface BridgeDeps {
+  queue: JobQueue;
+  users: EndUserRepo;
+  sessions: SessionStore;
+  now?: () => Date;
+  /** Long poll: how long sendRequestXML may wait for a new job. 0 disables. */
+  holdMs?: number;
+  sleep?: (ms: number) => Promise<void>;
+  /** session lifetime */
+  sessionTtlMs?: number;
+}
+
+export const SERVER_VERSION = 'wirebook-qbwc/0.1';
+const LOCKOUT_LIMIT = 20;
+const LOCKOUT_WINDOW_MS = 60 * 60 * 1000;
+const SOAP_HEADERS = { 'content-type': 'text/xml; charset=utf-8' };
+
+export interface SoapResult { status: number; headers: Record<string, string>; body: string }
+const ok = (body: string): SoapResult => ({ status: 200, headers: SOAP_HEADERS, body });
+
+const invalidRequest = (e: QbxmlValidationError): QbError => ({
+  code: 'invalid_request', type: 'invalid_request', httpStatusCode: 400, retryable: false,
+  message: e.message, userFacingMessage: 'The request could not be sent to QuickBooks.', guideUrl: '/errors/invalid-request',
+});
+
+/** Stateless Web Connector bridge: everything lives in the injected stores. Returns a SOAP 1.1 response. */
+export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapResult> {
+  const now = deps.now ?? (() => new Date());
+  const call = parseSoap(xml);
+  if (!call) return { status: 400, headers: SOAP_HEADERS, body: faultResponse('Malformed SOAP envelope') };
+  const { op, args } = call;
+
+  switch (op) {
+    case 'clientVersion': return ok(simpleResponse(op, ''));
+    case 'serverVersion': return ok(simpleResponse(op, SERVER_VERSION));
+
+    case 'authenticate': {
+      const user = await deps.users.findByUsername(args.strUserName ?? '');
+      if (!user) return ok(arrayResponse(op, ['', 'nvu']));
+      const t = now();
+      const win = t.getTime() - user.failedAuth.windowStart.getTime() > LOCKOUT_WINDOW_MS
+        ? { count: 0, windowStart: t } : user.failedAuth;
+      if (win.count >= LOCKOUT_LIMIT) return ok(arrayResponse(op, ['', 'nvu']));
+      if (!verifyPassword(args.strPassword ?? '', user.qbwcPasswordHash)) {
+        await deps.users.update(user.id, { failedAuth: { count: win.count + 1, windowStart: win.windowStart } });
+        return ok(arrayResponse(op, ['', 'nvu']));
+      }
+      const recovered = user.status === 'asleep' || user.status === 'broken';
+      await deps.users.update(user.id, {
+        failedAuth: { count: 0, windowStart: t }, lastPollAt: t,
+        ...(recovered ? { status: 'connected' as const, lastError: undefined } : {}),
+      });
+      const ticket = newTicket();
+      await deps.sessions.create({ ticket, endUserId: user.id, qbxmlVersion: '16.0', expiresAt: new Date(t.getTime() + (deps.sessionTtlMs ?? 30 * 60_000)) });
+      const work = (await deps.queue.queuedCount(user.id)) > 0;
+      // "" = use the company file that is open; "NONE" = nothing to do
+      return ok(arrayResponse(op, [ticket, work ? '' : 'NONE']));
+    }
+
+    case 'sendRequestXML': {
+      const s = await deps.sessions.get(args.ticket ?? '');
+      if (!s) return ok(simpleResponse(op, '')); // unknown ticket ends the session, never a fault
+      const version = negotiateVersion(args.qbXMLMajorVers ?? '', args.qbXMLMinorVers ?? '0');
+      await deps.sessions.update(s.ticket, { qbxmlVersion: version });
+      const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+      const deadline = now().getTime() + (deps.holdMs ?? 0);
+      for (;;) {
+        const job = await deps.queue.claim(s.endUserId, now());
+        if (job) {
+          try {
+            return ok(simpleResponse(op, buildRequest(job.op as OpName, job.body, { requestId: job.id, version })));
+          } catch (e) {
+            if (!(e instanceof QbxmlValidationError)) throw e;
+            await deps.queue.complete(job.id, { state: 'failed', error: invalidRequest(e) }, now());
+            continue; // a bad request never blocks the file
+          }
+        }
+        if (await deps.queue.inFlight(s.endUserId)) return ok(simpleResponse(op, '')); // serial per file
+        if (now().getTime() >= deadline) return ok(simpleResponse(op, ''));
+        await sleep(250);
+      }
+    }
+
+    case 'receiveResponseXML': {
+      const s = await deps.sessions.get(args.ticket ?? '');
+      if (!s) return ok(simpleResponse(op, '100'));
+      const job = await deps.queue.inFlight(s.endUserId);
+      const t = now();
+      if ((args.hresult ?? '') !== '') {
+        const err = fromHresult(args.hresult ?? '');
+        if (job) await deps.queue.complete(job.id, { state: 'failed', error: err }, t);
+        await deps.sessions.update(s.ticket, { lastError: args.message || err.message });
+        return ok(simpleResponse(op, '-1')); // QBWC then calls getLastError
+      }
+      if (job) {
+        try {
+          const r = parseResponse(args.response ?? '');
+          const err = fromStatusCode(r.statusCode, r.message);
+          await deps.queue.complete(job.id, err
+            ? { state: 'failed', qbStatusCode: r.statusCode, error: err }
+            : { state: 'succeeded', qbStatusCode: r.statusCode, result: r.rows }, t);
+          if (!err) await deps.users.update(s.endUserId, { status: 'connected', lastSuccessAt: t });
+        } catch (e) {
+          if (!(e instanceof QbxmlParseError)) throw e;
+          await deps.queue.complete(job.id, { state: 'failed', error: { code: 'invalid_response', type: 'quickbooks', httpStatusCode: 502, retryable: true, message: e.message, userFacingMessage: 'QuickBooks sent a reply we could not read.', guideUrl: '/errors/invalid-response' } }, t);
+        }
+      }
+      const remaining = await deps.queue.queuedCount(s.endUserId);
+      return ok(simpleResponse(op, remaining > 0 ? '50' : '100'));
+    }
+
+    case 'connectionError': {
+      const s = await deps.sessions.get(args.ticket ?? '');
+      if (!s) return ok(simpleResponse(op, 'done'));
+      const err = fromHresult(args.hresult ?? '');
+      const job = await deps.queue.inFlight(s.endUserId);
+      if (job) await deps.queue.complete(job.id, { state: 'failed', error: err }, now());
+      await deps.users.update(s.endUserId, { status: 'broken', lastError: `${args.hresult ?? ''} ${args.message ?? ''}`.trim() });
+      await deps.sessions.update(s.ticket, { lastError: args.message ?? err.message });
+      return ok(simpleResponse(op, 'done')); // end the session cleanly
+    }
+
+    case 'getLastError': {
+      const s = await deps.sessions.get(args.ticket ?? '');
+      return ok(simpleResponse(op, s?.lastError ?? ''));
+    }
+
+    case 'closeConnection': {
+      if (args.ticket) await deps.sessions.delete(args.ticket);
+      return ok(simpleResponse(op, 'OK'));
+    }
+
+    default:
+      return { status: 500, headers: SOAP_HEADERS, body: faultResponse(`Unknown operation ${op}`) };
+  }
+}
