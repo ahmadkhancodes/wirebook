@@ -4,7 +4,7 @@ import { errorFor, type QbError } from '../errors/catalogue';
 import { newTicket } from './memory';
 import { verifyPassword } from './password';
 import { arrayResponse, faultResponse, parseSoap, simpleResponse } from './soap';
-import type { EndUserRepo, JobQueue, SessionStore } from './types';
+import type { EndUser, EndUserRepo, HealthLog, JobQueue, SessionStore } from './types';
 
 export interface BridgeDeps {
   queue: JobQueue;
@@ -14,6 +14,10 @@ export interface BridgeDeps {
   /** Long poll: how long sendRequestXML may wait for a new job. 0 disables. */
   holdMs?: number;
   sleep?: (ms: number) => Promise<void>;
+  /** Connection health timeline (optional: tests without it still work). */
+  health?: HealthLog;
+  /** Called after a request succeeded for this end user (billing meter: active files). Must not throw into the SOAP reply. */
+  onSuccess?: (user: EndUser, at: Date) => Promise<void>;
   /** session lifetime */
   sessionTtlMs?: number;
 }
@@ -55,8 +59,9 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       const recovered = user.status === 'asleep' || user.status === 'broken';
       await deps.users.update(user.id, {
         failedAuth: { count: 0, windowStart: t }, lastPollAt: t,
-        ...(recovered ? { status: 'connected' as const, lastError: undefined } : {}),
+        ...(recovered ? { status: 'connected' as const, lastError: undefined, brokenNotifiedAt: undefined } : {}),
       });
+      if (recovered) await deps.health?.append({ endUserId: user.id, projectId: user.projectId, at: t, status: 'connected', reason: `Polled again after being ${user.status}` });
       const ticket = newTicket();
       await deps.sessions.create({ ticket, endUserId: user.id, qbxmlVersion: '16.0', expiresAt: new Date(t.getTime() + (deps.sessionTtlMs ?? 30 * 60_000)) });
       const work = (await deps.queue.queuedCount(user.id)) > 0;
@@ -117,6 +122,8 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
           if (!err) {
             const who = await deps.users.get(s.endUserId);
             await deps.users.update(s.endUserId, { status: 'connected', lastSuccessAt: t, ...(who && !who.firstSyncAt ? { firstSyncAt: t } : {}) });
+            if (who && !who.firstSyncAt) await deps.health?.append({ endUserId: who.id, projectId: who.projectId, at: t, status: 'connected', reason: 'First sync completed' });
+            if (who && deps.onSuccess) await deps.onSuccess(who, t).catch(() => undefined);
           }
         } catch (e) {
           if (!(e instanceof QbxmlParseError)) throw e;
@@ -133,7 +140,10 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       const err = fromHresult(args.hresult ?? '');
       const job = await deps.queue.inFlight(s.endUserId);
       if (job) await deps.queue.complete(job.id, { state: 'failed', error: err }, now());
-      await deps.users.update(s.endUserId, { status: 'broken', lastError: `${args.hresult ?? ''} ${args.message ?? ''}`.trim() });
+      const lastError = `${args.hresult ?? ''} ${args.message ?? ''}`.trim();
+      const who = await deps.users.get(s.endUserId);
+      await deps.users.update(s.endUserId, { status: 'broken', lastError });
+      if (who && who.status !== 'broken') await deps.health?.append({ endUserId: who.id, projectId: who.projectId, at: now(), status: 'broken', reason: lastError || 'Connection error reported by the Web Connector' });
       await deps.sessions.update(s.ticket, { lastError: args.message ?? err.message });
       return ok(simpleResponse(op, 'done')); // end the session cleanly
     }

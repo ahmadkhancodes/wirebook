@@ -38,4 +38,12 @@ export const OBJECTS: Record<string, ObjectDef> = {
   invoices: { name: 'invoices', query: 'invoice.query', add: 'invoice.add', idList: 'txnIds', filters: txnFilters('customer') },
   bills: { name: 'bills', query: 'bill.query', add: 'bill.add', idList: 'txnIds', filters: txnFilters('vendor') },
   payments: { name: 'payments', query: 'payment.query', add: 'payment.add', idList: 'txnIds', filters: txnFilters('customer') },
+  estimates: { name: 'estimates', query: 'estimate.query', add: 'estimate.add', idList: 'txnIds', filters: txnFilters('customer') },
+  'sales-orders': { name: 'sales-orders', query: 'salesOrder.query', add: 'salesOrder.add', idList: 'txnIds', filters: txnFilters('customer') },
+  'sales-receipts': { name: 'sales-receipts', query: 'salesReceipt.query', add: 'salesReceipt.add', idList: 'txnIds', filters: txnFilters('customer') },
+  'credit-memos': { name: 'credit-memos', query: 'creditMemo.query', add: 'creditMemo.add', idList: 'txnIds', filters: txnFilters('customer') },
+  'purchase-orders': { name: 'purchase-orders', query: 'purchaseOrder.query', add: 'purchaseOrder.add', idList: 'txnIds', filters: txnFilters('vendor') },
+  classes: { name: 'classes', query: 'class.query', add: 'class.add', mod: 'class.mod', idList: 'listIds', filters: listFilters },
+  terms: { name: 'terms', query: 'terms.query', add: 'terms.add', idList: 'listIds', filters: listFilters },
+  employees: { name: 'employees', query: 'employee.query', add: 'employee.add', mod: 'employee.mod', idList: 'listIds', filters: listFilters },
 };

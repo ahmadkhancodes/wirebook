@@ -9,11 +9,11 @@ export const BASE = 'https://wirebook.test';
 export const SECRET = 'test-secret';
 
 /** Everything runs in process: memory bridge, a fake clock, and the Web Connector simulator standing in for QuickBooks. No network. */
-export function harness(opts: { waitMs?: number } = {}) {
+export function harness(opts: { waitMs?: number; onSuccess?: (u: EndUser, at: Date) => Promise<void> } = {}) {
   const bridge: Bridge = createMemoryBridge();
   const clock = { now: new Date() };
   const sims = new Map<string, QbwcSimulator>();
-  const post = (xml: string) => handleSoap(xml, { ...bridge, now: () => clock.now });
+  const post = (xml: string) => handleSoap(xml, { ...bridge, now: () => clock.now, ...(opts.onSuccess ? { onSuccess: opts.onSuccess } : {}) });
 
   const deps: V1Deps & { secret: string } = {
     bridge, baseUrl: BASE, secret: SECRET, now: () => clock.now, waitMs: opts.waitMs ?? 5000,
@@ -62,4 +62,18 @@ export function harness(opts: { waitMs?: number } = {}) {
     return { status: res.status, headers: res.headers, json, text };
   }
   return { bridge, deps, clock, sims, addUser, call, key, post };
+}
+
+/** A fetch-compatible function that routes requests into the in-process API of a harness. For SDK tests. */
+export function fetchFor(h: ReturnType<typeof harness>): typeof fetch {
+  return (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const req = new Request(input as RequestInfo, init);
+    const url = new URL(req.url);
+    const text = await req.text();
+    const headers: Record<string, string> = {};
+    req.headers.forEach((v, k) => { headers[k] = v; });
+    const r = await h.call(req.method, url.pathname + url.search, { ...(text ? { raw: text } : {}), headers, auth: null, user: null });
+    const out = new Headers(r.headers);
+    return new Response(r.text, { status: r.status, headers: out });
+  }) as typeof fetch;
 }

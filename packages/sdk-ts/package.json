@@ -1,0 +1,20 @@
+{
+  "name": "@wirebook/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the Wirebook API: QuickBooks Desktop over REST and JSON.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  },
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["quickbooks", "quickbooks-desktop", "qbxml", "wirebook", "sdk"]
+}

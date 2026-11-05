@@ -3,6 +3,7 @@ import { getDb } from '@/lib/db';
 import { appUrl, env } from '@/lib/env';
 import { authApiKey } from '@/lib/auth/session';
 import { HttpError } from '@/lib/http';
+import { canActivateFile } from '@/lib/billing/metering';
 import { rateLimit, RULES } from '@/lib/security/ratelimit';
 import { apiError } from './errors';
 import type { Environment, V1Deps } from './engine';
@@ -21,6 +22,9 @@ export async function defaultDeps(req: Request): Promise<V1Deps & { secret: stri
     baseUrl: appUrl(),
     waitMs: syncWaitMs(),
     secret: connectSecret(),
+    async checkFile(auth, endUserId) {
+      if (!(await canActivateFile(await getDb(), `${auth.orgId}__${auth.environment}`, endUserId))) throw apiError('file_limit_reached');
+    },
     async authenticate(r) {
       const db = await getDb();
       const raw = r.headers.get('x-api-key') ?? r.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';

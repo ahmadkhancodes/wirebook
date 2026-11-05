@@ -85,6 +85,11 @@ export interface Suppression {
   at: Date;
 }
 
+export interface OrgSettings {
+  /** Shortens payload retention below product.retention.payloadDays. */
+  retentionDays?: number;
+}
+
 export interface Db {
   readonly app: string;
 
@@ -102,6 +107,16 @@ export interface Db {
   // metering
   incUsage(orgId: string, meter: string, period: string, by?: number): Promise<number>;
   getUsage(orgId: string, meter: string, period: string): Promise<number>;
+
+  /** Active company files: a distinct production file counts once per period. Returns true if newly added. */
+  markActiveFile(orgId: string, period: string, fileId: string, at?: Date): Promise<boolean>;
+  listActiveFiles(orgId: string, period: string): Promise<string[]>;
+
+  // per-org settings
+  getOrgSettings(orgId: string): Promise<OrgSettings>;
+  setOrgSettings(orgId: string, patch: OrgSettings): Promise<OrgSettings>;
+  /** Orgs that have a custom retention (the purge job handles them separately). */
+  listOrgsWithRetention(): Promise<{ orgId: string; retentionDays: number }[]>;
 
   // rate limiting (sliding window). Returns hits inside the window INCLUDING this one.
   hitRateLimit(key: string, windowMs: number, now?: number): Promise<number>;

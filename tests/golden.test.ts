@@ -29,6 +29,31 @@ const GOLDEN: { op: OpName; input: unknown; xml: string }[] = [
   { op: 'payment.query', input: { entityFilter: { fullName: 'Acme' } }, xml: '<ReceivePaymentQueryRq requestID="g"><EntityFilter><FullName>Acme</FullName></EntityFilter></ReceivePaymentQueryRq>' },
   { op: 'payment.add', input: { totalAmount: 20, customerRef: { fullName: 'Acme' }, appliedTo: [{ paymentAmount: 20, txnId: 'T1' }], memo: 'Thanks' },
     xml: '<ReceivePaymentAddRq requestID="g"><ReceivePaymentAdd><CustomerRef><FullName>Acme</FullName></CustomerRef><TotalAmount>20.00</TotalAmount><Memo>Thanks</Memo><AppliedToTxnAdd><TxnID>T1</TxnID><PaymentAmount>20.00</PaymentAmount></AppliedToTxnAdd></ReceivePaymentAdd></ReceivePaymentAddRq>' },
+  { op: 'estimate.query', input: { entityFilter: { fullName: 'Acme' }, maxReturned: 2 }, xml: '<EstimateQueryRq requestID="g"><MaxReturned>2</MaxReturned><EntityFilter><FullName>Acme</FullName></EntityFilter></EstimateQueryRq>' },
+  { op: 'estimate.add', input: { refNumber: 'E-1', customerRef: { fullName: 'Acme' }, txnDate: '2026-11-05', lines: [{ rate: 5, quantity: 2, itemRef: { fullName: 'Labour' } }] },
+    xml: '<EstimateAddRq requestID="g"><EstimateAdd><CustomerRef><FullName>Acme</FullName></CustomerRef><TxnDate>2026-11-05</TxnDate><RefNumber>E-1</RefNumber><EstimateLineAdd><ItemRef><FullName>Labour</FullName></ItemRef><Quantity>2</Quantity><Rate>5.00</Rate></EstimateLineAdd></EstimateAdd></EstimateAddRq>' },
+  { op: 'salesOrder.query', input: { refNumbers: ['SO-1'] }, xml: '<SalesOrderQueryRq requestID="g"><RefNumber>SO-1</RefNumber></SalesOrderQueryRq>' },
+  { op: 'salesOrder.add', input: { memo: 'm', shipDate: '2026-12-01', pONumber: 'P1', customerRef: { fullName: 'Acme' }, lines: [{ amount: 9, itemRef: { fullName: 'Labour' } }] },
+    xml: '<SalesOrderAddRq requestID="g"><SalesOrderAdd><CustomerRef><FullName>Acme</FullName></CustomerRef><PONumber>P1</PONumber><ShipDate>2026-12-01</ShipDate><Memo>m</Memo><SalesOrderLineAdd><ItemRef><FullName>Labour</FullName></ItemRef><Amount>9.00</Amount></SalesOrderLineAdd></SalesOrderAdd></SalesOrderAddRq>' },
+  { op: 'salesReceipt.query', input: { includeLineItems: true }, xml: '<SalesReceiptQueryRq requestID="g"><IncludeLineItems>true</IncludeLineItems></SalesReceiptQueryRq>' },
+  { op: 'salesReceipt.add', input: { depositToAccountRef: { fullName: 'Bank' }, checkNumber: '77', customerRef: { fullName: 'Acme' }, paymentMethodRef: { fullName: 'Cash' }, lines: [{ rate: 1, itemRef: { fullName: 'Labour' } }] },
+    xml: '<SalesReceiptAddRq requestID="g"><SalesReceiptAdd><CustomerRef><FullName>Acme</FullName></CustomerRef><CheckNumber>77</CheckNumber><PaymentMethodRef><FullName>Cash</FullName></PaymentMethodRef><DepositToAccountRef><FullName>Bank</FullName></DepositToAccountRef><SalesReceiptLineAdd><ItemRef><FullName>Labour</FullName></ItemRef><Rate>1.00</Rate></SalesReceiptLineAdd></SalesReceiptAdd></SalesReceiptAddRq>' },
+  { op: 'creditMemo.query', input: { modifiedDateRangeFilter: { fromModifiedDate: '2026-01-01' } }, xml: '<CreditMemoQueryRq requestID="g"><ModifiedDateRangeFilter><FromModifiedDate>2026-01-01</FromModifiedDate></ModifiedDateRangeFilter></CreditMemoQueryRq>' },
+  { op: 'creditMemo.add', input: { memo: 'refund', aRAccountRef: { fullName: 'AR' }, customerRef: { fullName: 'Acme' }, lines: [{ amount: 3, itemRef: { fullName: 'Labour' } }] },
+    xml: '<CreditMemoAddRq requestID="g"><CreditMemoAdd><CustomerRef><FullName>Acme</FullName></CustomerRef><ARAccountRef><FullName>AR</FullName></ARAccountRef><Memo>refund</Memo><CreditMemoLineAdd><ItemRef><FullName>Labour</FullName></ItemRef><Amount>3.00</Amount></CreditMemoLineAdd></CreditMemoAdd></CreditMemoAddRq>' },
+  { op: 'purchaseOrder.query', input: { entityFilter: { fullName: 'Lumber Co' } }, xml: '<PurchaseOrderQueryRq requestID="g"><EntityFilter><FullName>Lumber Co</FullName></EntityFilter></PurchaseOrderQueryRq>' },
+  { op: 'purchaseOrder.add', input: { expectedDate: '2026-12-02', vendorRef: { fullName: 'Lumber Co' }, lines: [{ rate: 4, quantity: 3, customerRef: { fullName: 'Acme' }, itemRef: { fullName: 'Plank' } }] },
+    xml: '<PurchaseOrderAddRq requestID="g"><PurchaseOrderAdd><VendorRef><FullName>Lumber Co</FullName></VendorRef><ExpectedDate>2026-12-02</ExpectedDate><PurchaseOrderLineAdd><ItemRef><FullName>Plank</FullName></ItemRef><Quantity>3</Quantity><Rate>4.00</Rate><CustomerRef><FullName>Acme</FullName></CustomerRef></PurchaseOrderLineAdd></PurchaseOrderAdd></PurchaseOrderAddRq>' },
+  { op: 'class.query', input: { activeStatus: 'ActiveOnly' }, xml: '<ClassQueryRq requestID="g"><ActiveStatus>ActiveOnly</ActiveStatus></ClassQueryRq>' },
+  { op: 'class.add', input: { parentRef: { fullName: 'East' }, name: 'East:Leeds' }, xml: '<ClassAddRq requestID="g"><ClassAdd><Name>East:Leeds</Name><ParentRef><FullName>East</FullName></ParentRef></ClassAdd></ClassAddRq>' },
+  { op: 'class.mod', input: { name: 'North', revisionNumber: '3', listId: 'C1' }, xml: '<ClassModRq requestID="g"><ClassMod><ListID>C1</ListID><EditSequence>3</EditSequence><Name>North</Name></ClassMod></ClassModRq>' },
+  { op: 'terms.query', input: { listIds: ['T1'] }, xml: '<TermsQueryRq requestID="g"><ListID>T1</ListID></TermsQueryRq>' },
+  { op: 'terms.add', input: { discountPct: '2.0', stdDueDays: 30, name: 'Net 30', stdDiscountDays: 10 },
+    xml: '<StandardTermsAddRq requestID="g"><StandardTermsAdd><Name>Net 30</Name><StdDueDays>30</StdDueDays><StdDiscountDays>10</StdDiscountDays><DiscountPct>2.0</DiscountPct></StandardTermsAdd></StandardTermsAddRq>' },
+  { op: 'employee.query', input: { nameFilter: { name: 'Ann', matchCriterion: 'StartsWith' } }, xml: '<EmployeeQueryRq requestID="g"><NameFilter><MatchCriterion>StartsWith</MatchCriterion><Name>Ann</Name></NameFilter></EmployeeQueryRq>' },
+  { op: 'employee.add', input: { email: 'a@b.test', lastName: 'Lee', firstName: 'Ann', jobTitle: 'Foreman' },
+    xml: '<EmployeeAddRq requestID="g"><EmployeeAdd><FirstName>Ann</FirstName><LastName>Lee</LastName><JobTitle>Foreman</JobTitle><Email>a@b.test</Email></EmployeeAdd></EmployeeAddRq>' },
+  { op: 'employee.mod', input: { phone: '555', revisionNumber: '9', listId: 'E1' }, xml: '<EmployeeModRq requestID="g"><EmployeeMod><ListID>E1</ListID><EditSequence>9</EditSequence><Phone>555</Phone></EmployeeMod></EmployeeModRq>' },
 ];
 
 describe('golden qbXML requests for the M2 objects', () => {
@@ -49,6 +74,17 @@ describe('golden qbXML requests for the M2 objects', () => {
     need('bill.add', { vendorRef: { fullName: 'v' }, expenseLines: [{ accountRef: { fullName: 'a' } }] }, /expenseLines\[0\]\.amount: is required/);
     need('payment.add', { customerRef: { fullName: 'c' } }, /totalAmount: is required/);
     need('payment.add', { customerRef: { fullName: 'c' }, totalAmount: 1, appliedTo: [{}] }, /appliedTo\[0\]\.txnId: is required/);
+    need('estimate.add', {}, /customerRef: is required/);
+    need('estimate.add', { customerRef: { fullName: 'c' }, lines: [{}] }, /lines\[0\]\.itemRef: is required/);
+    need('salesOrder.add', {}, /customerRef: is required/);
+    need('salesReceipt.add', {}, /customerRef: is required/);
+    need('creditMemo.add', {}, /customerRef: is required/);
+    need('purchaseOrder.add', {}, /vendorRef: is required/);
+    need('class.add', {}, /name: is required/);
+    need('class.mod', { listId: 'C1' }, /revisionNumber: is required/);
+    need('terms.add', {}, /name: is required/);
+    need('employee.add', { firstName: 'A' }, /lastName: is required/);
+    need('employee.mod', { revisionNumber: '1' }, /listId: is required/);
     expect(() => buildRequest('vendor.add', { name: 'x', colour: 1 }, { requestId: 'r' })).toThrowError(new QbxmlValidationError('colour', 'unknown field'));
   });
 

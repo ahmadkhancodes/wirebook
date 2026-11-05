@@ -16,6 +16,8 @@ export interface V1Deps {
   bridge: Bridge;
   /** Verifies the API key. Throws ApiError (missing_api_key, invalid_api_key, rate_limited). */
   authenticate(req: Request): Promise<V1Auth>;
+  /** Plan gate: may this production file be used this month? Throws ApiError file_limit_reached. `endUserId` is null for a file that does not exist yet. */
+  checkFile?(auth: V1Auth, endUserId: string | null): Promise<void>;
   /** public origin, no trailing slash; used for guide links, Location and connect URLs */
   baseUrl: string;
   now?: () => Date;
@@ -124,6 +126,7 @@ const failure = (deps: V1Deps, job: Job): Response =>
 async function submit(deps: V1Deps, req: Request, s: Submit): Promise<Response> {
   const projectId = projectIdOf(s.auth);
   const now = nowOf(deps);
+  await deps.checkFile?.(s.auth, s.endUser.id);
   const key = s.idempotencyKey ?? undefined;
   if (key !== undefined && (key.length < 1 || key.length > 255 || !/^[\x20-\x7e]+$/.test(key))) throw apiError('invalid_request', { path: 'Idempotency-Key' }, { message: 'Idempotency-Key: must be 1 to 255 printable characters' });
   const bodyHash = await sha256(s.hashSource);

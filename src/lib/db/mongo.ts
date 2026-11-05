@@ -1,6 +1,6 @@
 import { MongoClient, type Collection, type Db as MongoDatabase, type Document } from "mongodb";
 import { uuidv7 } from "@/lib/ids";
-import { DELIVERY_TTL_DAYS, type AuditEntry, type BillingAccount, type Db, type Entitlement, type Suppression, type WebhookDelivery, type WebhookEndpoint } from "./types";
+import { DELIVERY_TTL_DAYS, type OrgSettings, type AuditEntry, type BillingAccount, type Db, type Entitlement, type Suppression, type WebhookDelivery, type WebhookEndpoint } from "./types";
 
 // Ported from trayo server/db/mongo.ts. Changes: global singleton client (Vercel), pool 10, Date TTLs,
 // stripe events recorded after success, no sync/family/anonymous. Use only from runtime = "nodejs" routes.
@@ -82,6 +82,32 @@ export function createMongoDb(uri: string, dbName: string, app: string): Db {
     async getUsage(orgId, meter, period) {
       const d = await (await col<{ _id: string; value: number }>("usage")).findOne({ _id: `${orgId}|${meter}|${period}` });
       return d?.value ?? 0;
+    },
+    async markActiveFile(orgId, period, fileId, at = new Date()) {
+      const r = await (await col<{ _id: string }>("active_files")).updateOne(
+        { _id: `${app}:${orgId}:${period}:${fileId}` },
+        { $setOnInsert: { app, orgId, period, fileId, at } },
+        { upsert: true },
+      );
+      return r.upsertedCount > 0;
+    },
+    async listActiveFiles(orgId, period) {
+      const docs = await (await col<{ fileId: string }>("active_files")).find({ app, orgId, period }).toArray();
+      return docs.map((d) => d.fileId);
+    },
+    async getOrgSettings(orgId) {
+      return strip<OrgSettings>(await (await col<WithId<OrgSettings & { app: string }>>("org_settings")).findOne({ _id: `${app}:${orgId}` })) ?? {};
+    },
+    async setOrgSettings(orgId, patch) {
+      const c = await col<WithId<OrgSettings & { app: string; orgId: string }>>("org_settings");
+      await c.updateOne({ _id: `${app}:${orgId}` }, { $set: { ...patch, app, orgId } }, { upsert: true });
+      const { app: _a, orgId: _o, ...rest } = (await c.findOne({ _id: `${app}:${orgId}` }))! as Record<string, unknown>;
+      delete rest._id;
+      return rest as OrgSettings;
+    },
+    async listOrgsWithRetention() {
+      const docs = await (await col<{ orgId: string; retentionDays: number }>("org_settings")).find({ app, retentionDays: { $exists: true } }).toArray();
+      return docs.map((d) => ({ orgId: d.orgId, retentionDays: d.retentionDays }));
     },
     async hitRateLimit(key, windowMs, now = Date.now()) {
       // One atomic pipeline update: drop hits outside the window, push this one, bump the TTL Date.
@@ -196,6 +222,8 @@ export function createMongoDb(uri: string, dbName: string, app: string): Db {
       await d.collection("billing_accounts").deleteOne({ _id: orgId as never });
       await d.collection("entitlements").deleteOne({ _id: orgId as never });
       await d.collection("usage").deleteMany({ app, orgId });
+      await d.collection("active_files").deleteMany({ app, orgId });
+      await d.collection("org_settings").deleteOne({ _id: `${app}:${orgId}` as never });
       await d.collection("webhook_endpoints").deleteMany({ app, orgId });
       await d.collection("webhook_deliveries").deleteMany({ app, orgId });
     },
@@ -209,6 +237,7 @@ export async function ensureIndexes(uri: string, dbName: string) {
   await d.collection("stripe_events").createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });
   await d.collection("rate_limits").createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });
   await d.collection("usage").createIndex({ app: 1, orgId: 1, period: 1 });
+  await d.collection("active_files").createIndex({ app: 1, orgId: 1, period: 1 });
   await d.collection("audit_log").createIndex({ app: 1, orgId: 1, at: -1 });
   await d.collection("webhook_endpoints").createIndex({ app: 1, orgId: 1 });
   await d.collection("webhook_deliveries").createIndex({ app: 1, orgId: 1, createdAt: -1 });

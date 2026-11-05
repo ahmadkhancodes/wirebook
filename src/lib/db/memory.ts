@@ -1,5 +1,5 @@
 import { uuidv7 } from "@/lib/ids";
-import type { AuditEntry, BillingAccount, Db, Entitlement, Suppression, WebhookDelivery, WebhookEndpoint } from "./types";
+import type { OrgSettings, AuditEntry, BillingAccount, Db, Entitlement, Suppression, WebhookDelivery, WebhookEndpoint } from "./types";
 
 /** In-memory Db for tests, local dev and stub mode. Same semantics as the Mongo driver (dbContract.ts). */
 export function createMemoryDb(app: string, config: Record<string, string> = {}): Db {
@@ -8,6 +8,8 @@ export function createMemoryDb(app: string, config: Record<string, string> = {})
   const events = new Set<string>();
   const usage = new Map<string, number>();
   const limits = new Map<string, number[]>();
+  const active = new Map<string, Set<string>>();
+  const settings = new Map<string, OrgSettings>();
   const audit: AuditEntry[] = [];
   const endpoints = new Map<string, WebhookEndpoint>();
   const deliveries = new Map<string, WebhookDelivery>();
@@ -53,6 +55,28 @@ export function createMemoryDb(app: string, config: Record<string, string> = {})
     },
     async getUsage(orgId, meter, period) {
       return usage.get(`${orgId}|${meter}|${period}`) ?? 0;
+    },
+    async markActiveFile(orgId, period, fileId) {
+      const k = `${orgId}|${period}`;
+      const set = active.get(k) ?? new Set<string>();
+      if (set.has(fileId)) return false;
+      set.add(fileId);
+      active.set(k, set);
+      return true;
+    },
+    async listActiveFiles(orgId, period) {
+      return [...(active.get(`${orgId}|${period}`) ?? [])];
+    },
+    async getOrgSettings(orgId) {
+      return clone(settings.get(orgId) ?? {});
+    },
+    async setOrgSettings(orgId, patch) {
+      const next = { ...settings.get(orgId), ...patch };
+      settings.set(orgId, next);
+      return clone(next);
+    },
+    async listOrgsWithRetention() {
+      return [...settings].filter(([, s]) => s.retentionDays !== undefined).map(([orgId, s]) => ({ orgId, retentionDays: s.retentionDays! }));
     },
     async hitRateLimit(key, windowMs, now = Date.now()) {
       const hits = (limits.get(key) ?? []).filter((t) => t > now - windowMs);
@@ -144,6 +168,8 @@ export function createMemoryDb(app: string, config: Record<string, string> = {})
       accounts.delete(orgId);
       ents.delete(orgId);
       for (const [k] of usage) if (k.startsWith(`${orgId}|`)) usage.delete(k);
+      for (const [k] of active) if (k.startsWith(`${orgId}|`)) active.delete(k);
+      settings.delete(orgId);
       for (const [k, e] of endpoints) if (e.orgId === orgId) endpoints.delete(k);
       for (const [k, d] of deliveries) if (d.orgId === orgId) deliveries.delete(k);
       // The audit log is append-only: entries are kept (no PII beyond ids) per the privacy policy.

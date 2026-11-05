@@ -5,7 +5,7 @@ import { XMLParser } from 'fast-xml-parser';
  * It speaks the real SOAP 1.1 operations and answers qbXML from a tiny fake company file.
  * It proves our contract with the QBWC protocol; it is NOT real QuickBooks.
  */
-const xp = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', parseTagValue: false, isArray: (n) => ['InvoiceLineAdd', 'ExpenseLineAdd', 'ItemLineAdd', 'AppliedToTxnAdd'].includes(n) });
+const xp = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', parseTagValue: false, isArray: (n) => ['InvoiceLineAdd', 'ExpenseLineAdd', 'ItemLineAdd', 'AppliedToTxnAdd', 'EstimateLineAdd', 'SalesOrderLineAdd', 'SalesReceiptLineAdd', 'CreditMemoLineAdd', 'PurchaseOrderLineAdd'].includes(n) });
 const xmlp = new XMLParser({ removeNSPrefix: true, parseTagValue: false, trimValues: false });
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const NS = 'xmlns="http://developer.intuit.com/"';
@@ -120,13 +120,14 @@ export class FakeCompanyFile {
         return this.wrap(`${head(0, 'Info', 'Status OK')}><InvoiceRet><TxnID>${inv.TxnID}</TxnID><CustomerRef><FullName>${esc(who)}</FullName></CustomerRef><RefNumber>${esc(inv.RefNumber ?? '')}</RefNumber><Subtotal>${total.toFixed(2)}</Subtotal></InvoiceRet></${rs}>`);
       }
       default: {
-        const m = /^(Vendor|Item|Account|Bill|ReceivePayment)(Service)?(Query|Add|Mod)Rq$/.exec(rq);
+        const m = /^(Vendor|Item|Account|Bill|ReceivePayment|Estimate|SalesOrder|SalesReceipt|CreditMemo|PurchaseOrder|Class|Employee|StandardTerms|Terms)(Service)?(Query|Add|Mod)Rq$/.exec(rq);
         if (!m) return this.wrap(`${head(3000, 'Error', `unsupported request ${rq}`)} />`);
-        const [, type, svc, kind] = m as unknown as [string, string, string | undefined, string];
+        const [, rawType, svc, kind] = m as unknown as [string, string, string | undefined, string];
+        const type = rawType === 'Terms' ? 'StandardTerms' : rawType;
         const ret = `${type}${svc ?? ''}Ret`;
         const rowsOf = (t: string) => (this.store[t === 'Item' ? 'ItemServiceRet' : `${t}Ret`] ??= []);
         const list = rowsOf(type);
-        const isTxn = type === 'Bill' || type === 'ReceivePayment';
+        const isTxn = ['Bill', 'ReceivePayment', 'Estimate', 'SalesOrder', 'SalesReceipt', 'CreditMemo', 'PurchaseOrder'].includes(type);
         const idTag = isTxn ? 'TxnID' : 'ListID';
         if (kind === 'Query') {
           const ids = wanted(idTag);
@@ -149,6 +150,9 @@ export class FakeCompanyFile {
         const a = node[`${type}${svc ?? ''}Add`] ?? {};
         if (type === 'Bill' && !this.names('Vendor', a.VendorRef?.ListID ? 'ListID' : 'FullName', a.VendorRef?.ListID ?? a.VendorRef?.FullName)) return this.wrap(`${head(3140, 'Error', `There is an invalid reference to QuickBooks Vendor "${a.VendorRef?.FullName ?? ''}" in the Bill.`)} />`);
         if (type === 'ReceivePayment' && !this.names('Customer', a.CustomerRef?.ListID ? 'ListID' : 'FullName', a.CustomerRef?.ListID ?? a.CustomerRef?.FullName)) return this.wrap(`${head(3140, 'Error', `There is an invalid reference to QuickBooks Customer "${a.CustomerRef?.FullName ?? ''}" in the payment.`)} />`);
+        if (['Estimate', 'SalesOrder', 'SalesReceipt', 'CreditMemo'].includes(type) && !this.names('Customer', a.CustomerRef?.ListID ? 'ListID' : 'FullName', a.CustomerRef?.ListID ?? a.CustomerRef?.FullName)) return this.wrap(`${head(3140, 'Error', `There is an invalid reference to QuickBooks Customer "${a.CustomerRef?.FullName ?? ''}" in the ${type}.`)} />`);
+        if (type === 'PurchaseOrder' && !this.names('Vendor', a.VendorRef?.ListID ? 'ListID' : 'FullName', a.VendorRef?.ListID ?? a.VendorRef?.FullName)) return this.wrap(`${head(3140, 'Error', `There is an invalid reference to QuickBooks Vendor "${a.VendorRef?.FullName ?? ''}" in the PurchaseOrder.`)} />`);
+        if (type === 'Employee') a.Name = [a.FirstName, a.LastName].filter(Boolean).join(' ');
         if (!isTxn && list.some((r) => r.Name === a.Name)) return this.wrap(`${head(3100, 'Error', `The name "${a.Name}" of the list element is already in use.`)} />`);
         const row: Record<string, any> = isTxn
           ? { TxnID: `9500-${++this.seq}`, ...a }
