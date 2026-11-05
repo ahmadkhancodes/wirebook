@@ -13,7 +13,7 @@ const post = (xml: string) => handleSoap(xml, deps);
 
 beforeEach(() => {
   users = new MemoryEndUsers();
-  clock = new Date('2026-11-05T10:00:00Z');
+  clock = new Date(); // MemorySessions checks expiry against the wall clock, so the fake clock starts at real now
   deps = { queue: new MemoryQueue(), users, sessions: new MemorySessions(), now: () => clock };
   users.add(user('end_a', 'acme'));
   users.add(user('end_b', 'harlan'));
