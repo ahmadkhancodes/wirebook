@@ -1,5 +1,6 @@
-import { buildRequest, negotiateVersion, parseResponse, QbxmlParseError, QbxmlValidationError, type OpName } from '../qbxml';
-import { fromHresult, fromStatusCode, type QbError } from '../errors/qb-status';
+import { buildRequest, negotiateVersion, parseResponse, QbxmlParseError, QbxmlValidationError } from '../qbxml';
+import { fromHresult, fromStatusCode } from '../errors/qb-status';
+import { errorFor, type QbError } from '../errors/catalogue';
 import { newTicket } from './memory';
 import { verifyPassword } from './password';
 import { arrayResponse, faultResponse, parseSoap, simpleResponse } from './soap';
@@ -25,10 +26,7 @@ const SOAP_HEADERS = { 'content-type': 'text/xml; charset=utf-8' };
 export interface SoapResult { status: number; headers: Record<string, string>; body: string }
 const ok = (body: string): SoapResult => ({ status: 200, headers: SOAP_HEADERS, body });
 
-const invalidRequest = (e: QbxmlValidationError): QbError => ({
-  code: 'invalid_request', type: 'invalid_request', httpStatusCode: 400, retryable: false,
-  message: e.message, userFacingMessage: 'The request could not be sent to QuickBooks.', guideUrl: '/errors/invalid-request',
-});
+const invalidRequest = (e: QbxmlValidationError): QbError => errorFor('invalid_request', { message: e.message });
 
 /** Stateless Web Connector bridge: everything lives in the injected stores. Returns a SOAP 1.1 response. */
 export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapResult> {
@@ -45,6 +43,8 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       const user = await deps.users.findByUsername(args.strUserName ?? '');
       if (!user) return ok(arrayResponse(op, ['', 'nvu']));
       const t = now();
+      // Connect flow step 2: a poll with this username proves the .qwc was added to the Web Connector
+      if (!user.firstAuthAt) await deps.users.update(user.id, { firstAuthAt: t });
       const win = t.getTime() - user.failedAuth.windowStart.getTime() > LOCKOUT_WINDOW_MS
         ? { count: 0, windowStart: t } : user.failedAuth;
       if (win.count >= LOCKOUT_LIMIT) return ok(arrayResponse(op, ['', 'nvu']));
@@ -69,13 +69,17 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       if (!s) return ok(simpleResponse(op, '')); // unknown ticket ends the session, never a fault
       const version = negotiateVersion(args.qbXMLMajorVers ?? '', args.qbXMLMinorVers ?? '0');
       await deps.sessions.update(s.ticket, { qbxmlVersion: version });
+      // Connect flow step 3: the Web Connector reached QuickBooks and the app is authorised
+      const who = await deps.users.get(s.endUserId);
+      if (who && !who.firstSessionAt) await deps.users.update(who.id, { firstSessionAt: now() });
       const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
       const deadline = now().getTime() + (deps.holdMs ?? 0);
       for (;;) {
         const job = await deps.queue.claim(s.endUserId, now());
         if (job) {
           try {
-            return ok(simpleResponse(op, buildRequest(job.op as OpName, job.body, { requestId: job.id, version })));
+            if (job.op === 'raw') return ok(simpleResponse(op, String((job.body as { qbxml?: string }).qbxml ?? '')));
+            return ok(simpleResponse(op, buildRequest(job.op, job.body, { requestId: job.id, version, ...(job.iterator ? { iterator: job.iterator } : {}) })));
           } catch (e) {
             if (!(e instanceof QbxmlValidationError)) throw e;
             await deps.queue.complete(job.id, { state: 'failed', error: invalidRequest(e) }, now());
@@ -103,13 +107,20 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
         try {
           const r = parseResponse(args.response ?? '');
           const err = fromStatusCode(r.statusCode, r.message);
+          const extra = {
+            ...(job.op === 'raw' ? { rawResponse: args.response ?? '' } : {}),
+            ...(r.iteratorRemaining !== undefined ? { iteratorResult: { ...(r.iteratorId ? { id: r.iteratorId } : {}), remaining: r.iteratorRemaining } } : {}),
+          };
           await deps.queue.complete(job.id, err
-            ? { state: 'failed', qbStatusCode: r.statusCode, error: err }
-            : { state: 'succeeded', qbStatusCode: r.statusCode, result: r.rows }, t);
-          if (!err) await deps.users.update(s.endUserId, { status: 'connected', lastSuccessAt: t });
+            ? { state: 'failed', qbStatusCode: r.statusCode, error: err, ...extra }
+            : { state: 'succeeded', qbStatusCode: r.statusCode, result: r.rows, ...extra }, t);
+          if (!err) {
+            const who = await deps.users.get(s.endUserId);
+            await deps.users.update(s.endUserId, { status: 'connected', lastSuccessAt: t, ...(who && !who.firstSyncAt ? { firstSyncAt: t } : {}) });
+          }
         } catch (e) {
           if (!(e instanceof QbxmlParseError)) throw e;
-          await deps.queue.complete(job.id, { state: 'failed', error: { code: 'invalid_response', type: 'quickbooks', httpStatusCode: 502, retryable: true, message: e.message, userFacingMessage: 'QuickBooks sent a reply we could not read.', guideUrl: '/errors/invalid-response' } }, t);
+          await deps.queue.complete(job.id, { state: 'failed', error: errorFor('invalid_response', { message: e.message }) }, t);
         }
       }
       const remaining = await deps.queue.queuedCount(s.endUserId);

@@ -114,6 +114,101 @@ export const INVOICE_ADD: Spec = [
   ] },
 ];
 
+/** Shared list query shape (customer, vendor, item, account): ListID*, FullName*, MaxReturned, ActiveStatus, modified range, NameFilter. */
+const listQuery = (extra: Spec = []): Spec => [...CUSTOMER_QUERY, ...extra];
+export const VENDOR_QUERY: Spec = listQuery();
+export const ITEM_QUERY: Spec = listQuery();
+export const ACCOUNT_QUERY: Spec = listQuery([{ name: 'AccountType', kind: 'str', max: 40 }]);
+/** Transaction query shape reused by bill and receive payment. */
+export const BILL_QUERY: Spec = INVOICE_QUERY;
+export const PAYMENT_QUERY: Spec = INVOICE_QUERY;
+
+const vendorFields: Spec = [
+  { name: 'Name', kind: 'str', max: 41 },
+  { name: 'IsActive', kind: 'bool' },
+  { name: 'CompanyName', kind: 'str', max: 41 },
+  { name: 'FirstName', kind: 'str', max: 25 },
+  { name: 'LastName', kind: 'str', max: 25 },
+  { name: 'VendorAddress', kind: 'obj', children: address },
+  { name: 'Phone', kind: 'str', max: 21 },
+  { name: 'Email', kind: 'str', max: 1023 },
+  { name: 'NameOnCheck', kind: 'str', max: 41 },
+  { name: 'AccountNumber', kind: 'str', max: 99 },
+  R('TermsRef'),
+];
+export const VENDOR_ADD: Spec = vendorFields.map((f) => (f.name === 'Name' ? { ...f, required: true } : f));
+export const VENDOR_MOD: Spec = [
+  { name: 'ListID', kind: 'str', required: true },
+  { name: 'EditSequence', kind: 'str', key: 'revisionNumber', required: true },
+  ...vendorFields,
+];
+
+/** Service items only in M2; other item types follow with the remaining objects. */
+export const ITEM_SERVICE_ADD: Spec = [
+  { name: 'Name', kind: 'str', max: 31, required: true },
+  { name: 'IsActive', kind: 'bool' },
+  R('ParentRef'),
+  { name: 'SalesOrPurchase', kind: 'obj', required: true, children: [
+    { name: 'Desc', kind: 'str', max: 4095 },
+    { name: 'Price', kind: 'price' },
+    { ...R('AccountRef'), required: true },
+  ] },
+];
+
+export const ACCOUNT_ADD: Spec = [
+  { name: 'Name', kind: 'str', max: 31, required: true },
+  { name: 'IsActive', kind: 'bool' },
+  R('ParentRef'),
+  { name: 'AccountType', kind: 'str', max: 40, required: true },
+  { name: 'AccountNumber', kind: 'str', max: 7 },
+  { name: 'BankNumber', kind: 'str', max: 25 },
+  { name: 'Desc', kind: 'str', max: 200 },
+  { name: 'OpenBalance', kind: 'amount' },
+  { name: 'OpenBalanceDate', kind: 'date' },
+];
+
+export const BILL_ADD: Spec = [
+  { ...R('VendorRef'), required: true },
+  R('APAccountRef'),
+  { name: 'TxnDate', kind: 'date' },
+  { name: 'DueDate', kind: 'date' },
+  { name: 'RefNumber', kind: 'str', max: 20 },
+  R('TermsRef'),
+  { name: 'Memo', kind: 'str', max: 4095 },
+  { name: 'ExpenseLineAdd', kind: 'list', key: 'expenseLines', children: [
+    { ...R('AccountRef'), required: true },
+    { name: 'Amount', kind: 'amount', required: true },
+    { name: 'Memo', kind: 'str', max: 4095 },
+    R('CustomerRef'),
+    R('ClassRef'),
+  ] },
+  { name: 'ItemLineAdd', kind: 'list', key: 'itemLines', children: [
+    { ...R('ItemRef'), required: true },
+    { name: 'Desc', kind: 'str', max: 4095 },
+    { name: 'Quantity', kind: 'quan' },
+    { name: 'UnitOfMeasure', kind: 'str', max: 31 },
+    { name: 'Cost', kind: 'price' },
+    { name: 'Amount', kind: 'amount' },
+    R('CustomerRef'),
+    R('ClassRef'),
+  ] },
+];
+
+export const PAYMENT_ADD: Spec = [
+  { ...R('CustomerRef'), required: true },
+  R('ARAccountRef'),
+  { name: 'TxnDate', kind: 'date' },
+  { name: 'RefNumber', kind: 'str', max: 20 },
+  { name: 'TotalAmount', kind: 'amount', required: true },
+  R('PaymentMethodRef'),
+  { name: 'Memo', kind: 'str', max: 4095 },
+  R('DepositToAccountRef'),
+  { name: 'AppliedToTxnAdd', kind: 'list', key: 'appliedTo', children: [
+    { name: 'TxnID', kind: 'str', required: true },
+    { name: 'PaymentAmount', kind: 'amount' },
+  ] },
+];
+
 export interface OpDef {
   /** e.g. CustomerQueryRq */
   rq: string;
@@ -132,5 +227,16 @@ export const OPS = {
   'customer.mod': { rq: 'CustomerModRq', wrapper: 'CustomerMod', rs: 'CustomerModRs', ret: 'CustomerRet', spec: CUSTOMER_MOD },
   'invoice.query': { rq: 'InvoiceQueryRq', rs: 'InvoiceQueryRs', ret: 'InvoiceRet', spec: INVOICE_QUERY },
   'invoice.add': { rq: 'InvoiceAddRq', wrapper: 'InvoiceAdd', rs: 'InvoiceAddRs', ret: 'InvoiceRet', spec: INVOICE_ADD },
+  'vendor.query': { rq: 'VendorQueryRq', rs: 'VendorQueryRs', ret: 'VendorRet', spec: VENDOR_QUERY },
+  'vendor.add': { rq: 'VendorAddRq', wrapper: 'VendorAdd', rs: 'VendorAddRs', ret: 'VendorRet', spec: VENDOR_ADD },
+  'vendor.mod': { rq: 'VendorModRq', wrapper: 'VendorMod', rs: 'VendorModRs', ret: 'VendorRet', spec: VENDOR_MOD },
+  'item.query': { rq: 'ItemQueryRq', rs: 'ItemQueryRs', ret: 'ItemServiceRet', spec: ITEM_QUERY },
+  'item.add': { rq: 'ItemServiceAddRq', wrapper: 'ItemServiceAdd', rs: 'ItemServiceAddRs', ret: 'ItemServiceRet', spec: ITEM_SERVICE_ADD },
+  'account.query': { rq: 'AccountQueryRq', rs: 'AccountQueryRs', ret: 'AccountRet', spec: ACCOUNT_QUERY },
+  'account.add': { rq: 'AccountAddRq', wrapper: 'AccountAdd', rs: 'AccountAddRs', ret: 'AccountRet', spec: ACCOUNT_ADD },
+  'bill.query': { rq: 'BillQueryRq', rs: 'BillQueryRs', ret: 'BillRet', spec: BILL_QUERY },
+  'bill.add': { rq: 'BillAddRq', wrapper: 'BillAdd', rs: 'BillAddRs', ret: 'BillRet', spec: BILL_ADD },
+  'payment.query': { rq: 'ReceivePaymentQueryRq', rs: 'ReceivePaymentQueryRs', ret: 'ReceivePaymentRet', spec: PAYMENT_QUERY },
+  'payment.add': { rq: 'ReceivePaymentAddRq', wrapper: 'ReceivePaymentAdd', rs: 'ReceivePaymentAddRs', ret: 'ReceivePaymentRet', spec: PAYMENT_ADD },
 } as const satisfies Record<string, OpDef>;
 export type OpName = keyof typeof OPS;

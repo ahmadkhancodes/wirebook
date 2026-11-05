@@ -1,0 +1,118 @@
+import { CheckCircle, Clock, Question, XCircle } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
+import type { Job, RequestState } from "@/lib/qbwc";
+
+export const STATE_LABEL: Record<RequestState, string> = { queued: "Queued", sent: "Sent", succeeded: "Succeeded", failed: "Failed", outcome_unknown: "Outcome unknown" };
+
+export function StateMark({ state }: { state: RequestState }) {
+  const cls = state === "succeeded" ? "text-success" : state === "failed" ? "text-danger" : state === "outcome_unknown" ? "text-warning" : "text-text-muted";
+  const Icon = state === "succeeded" ? CheckCircle : state === "failed" ? XCircle : state === "outcome_unknown" ? Question : Clock;
+  return (
+    <span className={`inline-flex items-center gap-1.5 caption-4 font-semibold ${cls}`}>
+      <Icon size={16} weight="bold" aria-hidden />
+      <span className="max-sm:sr-only">{STATE_LABEL[state]}</span>
+    </span>
+  );
+}
+
+export const clock = (d?: Date) => (d ? new Date(d).toISOString().slice(11, 19) : "–");
+export const day = (d: Date) => new Date(d).toISOString().slice(0, 10);
+const ms = (n?: number) => (n === undefined ? "–" : n < 1000 ? `${n} ms` : `${(n / 1000).toFixed(1)} s`);
+
+export interface LogQuery { env: string; state?: string; object?: string; q?: string }
+export function logHref(q: LogQuery, extra: Record<string, string | undefined> = {}) {
+  const p = new URLSearchParams();
+  if (q.env !== "test") p.set("env", q.env);
+  if (q.state) p.set("state", q.state);
+  if (q.object) p.set("object", q.object);
+  if (q.q) p.set("q", q.q);
+  for (const [k, v] of Object.entries(extra)) if (v) p.set(k, v);
+  const s = p.toString();
+  return `/app${s ? `?${s}` : ""}`;
+}
+
+/** The ledger table: tabular figures, banded rows, failed rows tinted with the reason underneath. */
+export function LedgerTable({ rows, selected, query }: { rows: Job[]; selected?: string; query: LogQuery }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse figures text-[13.5px] leading-5">
+        <caption className="sr-only">Requests, newest first</caption>
+        <thead>
+          <tr className="border-b border-border text-left caption-4 text-text-subtle">
+            <th scope="col" className="whitespace-nowrap px-3 py-2 font-semibold">Time (UTC)</th>
+            <th scope="col" className="hidden px-3 py-2 font-semibold 2xl:table-cell">Request</th>
+            <th scope="col" className="px-3 py-2 font-semibold">Call</th>
+            <th scope="col" className="px-3 py-2 font-semibold">Status</th>
+            <th scope="col" className="hidden px-3 py-2 text-right font-semibold xl:table-cell">Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((j, i) => {
+            const failed = j.state === "failed";
+            const sel = j.id === selected;
+            return (
+              <tr key={j.id} aria-selected={sel || undefined} className={`${failed ? "bg-danger-surface" : i % 2 ? "bg-surface-sunken" : ""} ${sel ? "outline outline-2 -outline-offset-2 outline-text" : ""}`}>
+                <td className="whitespace-nowrap px-3 py-1.5 align-top">
+                  <Link href={logHref(query, { req: j.id })} className="text-text underline-offset-4 hover:underline focus-visible:focus-ring" aria-label={`Open request ${j.id}`}>{clock(j.createdAt)}</Link>
+                </td>
+                <td className="hidden whitespace-nowrap px-3 py-1.5 align-top text-text-subtle 2xl:table-cell">{j.id.slice(0, 16)}</td>
+                <td className="px-3 py-1.5 align-top text-text">
+                  <span className="whitespace-nowrap"><span className="sm:hidden">{j.meta?.method ?? "–"} {(j.meta?.path ?? j.op).replace(/^\/v1\/(qbd\/)?/, "")}</span><span className="max-sm:hidden">{j.meta?.method ?? "–"} {j.meta?.path ?? j.op}</span></span>
+                  {failed && j.error ? <span className="block font-sans caption-4 text-danger">{j.error.userFacingMessage}</span> : null}
+                </td>
+                <td className="whitespace-nowrap px-3 py-1.5 align-top"><StateMark state={j.state} /></td>
+                <td className="hidden whitespace-nowrap px-3 py-1.5 text-right align-top text-text-subtle xl:table-cell">{ms(j.durationMs)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** The detail pane: key facts, the timeline and, when it failed, the error box with the guide. */
+export function DetailPane({ job }: { job: Job }) {
+  const events: [string, Date | undefined, string][] = [
+    [clock(job.createdAt), job.createdAt, "Queued for the company file"],
+    [clock(job.sentAt), job.sentAt, "Sent to QuickBooks through the Web Connector"],
+    [clock(job.completedAt), job.completedAt, job.state === "succeeded" ? "QuickBooks answered: succeeded" : job.state === "outcome_unknown" ? "No answer from QuickBooks: outcome unknown" : job.state === "failed" ? "QuickBooks answered: failed" : ""],
+  ];
+  const waited = job.sentAt ? new Date(job.sentAt).getTime() - new Date(job.createdAt).getTime() : undefined;
+  return (
+    <aside aria-labelledby="detail-h" className="flex flex-col gap-4 border-t border-border bg-surface p-4 lg:border-l lg:border-t-0">
+      <div className="flex items-start justify-between gap-3">
+        <h2 id="detail-h" className="title-2 text-text">{job.meta?.method ?? ""} {job.meta?.path ?? job.op}</h2>
+        <StateMark state={job.state} />
+      </div>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 caption-4">
+        <dt className="text-text-subtle">Request id</dt><dd className="figures break-all text-text">{job.id}</dd>
+        <dt className="text-text-subtle">Company file</dt><dd className="figures break-all text-text">{job.endUserId}</dd>
+        <dt className="text-text-subtle">Object</dt><dd className="figures text-text">{job.meta?.objectType ?? "–"}</dd>
+        <dt className="text-text-subtle">QuickBooks status</dt><dd className="figures text-text">{job.qbStatusCode ?? "–"}</dd>
+        <dt className="text-text-subtle">Waited in queue</dt><dd className="figures text-text">{ms(waited)}</dd>
+        <dt className="text-text-subtle">Round trip</dt><dd className="figures text-text">{ms(job.durationMs)}</dd>
+        {job.meta?.idempotencyKey ? <><dt className="text-text-subtle">Idempotency key</dt><dd className="figures break-all text-text">{job.meta.idempotencyKey}</dd></> : null}
+      </dl>
+      <div>
+        <h3 className="caption-4 mb-1 font-semibold uppercase tracking-wider text-text-subtle">Timeline</h3>
+        <ol className="flex flex-col">
+          {events.filter((e) => e[1] && e[2]).map(([t, , label]) => (
+            <li key={label} className="grid grid-cols-[4.5rem_1fr] gap-3 border-b border-border py-2 caption-4 last:border-b-0">
+              <time className="figures text-text-subtle">{t}</time>
+              <span className="text-text">{label}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      {job.error ? (
+        <div role="alert" className="rounded-md border border-danger bg-danger-surface p-3 caption-4">
+          <p className="font-semibold text-danger">{job.error.code}</p>
+          <p className="mt-1 text-text">{job.error.message}</p>
+          <p className="mt-1 text-text-subtle">{job.error.userFacingMessage}</p>
+          <Link href={job.error.guideUrl} className="mt-2 inline-block text-text underline underline-offset-4">Read the guide{job.error.retryable ? " (safe to retry)" : ""}</Link>
+        </div>
+      ) : null}
+    </aside>
+  );
+}

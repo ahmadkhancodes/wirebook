@@ -10,6 +10,9 @@ export interface QbxmlResponse {
   rs: string;
   /** parsed Ret objects with camelCase keys; EditSequence is exposed as revisionNumber */
   rows: Record<string, unknown>[];
+  /** iterator id and remaining count when the request used an iterator */
+  iteratorId?: string;
+  iteratorRemaining?: number;
 }
 
 const parser = new XMLParser({
@@ -59,5 +62,7 @@ export function parseResponse(xml: string): QbxmlResponse {
     message: node['@_statusMessage'] ?? '',
     rs,
     rows,
+    ...(node['@_iteratorID'] ? { iteratorId: String(node['@_iteratorID']) } : {}),
+    ...(node['@_iteratorRemainingCount'] !== undefined ? { iteratorRemaining: Number(node['@_iteratorRemainingCount']) } : {}),
   };
 }
