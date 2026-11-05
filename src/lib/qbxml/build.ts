@@ -89,6 +89,8 @@ export function negotiateVersion(reportedMajor: string | number, reportedMinor: 
 export interface BuildOptions {
   requestId: string;
   version?: string;
+  /** qbXML iterator: Start on the first page, Continue with the id QuickBooks returned. */
+  iterator?: { mode: 'Start' | 'Continue'; id?: string };
 }
 
 /** Build a complete qbXML document for one request. Never concatenates caller strings unescaped. */
@@ -97,5 +99,8 @@ export function buildRequest(op: OpName, body: unknown, opts: BuildOptions): str
   if (!/^[A-Za-z0-9_-]{1,50}$/.test(opts.requestId)) throw new QbxmlValidationError('requestId', 'invalid');
   const inner = fields(def.spec, body ?? {}, '');
   const content = def.wrapper ? `<${def.wrapper}>${inner}</${def.wrapper}>` : inner;
-  return `<?xml version="1.0" encoding="utf-8"?><?qbxml version="${opts.version ?? MAX_QBXML_VERSION}"?><QBXML><QBXMLMsgsRq onError="stopOnError"><${def.rq} requestID="${opts.requestId}">${content}</${def.rq}></QBXMLMsgsRq></QBXML>`;
+  const it = opts.iterator;
+  if (it?.mode === 'Continue' && !/^[A-Za-z0-9{}-]{1,80}$/.test(it.id ?? '')) throw new QbxmlValidationError('cursor', 'invalid iterator id');
+  const itAttr = it ? ` iterator="${it.mode}"${it.mode === 'Continue' ? ` iteratorID="${it.id}"` : ''}` : '';
+  return `<?xml version="1.0" encoding="utf-8"?><?qbxml version="${opts.version ?? MAX_QBXML_VERSION}"?><QBXML><QBXMLMsgsRq onError="stopOnError"><${def.rq} requestID="${opts.requestId}"${itAttr}>${content}</${def.rq}></QBXMLMsgsRq></QBXML>`;
 }

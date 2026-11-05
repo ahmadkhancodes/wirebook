@@ -10,7 +10,7 @@ export const gettingStarted: DocPage = {
     {
       heading: "Status",
       body: [
-        `${p.fullName} is in build. Accounts, API keys and billing work today. The QuickBooks request endpoints (/v1/qbd/*) and the connect flow are being wired next, and are validated against a Web Connector simulator, not yet a real QuickBooks install. Everything below describes the contract we are building to. Nothing here claims real world parity yet.`,
+        `${p.fullName} is in build. Accounts, API keys and billing work today. The QuickBooks request endpoints (/v1/qbd/*), the hosted connect flow and the request log are built and validated against a Web Connector simulator, not yet a real QuickBooks install. Nothing here claims real world parity yet.`,
       ],
     },
     {

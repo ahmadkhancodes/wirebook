@@ -67,7 +67,7 @@ describe('qbXML parser and status codes', () => {
   it('treats 0 and 1 as success and maps 3100 / 3140 deterministically', () => {
     expect(fromStatusCode(0)).toBeNull();
     expect(fromStatusCode(1)).toBeNull();
-    expect(fromStatusCode(3100)?.code).toBe('edition_not_supported');
+    expect(fromStatusCode(3100)?.code).toBe('duplicate_name');
     expect(fromStatusCode(3140)?.code).toBe('invalid_reference');
     expect(fromStatusCode(3140)).toEqual(fromStatusCode(3140));
   });

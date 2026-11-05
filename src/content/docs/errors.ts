@@ -9,7 +9,7 @@ export const errors: DocPage = {
     {
       heading: "How errors are shaped",
       body: [
-        "Every error has a type, a code, a userFacingMessage, a guideUrl, a retryable flag and a requestId. The code is the QuickBooks status or Web Connector code when there is one. Thirty guides are planned for launch; the four below are the first.",
+        "Every error is one object with a type, a code, a message, a userFacingMessage, a guideUrl, a retryable flag and, when it applies, a path and a requestId. Each code has its own page in the error guides at /errors; the four below are the ones you will see first. More guides arrive with the remaining objects.",
       ],
     },
     {

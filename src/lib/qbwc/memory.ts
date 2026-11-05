@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import type { EndUser, EndUserRepo, Job, JobQueue, Session, SessionStore } from './types';
+import type { EndUser, EndUserRepo, Job, JobQueue, ListFilter, Session, SessionStore } from './types';
 
 /** In-memory drivers (DB_DRIVER=memory). Same contract the Mongo drivers must pass. */
 export class MemoryQueue implements JobQueue {
   private jobs = new Map<string, Job>();
   private seq = 0;
-  async enqueue(j: { endUserId: string; op: Job['op']; body: unknown }): Promise<Job> {
+  async enqueue(j: Parameters<JobQueue['enqueue']>[0]): Promise<Job> {
     const id = `req_${String(++this.seq).padStart(6, '0')}`;
-    const job: Job = { id, endUserId: j.endUserId, op: j.op, body: j.body, state: 'queued', createdAt: new Date() };
+    const job: Job = { id, endUserId: j.endUserId, op: j.op, body: j.body, state: 'queued', createdAt: new Date(), ...(j.iterator ? { iterator: j.iterator } : {}), ...(j.meta ? { meta: j.meta } : {}) };
     this.jobs.set(id, job);
     return { ...job };
   }
@@ -35,6 +35,18 @@ export class MemoryQueue implements JobQueue {
     return { ...j };
   }
   async get(id: string) { const j = this.jobs.get(id); return j ? { ...j } : null; }
+  async list(f: ListFilter) {
+    return [...this.jobs.values()]
+      .filter((j) => j.meta?.projectId === f.projectId)
+      .filter((j) => !f.endUserId || j.endUserId === f.endUserId)
+      .filter((j) => !f.state || j.state === f.state)
+      .filter((j) => !f.objectType || j.meta?.objectType === f.objectType)
+      .filter((j) => !f.id || j.id === f.id)
+      .filter((j) => !f.before || j.id < f.before.id)
+      .sort((a, b) => b.id.localeCompare(a.id))
+      .slice(0, f.limit)
+      .map((j) => ({ ...j }));
+  }
   async expireSent(olderThanMs: number, now: Date) {
     const out: Job[] = [];
     for (const j of this.jobs.values()) {
@@ -49,6 +61,17 @@ export class MemoryQueue implements JobQueue {
 export class MemoryEndUsers implements EndUserRepo {
   private users = new Map<string, EndUser>();
   add(u: EndUser) { this.users.set(u.id, u); }
+  async create(u: EndUser) {
+    for (const x of this.users.values()) {
+      if (x.id === u.id || x.qbwcUsername === u.qbwcUsername || x.ownerGuid === u.ownerGuid || x.fileGuid === u.fileGuid
+        || (u.externalId !== undefined && x.projectId === u.projectId && x.externalId === u.externalId)) throw new Error('duplicate end user');
+    }
+    this.users.set(u.id, { ...u });
+  }
+  async getByExternalId(projectId: string, externalId: string) {
+    for (const u of this.users.values()) if (u.projectId === projectId && u.externalId === externalId) return { ...u };
+    return null;
+  }
   async findByUsername(username: string) {
     for (const u of this.users.values()) if (u.qbwcUsername === username) return { ...u };
     return null;

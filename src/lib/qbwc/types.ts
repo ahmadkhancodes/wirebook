@@ -3,11 +3,38 @@ import type { QbError } from '../errors/qb-status';
 
 export type RequestState = 'queued' | 'sent' | 'succeeded' | 'failed' | 'outcome_unknown';
 
+/** `raw` carries `{ qbxml }` and is forwarded as is (POST /v1/qbd/raw). */
+export type JobOp = OpName | 'raw';
+
+export interface JobMeta {
+  projectId: string;
+  method: string;
+  path: string;
+  objectType: string;
+  idempotencyKey?: string;
+}
+
+export interface JobIterator { mode: 'Start' | 'Continue'; id?: string }
+
+export interface ListFilter {
+  projectId: string;
+  endUserId?: string;
+  state?: RequestState;
+  objectType?: string;
+  /** exact request id */
+  id?: string;
+  /** keyset: only rows strictly older than this (createdAt, id) */
+  before?: { createdAt: Date; id: string };
+  limit: number;
+}
+
 export interface Job {
   id: string;
   endUserId: string;
-  op: OpName;
+  op: JobOp;
   body: unknown;
+  iterator?: JobIterator;
+  meta?: JobMeta;
   state: RequestState;
   createdAt: Date;
   sentAt?: Date;
@@ -15,18 +42,24 @@ export interface Job {
   qbStatusCode?: number;
   error?: QbError;
   result?: Record<string, unknown>[];
+  /** iterator id and remaining count from the response, for cursor pagination */
+  iteratorResult?: { id?: string; remaining: number };
+  /** raw qbXML response, kept only for raw passthrough jobs (the caller gets it back) */
+  rawResponse?: string;
   durationMs?: number;
 }
 
 /** Per company file serial queue. Mongo implementation in M2; Valkey/BullMQ on the VPS later. */
 export interface JobQueue {
-  enqueue(job: { endUserId: string; op: OpName; body: unknown }): Promise<Job>;
+  enqueue(job: { endUserId: string; op: JobOp; body: unknown; iterator?: JobIterator; meta?: JobMeta }): Promise<Job>;
   /** Atomically move the oldest queued job of this end user to sent. Returns null if none, or one is already in flight. */
   claim(endUserId: string, now: Date): Promise<Job | null>;
   inFlight(endUserId: string): Promise<Job | null>;
   queuedCount(endUserId: string): Promise<number>;
-  complete(id: string, patch: Pick<Job, 'state'> & Partial<Pick<Job, 'qbStatusCode' | 'error' | 'result'>>, now: Date): Promise<Job>;
+  complete(id: string, patch: Pick<Job, 'state'> & Partial<Pick<Job, 'qbStatusCode' | 'error' | 'result' | 'iteratorResult' | 'rawResponse'>>, now: Date): Promise<Job>;
   get(id: string): Promise<Job | null>;
+  /** request log: newest first, tenant scoped by projectId */
+  list(filter: ListFilter): Promise<Job[]>;
   /** sent for longer than olderThanMs -> outcome_unknown (reconciler). Returns changed jobs. */
   expireSent(olderThanMs: number, now: Date): Promise<Job[]>;
 }
@@ -45,12 +78,23 @@ export interface EndUser {
   qbVersion?: string;
   qbxmlVersion?: string;
   failedAuth: { count: number; windowStart: Date };
+  externalId?: string;
+  companyName?: string;
+  createdAt?: Date;
+  /** Connect flow: what the server has actually observed, one timestamp per step. */
+  qwcDownloadedAt?: Date;
+  firstAuthAt?: Date;
+  firstSessionAt?: Date;
+  firstSyncAt?: Date;
 }
 
 export interface EndUserRepo {
   findByUsername(username: string): Promise<EndUser | null>;
   get(id: string): Promise<EndUser | null>;
   update(id: string, patch: Partial<EndUser>): Promise<void>;
+  /** Throws if the username, ownerGuid, fileGuid or (projectId, externalId) is already taken. */
+  create(u: EndUser): Promise<void>;
+  getByExternalId(projectId: string, externalId: string): Promise<EndUser | null>;
 }
 
 export interface Session {

@@ -20,6 +20,7 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
     return rows as unknown as KeyRow[];
   }, [orgId]);
   const [name, setName] = useState("");
+  const [environment, setEnvironment] = useState<"test" | "production">("test");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ name: string; key: string } | null>(null);
@@ -33,7 +34,7 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
     if (!clean) return setError("Name the key after where it will be used, for example Production server.");
     setBusy(true);
     setError(null);
-    const { data, error: err } = await authClient.apiKey.create({ name: clean, organizationId: orgId });
+    const { data, error: err } = await authClient.apiKey.create({ name: clean, organizationId: orgId, metadata: { environment } });
     setBusy(false);
     if (err || !data) return setError(authError(err, "We could not create the key. Try again."));
     setCreated({ name: clean, key: (data as unknown as { key: string }).key });
@@ -58,12 +59,19 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
       {created ? <SecretReveal title={`Key created: ${created.name}`} value={created.key} onDismiss={() => setCreated(null)} /> : null}
 
       {canManage ? (
-        <Panel title="Create a key">
+        <Panel title="Create a key" description="Test keys only see test end users and requests. Production keys only see production ones.">
           <form onSubmit={create} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-start">
             <div className="flex-1">
               <Field label="Name" htmlFor="key-name" error={error}>
                 <Input id="key-name" maxLength={60} placeholder="Production server" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={error ? true : undefined} aria-describedby={error ? "key-name-error" : undefined} />
               </Field>
+            </div>
+            <div className="flex flex-col gap-1 sm:w-44">
+              <label htmlFor="key-env" className="title-4 text-text">Environment</label>
+              <select id="key-env" value={environment} onChange={(e) => setEnvironment(e.target.value as "test" | "production")} className="min-h-11 rounded-md border border-border-strong bg-surface px-2 body-6 text-text">
+                <option value="test">Test</option>
+                <option value="production">Production</option>
+              </select>
             </div>
             <div className="sm:pt-6">
               <Button type="submit" loading={busy}>Create key</Button>

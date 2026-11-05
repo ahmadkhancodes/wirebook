@@ -39,3 +39,9 @@ https://tmsearch.uspto.gov/
 ## Legal placeholders to resolve before launch (M1-B)
 - `{{jurisdiction}}` and `{{registered address}}` (from `product.legal` in `src/config/product.ts`) appear highlighted on the legal pages. Also `{{refund policy}}` and `{{cap}}` in terms. The owner supplies the governing jurisdiction, the registered address, the refund wording and the liability cap.
 - Retention periods in privacy/DPA (30 and 35 days) were carried over from the kit. Confirm they match what M2 stores.
+
+## Before the bridge runs on Mongo (M2)
+- Once `MONGODB_URI` exists (Atlas project "BufferSol SaaS", database `wirebook`, user `wirebook-app`), run `npm run db:indexes` once. It creates the bridge indexes, including the unique partial index `one_sent_per_file` on `requests` that keeps one job in flight per company file, and the unique OwnerID, FileID and username indexes on `endUsers`. The Mongo bridge driver (`src/lib/bridge/mongo.ts`) has not been run against a real cluster in this build; only the memory driver is covered by tests.
+- Set `SYNC_WAIT_MS=90000` on Vercel Pro (default 55 s fits Hobby). Raise `maxDuration` in the `/v1/qbd` routes at the same time.
+- Retention check for legal: raw passthrough jobs keep the qbXML response on the request record so it can be returned to the caller; a purge of that body is M3 work. Dashboard request rows keep no other body.
+- Existing API keys have no `metadata.environment` and are treated as test keys. Create production keys under Settings, API keys.

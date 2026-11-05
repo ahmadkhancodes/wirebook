@@ -9,13 +9,38 @@ export const api: DocPage = {
     {
       heading: "Base URL and authentication",
       body: [
-        `All requests go to ${p.url}/api/v1 over HTTPS and need an x-api-key header. Bodies and responses are JSON. The /v1/qbd/* resource endpoints are the contract for the next milestone; /v1/me is live.`,
+        `Requests go to ${p.url}/v1/qbd over HTTPS with Authorization: Bearer YOUR_KEY (or x-api-key). Bodies and responses are JSON. A key belongs to the test or the production environment; test keys only see test end users and requests, and the two never mix.`,
+        "Name the company file with the X-End-User-Id header: the end user id from POST /v1/connect-links, or the external id you gave it. These endpoints are validated against a Web Connector simulator, not yet a real QuickBooks install.",
       ],
     },
     {
-      heading: "GET /api/v1/me",
-      body: ["Returns the organization the API key belongs to. Use it to check that a key works."],
-      code: { lang: "json", code: `{\n  "orgId": "org_123"\n}` },
+      heading: "Objects",
+      body: [
+        "customers, vendors, items, accounts, invoices, bills and payments. GET /v1/qbd/{object} lists, GET /v1/qbd/{object}/{id} retrieves, POST /v1/qbd/{object} creates and returns 201 with the created object. POST /v1/qbd/{object}/{id} updates customers and vendors; send the revisionNumber you read, and a stale one returns 409. Items are created as service items for now. Payments are customer payments (ReceivePayment).",
+        "If QuickBooks has not answered within the wait (55 seconds), you get 202 with a request id and a Location header. Poll GET /v1/requests/{id}. Send Prefer: respond-async to get the 202 straight away.",
+      ],
+      code: { lang: "bash", code: `curl ${p.url}/v1/qbd/customers?limit=25 \
+  -H "Authorization: Bearer sk_test_..." \
+  -H "X-End-User-Id: acme-42"` },
+    },
+    {
+      heading: "Pagination",
+      body: [
+        "Lists return data, hasMore, nextCursor and cursorExpiresAt. Pass nextCursor back as the cursor query parameter with the same filters. Cursors last 10 minutes, then the API answers 410 cursor_expired; start again without a cursor. limit is 1 to 100 and defaults to 25. Filters: name, active, modifiedSince, modifiedUntil (and customer or vendor, refNumber, includeLines on transactions).",
+      ],
+      code: { lang: "json", code: `{\n  "data": [{ "listId": "80000001-1", "name": "Acme Builders", "revisionNumber": "1700000000" }],\n  "hasMore": true,\n  "nextCursor": "eyJvIjoiY3VzdG9tZXJzIi4uLg",\n  "cursorExpiresAt": "2026-11-05T10:10:00.000Z"\n}` },
+    },
+    {
+      heading: "Raw qbXML",
+      body: [
+        "POST /v1/qbd/raw takes one valid qbXML request, as JSON {\"qbxml\": \"...\"} or an XML body, and returns the raw QuickBooks response and a parsed copy. Malformed XML returns 400 with the line and column. A QuickBooks error still returns 200 here, with its statusCode in the parsed output.",
+      ],
+    },
+    {
+      heading: "Connect links",
+      body: [
+        "POST /v1/connect-links with an externalId (and an optional companyName) creates the end user and returns a single use link that is valid for 24 hours. Send your customer to the link. See the connect flow guide.",
+      ],
     },
     {
       heading: "Request lifecycle",
@@ -27,24 +52,24 @@ export const api: DocPage = {
     {
       heading: "Idempotency",
       body: [
-        "Send an Idempotency-Key header on every write. We replay the first result for 7 days. The same key with a different body returns 409.",
+        "Send an Idempotency-Key header on every write. We replay the first result for 7 days and mark the response with Idempotent-Replayed: true. The same key with a different method, path or body returns 409 idempotency_conflict.",
       ],
-      code: { lang: "bash", code: `curl -X POST ${p.url}/api/v1/qbd/invoices \\\n  -H "x-api-key: YOUR_API_KEY" \\\n  -H "Idempotency-Key: acme-inv-1042" \\\n  -d @invoice.json` },
+      code: { lang: "bash", code: `curl -X POST ${p.url}/v1/qbd/invoices \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -H "X-End-User-Id: acme-42" \\\n  -H "Idempotency-Key: acme-inv-1042" \\\n  -d @invoice.json` },
     },
     {
       heading: "Errors",
       body: [
-        "Errors use a matching HTTP status and one JSON object. Match on code, not on the status text. The same input always gives the same message, because no AI model is involved.",
+        "Errors use a matching HTTP status and one JSON object. Match on code, not on the status text. Input problems also carry a path, such as lines[0].itemRef. Every code has a guide at /errors. The same input always gives the same message, because no AI model is involved.",
       ],
       code: {
         lang: "json",
-        code: `{\n  "type": "invalid_reference",\n  "code": "3140",\n  "userFacingMessage": "CustomerRef does not match a customer.",\n  "guideUrl": "/docs/errors",\n  "retryable": false,\n  "requestId": "req_01JC9P8"\n}`,
+        code: `{\n  "error": {\n    "code": "invalid_reference",\n    "type": "quickbooks",\n    "message": "A referenced list item does not exist in this company file (3140).",\n    "userFacingMessage": "A name or item in this request was not found in QuickBooks.",\n    "guideUrl": "${p.url}/errors/3140",\n    "retryable": false,\n    "requestId": "req_01JC9P8"\n  }\n}`,
       },
     },
     {
       heading: "Rate limits",
       body: [
-        "Each API key can make 600 requests per minute. Beyond that you get a 429 status with the error code rate_limited. Wait for the next minute and retry with exponential backoff.",
+        "Each API key can make 600 requests per minute, and ten bad keys from one address earn a minute of 429s. Beyond that you get a 429 status with the error code rate_limited. Wait for the next minute and retry with exponential backoff.",
       ],
     },
     {

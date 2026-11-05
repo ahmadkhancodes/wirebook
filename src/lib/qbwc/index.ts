@@ -4,3 +4,4 @@ export * from './handler';
 export * from './password';
 export * from './qwc';
 export * from './soap';
+export * from './wsdl';
