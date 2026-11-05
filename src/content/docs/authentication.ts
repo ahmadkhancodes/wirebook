@@ -27,7 +27,7 @@ export const authentication: DocPage = {
     {
       heading: "API keys",
       body: [
-        "Server to server requests use API keys. Create and revoke them in Settings, then API keys. Send the key in the x-api-key header on every request. Never put a key in browser code or a public repository. If a key leaks, revoke it and create a new one.",
+        "Server to server requests use API keys. Test keys (sk_test_) and Production keys are separate. Create and revoke them in Settings, then API keys. Send the key in the x-api-key header on every request. Never put a key in browser code or a public repository. If a key leaks, revoke it and create a new one.",
       ],
       code: {
         lang: "bash",

@@ -1,6 +1,7 @@
 # Progress: Wirebook by BufferSol
 
 ## State (5 Nov 2026)
+- **5 Nov 2026 M1-B code done, deploy pending:** landing (ledger hero, 11 plan sections), /pricing (from product.ts via src/lib/pricing.ts), /compare/conductor (dated facts), docs rewritten (getting started, connect flow, auth, API, errors, billing), legal pass with Intuit notice, footer, header, OG/icons restyled, QA in docs/qa and docs/design-qa.md. Not deployed. **Next is M2:** Web Connector bridge wired into routes, REST /v1, connect flow.
 - **Phase 0 done:** competitor refs (docs/design/refs/), DESIGN.md, SECTION_PLAN.md, ARCHITECTURE.md, ROADMAP.md, MANUAL_STEPS.md, DECISIONS.md, design mock + screenshots (docs/design/mock.html, mock-1440.png, mock-375.png, mock-1440-dark.png).
 - **5 Nov 2026 M1-A done:** kit-v1 adopted: product.ts renamed (Wirebook, plans free/production/starter_pack/volume, meter `files`), qbxml + qbwc modules merged (`src/lib/*`, `tools/simulate-qbwc`, `tests/*.test.ts`, `fast-xml-parser` in root package.json), design tokens + Spectral/Public Sans/JetBrains Mono wired, lint/typecheck/test (70)/build green, `*.product.json` removed. **Next: M1-B, landing and pricing** (marketing pages, compare, docs content and demo components still carry kit sample copy).
 - (Older note) No app code yet. Env: no MONGODB_URI (use DB_DRIVER=memory), Stripe/Resend/Cloudflare keys absent (stubs). Vercel: use VERCEL_TOKEN_NEW_ACCOUNT via CLI/REST only (team ahmad-code); the Vercel MCP connector is the OLD account.

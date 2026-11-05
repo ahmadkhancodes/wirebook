@@ -10,7 +10,7 @@ export const dpa: LegalDoc = {
       id: "scope",
       title: "Scope and roles",
       body: [
-        `This addendum applies when ${p.legal.entity} processes personal data in form submissions on your behalf. You are the controller and we are the processor. It forms part of the terms of service.`,
+        `This addendum applies when ${p.legal.entity} processes personal data contained in QuickBooks request and response payloads on your behalf. You are the controller and we are the processor. It forms part of the terms of service.`,
       ],
     },
     {
@@ -19,10 +19,10 @@ export const dpa: LegalDoc = {
       body: [
         {
           list: [
-            "Subject matter: receiving, storing, filtering and delivering form submissions.",
+            "Subject matter: relaying QuickBooks requests and responses between your application and connected QuickBooks Desktop company files through the Intuit Web Connector. Payload logging is off by default in production.",
             "Duration: while your account is open, plus the deletion period in the privacy policy.",
-            "Data subjects: people who submit your forms.",
-            "Data types: whatever fields and files your forms collect, plus IP address and user agent for spam checks.",
+            "Data subjects: your customers who connect a company file, and the people and businesses whose records appear in those company files.",
+            "Data types: whatever records the QuickBooks operations you call contain, plus request metadata (request id, operation, state, timestamps and error codes) and IP address for security.",
           ],
         },
       ],

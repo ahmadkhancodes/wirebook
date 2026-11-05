@@ -4,12 +4,12 @@ import type { LegalDoc } from "./types";
 export const security: LegalDoc = {
   slug: "security",
   title: "Security",
-  description: `How ${p.name} protects your account and your submissions.`,
+  description: `How ${p.name} protects your account and your QuickBooks data.`,
   sections: [
     {
       id: "overview",
       title: "Overview",
-      body: [`We design ${p.name} so that a mistake in one place does not expose everything. This page lists what we do today, and nothing we do not do.`],
+      body: [`We design ${p.name} so that a mistake in one place does not expose everything. This page lists what we do today, and nothing we do not do. These are self attested practices. We do not hold a SOC 2 report at launch, and we make no HIPAA claims. On request we can send a security pack and a signed data processing addendum.`],
     },
     {
       id: "data-protection",
@@ -19,7 +19,7 @@ export const security: LegalDoc = {
           list: [
             "All traffic uses TLS.",
             "Data is encrypted at rest by our database and hosting providers.",
-            "API keys and webhook secrets are shown once. API keys are stored as hashes.",
+            "API keys are shown once and stored as SHA-256 hashes. Webhook secrets are shown once.",
             "Every query is scoped to your organization.",
           ],
         },
@@ -45,7 +45,8 @@ export const security: LegalDoc = {
         {
           list: [
             "Rate limiting on public endpoints and on the API.",
-            "Spam and abuse filtering on submissions.",
+            "Payload logging is off by default in production, so QuickBooks payloads are not written to logs.",
+            "Idempotency keys are replayed for 7 days so retries do not duplicate work.",
             "Outbound webhooks are signed so you can verify them.",
             "Dependencies are updated regularly and checked for known vulnerabilities.",
           ],

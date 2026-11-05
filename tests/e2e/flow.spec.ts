@@ -48,7 +48,7 @@ test("magic link sign-in, org, billing state, api key, cron guard", async ({ pag
 
 test("public pages render with metadata and no horizontal overflow at 375px", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const path of ["/", "/pricing", "/docs", "/legal/privacy", "/sign-in"]) {
+  for (const path of ["/", "/pricing", "/compare/conductor", "/docs", "/docs/errors", "/legal/privacy", "/sign-in"]) {
     const res = await page.goto(path);
     expect(res?.status(), path).toBe(200);
     await expect(page.locator("title")).not.toBeEmpty();
@@ -57,4 +57,25 @@ test("public pages render with metadata and no horizontal overflow at 375px", as
   expect((await page.goto("/nope-404"))?.status()).toBe(404);
   expect((await page.request.get("/api/health")).ok()).toBeTruthy();
   expect(await (await page.request.get("/llms.txt")).text()).toContain("Wirebook");
+});
+
+test("landing shows the request log ledger, the dated benchmark and the Intuit notice", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("QuickBooks Desktop");
+  const log = page.getByRole("group", { name: "Sample request log" });
+  await expect(log).toContainText("sample data");
+  await expect(log).toContainText("outcome unknown");
+  await expect(page.getByText("checked 3 Nov 2026").first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Get a free API key" }).first()).toHaveAttribute("href", "/sign-in");
+  await expect(page.getByRole("contentinfo")).toContainText("not affiliated with or endorsed by Intuit");
+  expect((await page.goto("/compare/web3forms"))?.status()).toBe(404);
+});
+
+test("pricing derives every figure from the plan config", async ({ page }) => {
+  await page.goto("/pricing");
+  await expect(page.getByText("$19.99").first()).toBeVisible();
+  await page.getByRole("button", { name: "Monthly" }).click();
+  await expect(page.getByText("$24.99").first()).toBeVisible();
+  await expect(page.getByText("$97.99").first()).toBeVisible();
+  await expect(page.getByText("$249.90").first()).toBeVisible();
 });

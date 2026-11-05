@@ -13,7 +13,7 @@ export interface Step {
 export function HowItWorks({ title, steps }: { title: ReactNode; steps: Step[] }) {
   return (
     <Section labelledBy="how-title">
-      <h2 id="how-title" className="heading-4 md:heading-2 max-w-2xl text-text">{title}</h2>
+      <h2 id="how-title" className="heading-4 max-w-2xl text-text">{title}</h2>
       <ol className="mt-12 flex flex-col gap-16 md:mt-16 md:gap-24">
         {steps.map((step, i) => (
           <li key={step.title}>

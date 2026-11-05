@@ -63,21 +63,22 @@ export function SiteHeader() {
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const linkClass = (href: string) =>
     cn(
-      "inline-flex min-h-11 items-center rounded-md px-3 button-sm transition-colors duration-300 ease-out-kit hover:bg-surface-raised hover:text-text focus-visible:focus-ring",
+      "inline-flex min-h-11 items-center rounded-sm px-3 button-sm transition-colors duration-300 ease-out-kit hover:bg-surface-raised hover:text-text focus-visible:focus-ring",
       isCurrent(href) ? "text-text" : "text-text-subtle",
     );
 
   const panelItems = [
     ...product.nav.map((n) => ({ ...n, kind: "link" as const })),
     { href: "/sign-in", label: "Sign in", kind: "link" as const },
-    { href: "/sign-in", label: "Start free", kind: "cta" as const },
+    { href: product.cta.href, label: product.cta.label, kind: "cta" as const },
   ];
 
   return (
-    <header className="fixed inset-x-0 top-3 z-50 px-4 sm:px-6">
-      <div className="relative z-50 mx-auto flex w-full max-w-7xl items-center justify-between gap-4 rounded-lg border border-border bg-surface/80 py-1 pl-4 pr-1 backdrop-blur-md">
-        <Link href="/" className="inline-flex min-h-11 items-center rounded-md title-2 text-text focus-visible:focus-ring" aria-label={`${product.name} home`}>
-          {product.name}
+    <header className="sticky top-0 z-50 border-b border-border bg-surface px-4 sm:px-6">
+      <div className="relative z-50 mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4">
+        <Link href="/" className="inline-flex min-h-11 flex-col justify-center rounded-sm focus-visible:focus-ring" aria-label={`${product.fullName} home`}>
+          <span className="wordmark -ml-2 border-y border-border bg-surface-sunken px-2 text-text">wirebook</span>
+          <span className="wordmark-by mt-1 text-text-subtle">by BufferSol</span>
         </Link>
         <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
           {product.nav.map((n) => (
@@ -87,8 +88,8 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-1">
-          <Link href="/sign-in" className={cn(buttonClass("tertiary", "md"), "hidden md:inline-flex")}>Sign in</Link>
-          <Link href="/sign-in" className={cn(buttonClass("primary", "md"), "hidden md:inline-flex")}>Start free</Link>
+          <Link href="/sign-in" className={cn(buttonClass("tertiary", "md"), "max-md:hidden")}>Sign in</Link>
+          <Link href={product.cta.href} className={cn(buttonClass("primary", "md"), "max-md:hidden")}>{product.cta.label}</Link>
           <ThemeToggle />
           <button
             ref={toggleRef}
@@ -97,7 +98,7 @@ export function SiteHeader() {
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => (open ? close() : setOpenFor(pathname))}
-            className="inline-flex size-11 items-center justify-center rounded-md text-text transition-colors duration-300 ease-out-kit hover:bg-surface-raised focus-visible:focus-ring md:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-sm text-text transition-colors duration-300 ease-out-kit hover:bg-surface-raised focus-visible:focus-ring md:hidden"
           >
             <span aria-hidden className="relative block size-6">
               <span className={cn("absolute left-1 right-1 top-2 h-0.5 rounded-sm bg-current transition-transform duration-300 ease-out-kit", open && "translate-y-1 rotate-45")} />

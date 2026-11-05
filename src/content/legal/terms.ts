@@ -40,7 +40,7 @@ export const terms: LegalDoc = {
             return `${pl.name}: ${prices}.`;
           }),
         },
-        "Paid plans are billed in advance through Stripe and renew automatically each period until you cancel. Prices exclude taxes, which we add where required. If a payment fails we keep your plan for a grace period and then move the account to the Free plan.",
+        "Billing is per active company file and is handled through Stripe. Paid plans renew automatically each period until you cancel. Prices exclude taxes, which we add where required. If a payment fails we keep your plan for a grace period and then move the account to the Free plan.",
       ],
     },
     {
@@ -60,7 +60,7 @@ export const terms: LegalDoc = {
       id: "your-data",
       title: "Your data",
       body: [
-        "You own your content and submissions. You give us a limited license to host, process and deliver it to run the service. You are responsible for having a lawful basis to collect the data your forms gather and for telling your visitors how it is used.",
+        "You own your content and the QuickBooks data that passes through the service. You give us a limited license to host, process and relay it to run the service. You are responsible for having a lawful basis and your end users' permission to connect their company files, and for telling them how the data is used.",
       ],
     },
     {
@@ -72,6 +72,11 @@ export const terms: LegalDoc = {
       id: "availability",
       title: "Availability and support",
       body: [`We work to keep the service available but do not promise uninterrupted operation. Support is at ${p.supportEmail}.`],
+    },
+    {
+      id: "quickbooks",
+      title: "QuickBooks and Intuit",
+      body: ["The service connects to QuickBooks Desktop through the Intuit Web Connector. Your end users must run a supported version of QuickBooks Desktop and keep the Web Connector set up. We are not responsible for changes Intuit makes to its software."],
     },
     {
       id: "warranty",
