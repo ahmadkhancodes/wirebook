@@ -120,9 +120,21 @@ export const product = {
     maintenance: "off",
   } as Record<string, string>,
   nav: [
-    { href: "/pricing", label: "Pricing" },
     { href: "/docs", label: "Docs" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/compare/conductor", label: "Compare" },
   ],
+  /** Dated competitor facts from docs/brief.md (tab 04, prices as published). Cite the date wherever a price is shown. */
+  benchmark: {
+    name: "Conductor",
+    host: "conductor.is",
+    usdPerFileMonth: 49,
+    checked: "3 Nov 2026",
+  },
+  /** Primary call to action, one wording everywhere. */
+  cta: { label: "Get a free API key", href: "/sign-in" },
+  intuitNotice:
+    "QuickBooks is a trademark of Intuit Inc. Wirebook by BufferSol is a product of BufferSol Technologies and is not affiliated with or endorsed by Intuit.",
 } as const;
 
 export type Product = typeof product;

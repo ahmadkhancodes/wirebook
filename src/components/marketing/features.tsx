@@ -23,7 +23,7 @@ export function Features({ title, intro, items }: { title: ReactNode; intro?: Re
   return (
     <Section tone="raised" labelledBy="features-title">
       <div className="flex max-w-2xl flex-col gap-4">
-        <h2 id="features-title" className="heading-4 md:heading-2 text-text">{title}</h2>
+        <h2 id="features-title" className="heading-4 text-text">{title}</h2>
         {intro ? <p className="body-3 text-text-subtle">{intro}</p> : null}
       </div>
       <ul className="mt-12 grid gap-4 md:mt-16 md:grid-cols-6">

@@ -1,5 +1,5 @@
 import { product } from "@/config/product";
-import type { LegalBlock, LegalDoc as LegalDocData } from "@/content/legal";
+import { intuitNotice, type LegalBlock, type LegalDoc as LegalDocData } from "@/content/legal";
 import { Container } from "@/components/ui/layout";
 
 const placeholder = /(\{\{[^}]+\}\})/g;
@@ -102,6 +102,7 @@ export function LegalDoc({ doc }: { doc: LegalDocData }) {
             </section>
           ))}
         </div>
+        <p className="body-6 mt-12 border-t border-border pt-6 text-text-muted">{intuitNotice}</p>
       </article>
     </Container>
   );

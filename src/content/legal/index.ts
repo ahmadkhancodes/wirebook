@@ -1,3 +1,4 @@
+import { product } from "@/config/product";
 import { acceptableUse } from "./acceptable-use";
 import { cookies } from "./cookies";
 import { dpa } from "./dpa";
@@ -12,3 +13,5 @@ export type { LegalBlock, LegalDoc, LegalSection } from "./types";
 export const legalDocs: LegalDoc[] = [privacy, terms, dpa, security, subprocessors, cookies, acceptableUse];
 
 export const getLegalDoc = (slug: string): LegalDoc | undefined => legalDocs.find((d) => d.slug === slug);
+
+export const intuitNotice = product.intuitNotice;

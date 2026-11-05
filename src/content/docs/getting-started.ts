@@ -1,36 +1,40 @@
 import { product as p } from "@/config/product";
+import { money, rates } from "@/lib/pricing";
 import type { DocPage } from "./types";
 
 export const gettingStarted: DocPage = {
   slug: "getting-started",
   title: "Getting started",
-  description: `Create a ${p.name} account and make your first request in a few minutes.`,
+  description: `Create a ${p.name} account, make a key and send your first request against a sample company file.`,
   sections: [
+    {
+      heading: "Status",
+      body: [
+        `${p.fullName} is in build. Accounts, API keys and billing work today. The QuickBooks request endpoints (/v1/qbd/*) and the connect flow are being wired next, and are validated against a Web Connector simulator, not yet a real QuickBooks install. Everything below describes the contract we are building to. Nothing here claims real world parity yet.`,
+      ],
+    },
     {
       heading: "Create your account",
       body: [
-        `Go to ${p.url} and sign in with your email. We send a magic link, so there is no password to set. Your first sign in creates an organization that holds your data, members and billing.`,
-        `New accounts start on the ${p.plans[0]?.name ?? "Free"} plan. You can upgrade from Settings, then Billing, at any time.`,
+        `Go to ${p.url} and sign in with your email. We send a magic link, so there is no password to set. Your first sign in creates an organization that holds your end users, keys and billing.`,
+        `New accounts start on the ${p.plans[0]?.name ?? "Developer"} plan: unlimited sample company files, no card. Production is ${money(rates.perFile)} per active file per month.`,
       ],
     },
     {
       heading: "Create an API key",
       body: [
-        "Open Settings, then API keys, and create a key. The full key is shown once, so copy it into your secrets manager straight away. Keys are stored as hashes and cannot be recovered.",
+        "Open Settings, then API keys, and create a key. Test keys start with sk_test_ and run against sample files. The full key is shown once, so copy it into your secrets manager straight away. Keys are stored as SHA-256 hashes and cannot be recovered.",
       ],
     },
     {
       heading: "Make your first request",
-      body: ["Send the key in the x-api-key header. This call returns the organization the key belongs to."],
-      code: {
-        lang: "bash",
-        code: `curl ${p.url}/api/v1/me \\\n  -H "x-api-key: YOUR_API_KEY"`,
-      },
+      body: ["Send the key in the x-api-key header. This call returns the organization the key belongs to, and proves the key works."],
+      code: { lang: "bash", code: `curl ${p.url}/api/v1/me \\\n  -H "x-api-key: YOUR_API_KEY"` },
     },
     {
       heading: "Next steps",
       body: [
-        "Read the authentication guide to add passkeys and two factor sign in. Set up webhooks to receive events in your own systems. See the API reference for errors and rate limits.",
+        "Read the connect flow guide to see what your customer does on the QuickBooks PC. Read the API reference for request states and idempotency, and the errors guide for what each status means.",
       ],
     },
   ],

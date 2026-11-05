@@ -7,7 +7,15 @@ const columns = [
     links: [
       { href: "/pricing", label: "Pricing" },
       { href: "/docs", label: "Docs" },
-      { href: "/compare/web3forms", label: "Compare" },
+      { href: "/compare/conductor", label: "Compare" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { href: "/docs/getting-started", label: "Quickstart" },
+      { href: "/docs/errors", label: "Errors" },
+      { href: "/docs/connect-flow", label: "Connect flow" },
     ],
   },
   {
@@ -27,14 +35,14 @@ const linkClass =
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-surface-raised">
+    <footer className="footing bg-surface">
       <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 md:py-16 lg:px-8">
         <div className="grid gap-12 md:grid-cols-12">
           <div className="flex max-w-xs flex-col gap-3 md:col-span-5">
-            <Link href="/" className="title-2 w-fit rounded-sm text-text focus-visible:focus-ring">{product.name}</Link>
+            <Link href="/" className="wordmark w-fit rounded-sm text-text focus-visible:focus-ring">wirebook</Link>
             <p className="body-6 text-text-subtle">{product.tagline}.</p>
           </div>
-          <div className="grid grid-cols-2 gap-8 md:col-span-7 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-8 md:col-span-7 md:grid-cols-4">
             {columns.map((col) => (
               <nav key={col.title} aria-label={col.title} className="flex flex-col">
                 <p className="caption-3 mb-2 text-text">{col.title}</p>
@@ -46,12 +54,13 @@ export function SiteFooter() {
             <nav aria-label="Company" className="flex flex-col">
               <p className="caption-3 mb-2 text-text">Company</p>
               <a href={product.companyUrl} className={linkClass}>{product.company}</a>
+              <a href={`mailto:${product.supportEmail}`} className={linkClass}>Contact</a>
             </nav>
           </div>
         </div>
-        <div className="mt-12 flex flex-col gap-1 border-t border-border pt-6 md:flex-row md:items-center md:justify-between">
-          <p className="caption-2 text-text-subtle">A BufferSol product</p>
-          <p className="caption-2 text-text-muted">&copy; {new Date().getFullYear()} {product.company}</p>
+        <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6 md:flex-row md:items-start md:justify-between">
+          <p className="caption-2 text-text-subtle">A BufferSol product. &copy; {new Date().getFullYear()} {product.company}</p>
+          <p className="max-w-2xl caption-2 text-text-subtle">{product.intuitNotice}</p>
         </div>
       </div>
     </footer>

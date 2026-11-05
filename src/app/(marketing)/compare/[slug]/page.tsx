@@ -35,9 +35,9 @@ export default async function ComparePage({ params }: Props) {
     <>
       <Section labelledBy="compare-title">
         <div className="flex max-w-2xl flex-col items-start gap-6">
-          <h1 id="compare-title" className="hero-gradient-text heading-3 md:heading-1">{entry.headline}</h1>
+          <h1 id="compare-title" className="heading-3 md:heading-2 text-text">{entry.headline}</h1>
           <p className="body-3 text-text-subtle md:title-1">{entry.intro}</p>
-          <ButtonLink href="/sign-in" size="lg">Start free</ButtonLink>
+          <ButtonLink href={product.cta.href} size="lg">{product.cta.label}</ButtonLink>
         </div>
         <div className="mt-12 md:mt-16">
           <CompareTable
@@ -48,13 +48,14 @@ export default async function ComparePage({ params }: Props) {
           />
         </div>
         <p className="body-6 mt-6 max-w-2xl text-text-subtle">{entry.fitNote}</p>
+        <p className="caption-2 mt-4 max-w-2xl text-text-subtle">Competitor facts last checked {entry.checked}, from the competitor&apos;s own pages and Apideck where noted.</p>
       </Section>
       <Faq title="Common questions" items={entry.faq} />
       <FinalCta
-        title={`Try ${product.name} on one form`}
-        body="Point a form at your endpoint and watch the first delivery receipt arrive."
-        cta={{ href: "/sign-in", label: "Start free" }}
-        note="No credit card needed."
+        title="Try it on a sample company file"
+        body="Create a key, connect a sample file and send your first request."
+        cta={product.cta}
+        note="No card. Unlimited sample files."
       />
     </>
   );

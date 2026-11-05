@@ -24,3 +24,11 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Wall clock in qbwc tests:** `MemorySessions.get` checks expiry against the real clock, so the bridge test's fake clock now starts at real now (the fixed 2026-11-05T10:00Z date broke once the day passed 10:00 UTC). Logic untouched.
 - **Lint:** `no-explicit-any` is off for `tools/**`, `src/lib/qbxml/**`, `src/lib/qbwc/**` (prior modules kept as written).
 - **Fonts:** added a third font export `display` (Spectral) and its variable on `<html>` in layout.tsx; needed for the serif display face.
+
+## 5 Nov 2026 (M1-B storefront)
+- **Heading tokens retuned:** heading-1..4 now use Spectral (display) at 56/40/36/28 to match DESIGN.md; the kit's hero gradient utility and glass header were removed (gradients and glassmorphism are banned). Radii capped at 6px via theme tokens.
+- **Single source for figures:** `src/lib/pricing.ts` derives every price on marketing pages from `product.ts`; the dated Conductor benchmark ($49, checked 3 Nov 2026) and the CTA/Intuit notice live in `product.ts`.
+- **Compare:** only /compare/conductor ships (diy and apideck stay M3+). Rows state roadmap items as not shipped.
+- **Docs:** webhooks doc removed (roadmap only); docs state that /v1/qbd/* is a contract being built and validated against the simulator.
+- **Pages not linked until they exist:** footer links only to existing docs pages (no Changelog/Status/error pages yet). Error guide link in the log sample is plain text.
+- **Legal:** retention figures (30/35 days) inherited from the kit, flagged in MANUAL_STEPS.

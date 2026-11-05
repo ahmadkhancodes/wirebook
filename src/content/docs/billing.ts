@@ -1,45 +1,33 @@
 import { product as p } from "@/config/product";
+import { money, rates } from "@/lib/pricing";
 import type { DocPage } from "./types";
-
-const money = (usd: number) => `$${(usd / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
 export const billing: DocPage = {
   slug: "billing",
-  title: "Billing",
-  description: `Plans, checkout, the customer portal and billing webhooks for ${p.name}.`,
+  title: "Plans and billing",
+  description: `How ${p.name} bills per active company file, and how the free Developer tier works.`,
   sections: [
     {
+      heading: "What counts as an active file",
+      body: [
+        "A company file is billed in a month only if a data request succeeded for it that month. Sample files never count.",
+      ],
+    },
+    {
       heading: "Plans",
-      body: p.plans.map((pl) => {
-        const prices = pl.prices.length
-          ? pl.prices.map((x) => `${money(x.usd)} per ${x.interval}`).join(" or ")
-          : "free";
-        return `${pl.name} (${prices}): ${pl.highlights.join(", ")}.`;
-      }),
-    },
-    {
-      heading: "Checkout",
       body: [
-        "Choose a plan in Settings, then Billing. You are sent to a Stripe Checkout page to pay. When payment succeeds you return to the app and your plan updates within seconds.",
+        `Developer is free, with unlimited sample company files and no card. Production is ${money(rates.perFile)} per active file per month, or ${money(rates.perFileAnnualMonthly)} per file per month billed yearly. The Starter Pack covers up to ${rates.packFiles} files for ${money(rates.packMonthly)} a month (${money(rates.packAnnualMonthly)} billed yearly). Volume is ${money(rates.volumeFile)} per file from file ${rates.volumeFromFiles} upward. Enterprise is custom. See the pricing page for the full list.`,
       ],
     },
     {
-      heading: "Customer portal",
+      heading: "Change or cancel",
       body: [
-        "Use the portal to change plan, update your card, download invoices and cancel anytime. Open it from Settings, then Billing, then Manage billing. A cancelled plan stays active until the end of the period you paid for.",
+        "Open Settings, then Billing, to upgrade, switch interval, update your card or cancel. We use Stripe for payments. A failed payment keeps your plan for 7 days before limits fall back to the Developer tier.",
       ],
     },
     {
-      heading: "Failed payments",
-      body: [
-        `If a payment fails, your plan stays active for ${p.graceDays} days while Stripe retries. After that the account falls back to the Free plan limits. Your data is kept.`,
-      ],
-    },
-    {
-      heading: "Billing webhooks",
-      body: [
-        `Billing state is synced from Stripe through a webhook at ${p.url}/api/stripe/webhook. The endpoint verifies the Stripe signature and is idempotent, so retries are safe. You do not need to configure anything as a customer.`,
-      ],
+      heading: "Migrating from another API",
+      body: ["The first 2 months are $0 for files moved from another QuickBooks Desktop API or a home grown Web Connector server."],
     },
   ],
 };

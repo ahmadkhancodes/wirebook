@@ -35,3 +35,7 @@ https://developer.intuit.com/app/developer/qbdesktop/docs/get-started
 ## 7. Trademark clearance (before launch)
 https://tmsearch.uspto.gov/
 - Formal clearance for "Wirebook" (brief recommends USPTO/UKIPO/CIPO). Fallback names: DeskRelay, BookRelay.
+
+## Legal placeholders to resolve before launch (M1-B)
+- `{{jurisdiction}}` and `{{registered address}}` (from `product.legal` in `src/config/product.ts`) appear highlighted on the legal pages. Also `{{refund policy}}` and `{{cap}}` in terms. The owner supplies the governing jurisdiction, the registered address, the refund wording and the liability cap.
+- Retention periods in privacy/DPA (30 and 35 days) were carried over from the kit. Confirm they match what M2 stores.

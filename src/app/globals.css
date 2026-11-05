@@ -48,9 +48,7 @@
   --danger: #b3261e; /* redpencil */
   --danger-surface: #fbe9e7;
   --highlight: #fff1a8;
-  --hero-from: #14201a;
-  --hero-to: #4a5a50;
-  --shadow-color: 150 25% 10%;
+    --shadow-color: 150 25% 10%;
   color-scheme: light;
 }
 
@@ -76,9 +74,7 @@
   --danger: #ff8a80;
   --danger-surface: #2a1614;
   --highlight: #3b3a14;
-  --hero-from: #e4ece4;
-  --hero-to: #9db0a3;
-  --shadow-color: 0 0% 0%;
+    --shadow-color: 0 0% 0%;
   color-scheme: dark;
 }
 
@@ -133,16 +129,22 @@
   --spacing-20: 80px;
   --spacing-24: 96px;
 
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
+
   --ease-out-kit: cubic-bezier(0.22, 1, 0.36, 1);
   --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   --default-transition-duration: 300ms;
 }
 
 /* ---- Named type styles (playbook §5). Use these, never loose size+weight pairs. ---- */
-@utility heading-1 { font-size: 3.75rem; line-height: 1; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
-@utility heading-2 { font-size: 3rem; line-height: 1; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
-@utility heading-3 { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
-@utility heading-4 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+@utility heading-1 { font-family: var(--font-display-family); font-size: 3.5rem; line-height: 4rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-2 { font-family: var(--font-display-family); font-size: 2.5rem; line-height: 3rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-3 { font-family: var(--font-display-family); font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-4 { font-family: var(--font-display-family); font-size: 1.75rem; line-height: 2.25rem; font-weight: 500; letter-spacing: -0.01em; text-wrap: balance; }
 @utility heading-5 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; text-wrap: balance; }
 @utility heading-6 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; text-wrap: balance; }
 @utility title-1 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 500; }
@@ -166,14 +168,6 @@
 @utility caption-4 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
 @utility caption-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 400; }
 
-/* The only gradient allowed (playbook §6): hero heading text, left to right. */
-@utility hero-gradient-text {
-  background-image: linear-gradient(to right, var(--hero-from), var(--hero-to));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 @utility focus-ring {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -185,8 +179,7 @@
     background: var(--surface);
     color: var(--text);
     font-family: var(--font-sans-family);
-    font-feature-settings: "ss01", "cv11";
-    -webkit-font-smoothing: antialiased;
+        -webkit-font-smoothing: antialiased;
   }
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   ::selection { background: var(--action); color: var(--action-text); }
@@ -203,3 +196,23 @@
   .kit-word { opacity: 1; transition: none; }
   *, *::before, *::after { animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ---- Ledger signature: tabular mono figures, perforated gutter, double rule footing, ticks. ---- */
+@utility figures { font-family: var(--font-mono-family); font-feature-settings: "tnum" 1, "zero" 1; }
+@utility footing { border-top: 3px double var(--text); }
+@utility perf {
+  position: relative;
+  &::before { content: ""; position: absolute; left: 16px; top: 0; bottom: 0; border-left: 1px dotted var(--border); }
+  &::after {
+    content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 6px;
+    background: radial-gradient(circle, var(--border) 2.5px, transparent 3px) 0 0 / 6px 24px repeat-y;
+  }
+}
+.kit-tick path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: kit-draw 200ms var(--ease-out-kit) forwards; animation-delay: calc(var(--i, 0) * 60ms + 60ms); }
+@keyframes kit-draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .kit-tick path { animation: none; stroke-dashoffset: 0; }
+}
+@utility wordmark { font-family: var(--font-display-family); font-size: 1.375rem; line-height: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
+@utility wordmark-by { font-size: 0.625rem; line-height: 0.75rem; font-weight: 500; letter-spacing: 0.08em; font-variant-caps: all-small-caps; }
+.code-block { font-family: var(--font-mono-family); font-size: 0.84375rem; line-height: 1.375rem; white-space: pre; }

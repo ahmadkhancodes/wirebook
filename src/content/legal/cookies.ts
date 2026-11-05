@@ -21,7 +21,7 @@ export const cookies: LegalDoc = {
             head: ["Purpose", "Lifetime"],
             rows: [
               ["Session cookie that keeps you signed in", "Up to 30 days, or until you sign out"],
-              ["Security tokens for sign in and forms", "Short lived, minutes to hours"],
+              ["Security tokens for sign in and connect links", "Short lived, minutes to hours"],
               ["Theme preference, stored locally in your browser", "Until you clear it"],
             ],
           },
@@ -31,7 +31,7 @@ export const cookies: LegalDoc = {
     {
       id: "analytics",
       title: "Analytics",
-      body: ["We use Vercel Web Analytics to count page views. It is cookieless and does not track you across sites or build a profile of you."],
+      body: ["We use Vercel Web Analytics to count page views on the marketing site. It is not part of the API data path. It is cookieless and does not track you across sites or build a profile of you."],
     },
     {
       id: "control",

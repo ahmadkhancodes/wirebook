@@ -10,8 +10,8 @@ export const privacy: LegalDoc = {
       id: "who-we-are",
       title: "Who we are",
       body: [
-        `${p.name} is operated by ${p.legal.entity}, ${p.legal.address}. This policy explains what personal data we handle when you visit ${p.host}, create an account or use the service.`,
-        `For account and billing data we are the controller. For form submissions that your visitors send to your endpoints, you are the controller and we are your processor. The data processing addendum covers that second case.`,
+        `${p.name} is operated by ${p.legal.entity}, ${p.legal.address}. This policy explains what personal data we handle when you visit ${p.host}, create an account or use the service. End users, meaning your customers who connect their QuickBooks Desktop company file through a link you send them, are covered below.`,
+        `For account and billing data we are the controller. For QuickBooks data that flows through the API on behalf of your customers, you are the controller and we are your processor. The data processing addendum covers that second case.`,
       ],
     },
     {
@@ -24,11 +24,13 @@ export const privacy: LegalDoc = {
             "Account data: your email address, name if you give one, and sign in credentials such as passkeys or two factor settings.",
             "Organization data: workspace name, members, roles, API keys (stored hashed) and the settings you configure.",
             "Billing data: your plan and subscription status. Card details go straight to Stripe and never touch our servers.",
-            "Form submissions: the fields and files that visitors of your sites send to your endpoints, plus delivery receipts and spam verdicts. You receive this data and we store it for you.",
+            "QuickBooks data: the request and response payloads that pass between your application and a connected QuickBooks Desktop company file through the Intuit Web Connector. Payload logging is off by default in production, so payloads are relayed and not kept in logs unless you turn logging on.",
+            "Request metadata: request id, operation, state, timestamps and error codes for each API call, plus idempotency keys, which are replayed for 7 days.",
+            "End user connection data: the details an end user gives when they connect a company file through a connect link, such as the company file name and connection status.",
             "Technical data: IP address, browser type and request logs, kept briefly for security, abuse prevention and debugging.",
           ],
         },
-        "We do not sell personal data and we do not use submission content for advertising or to train models.",
+        "We do not sell personal data. We do not use QuickBooks data for advertising or to train models, and no AI model and no analytics service sits in the data path.",
       ],
     },
     {
@@ -38,8 +40,8 @@ export const privacy: LegalDoc = {
         "If you are in the European Economic Area or the United Kingdom, we rely on these legal bases under the GDPR and UK GDPR.",
         {
           list: [
-            "Contract: to create your account, deliver submissions and bill you.",
-            "Legitimate interests: to secure the service, prevent abuse and spam, and keep records that let us fix problems.",
+            "Contract: to create your account, relay requests to connected company files and bill you per active company file.",
+            "Legitimate interests: to secure the service, prevent abuse, and keep records that let us fix problems.",
             "Legal obligation: to keep tax and accounting records.",
             "Consent: for optional communications, which you can withdraw at any time.",
           ],
@@ -60,7 +62,7 @@ export const privacy: LegalDoc = {
         {
           list: [
             "Account and organization data is kept while your account is open.",
-            "Submissions are kept for the history period of your plan, then deleted.",
+            "Request metadata is kept for the history period of your plan, then deleted. QuickBooks payloads are not stored unless payload logging is turned on.",
             "After you delete your account we remove your data within 30 days, except billing records we must keep by law, which are kept for the period the law requires.",
             "Server logs are kept for up to 30 days.",
             "Backups roll off within 35 days after deletion.",
@@ -93,7 +95,7 @@ export const privacy: LegalDoc = {
       id: "transfers",
       title: "International transfers",
       body: [
-        "Our subprocessors are mainly in the United States. When we transfer personal data from the EEA, UK or Switzerland, we rely on the EU Standard Contractual Clauses and the UK addendum, and on the EU US Data Privacy Framework where a provider is certified.",
+        "Our hosting and database are in the United States (Vercel and MongoDB Atlas). When we transfer personal data from the EEA, UK or Switzerland, we rely on the EU Standard Contractual Clauses and the UK addendum, and on the EU US Data Privacy Framework where a provider is certified.",
       ],
     },
     {
