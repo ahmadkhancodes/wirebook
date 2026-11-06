@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
-const Patch = z.object({ url: z.string().url().max(2048).optional(), events: z.array(z.string().min(1).max(64)).min(1).max(50).optional(), enabled: z.boolean().optional() });
+const Patch = z.object({ url: z.string().url().max(2048).optional(), events: z.array(z.string().min(1).max(64)).min(1).max(50).optional(), enabled: z.boolean().optional(), environment: z.enum(["test", "production"]).optional() });
 
 export const PATCH = withApi<Ctx>(async (req, { params }) => {
   const ctx = await requireOrg();

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DataTable, Td } from "@/components/app/data-table";
 import { PageHeader } from "@/components/app/page-header";
 import { fmt } from "@/components/app/labels";
@@ -14,7 +15,7 @@ export default async function AdminPage() {
   ];
   return (
     <>
-      <PageHeader title="Admin overview" description="Totals across every organization. Visible to founder accounts only." />
+      <PageHeader title="Admin overview" description="Totals across every organization. Visible to founder accounts only." actions={<Link href="/admin/abuse" className="inline-flex min-h-11 items-center body-6 text-text underline underline-offset-4 focus-visible:focus-ring">Abuse controls</Link>} />
       <div className="flex flex-col gap-8">
         <dl className="grid gap-4 sm:grid-cols-3">
           {stats.map((s) => (

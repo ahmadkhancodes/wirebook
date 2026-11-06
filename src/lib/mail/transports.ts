@@ -3,7 +3,12 @@ import { log } from "@/lib/logger";
 import type { MailMessage, MailTransport, SendResult } from "./types";
 
 /** Dev/test/stub transport: keeps messages in memory and logs the subject (never the body). */
-export const outbox: (MailMessage & { from: string; id: string; at: Date })[] = [];
+type Sent = MailMessage & { from: string; id: string; at: Date };
+declare global {
+  var __wirebookOutbox: Sent[] | undefined;
+}
+/** One array per process even when the bundler gives the auth route and the outbox route their own copy of this module. */
+export const outbox: Sent[] = (globalThis.__wirebookOutbox ??= []);
 
 export function consoleTransport(): MailTransport {
   return {

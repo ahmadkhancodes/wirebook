@@ -58,6 +58,14 @@ export class MemoryQueue implements JobQueue {
     }
     return n;
   }
+  async deleteMetadata(o: { before: Date }) {
+    let n = 0;
+    for (const [id, j] of this.jobs) {
+      if (j.createdAt >= o.before || j.state === 'queued' || j.state === 'sent') continue;
+      this.jobs.delete(id); n++;
+    }
+    return n;
+  }
   async listForUser(endUserId: string, limit: number) {
     return [...this.jobs.values()].filter((j) => j.endUserId === endUserId).sort((a, b) => b.id.localeCompare(a.id)).slice(0, limit).map((j) => ({ ...j }));
   }

@@ -1,6 +1,6 @@
 import { createConnectLink, derivePassword } from '../../src/lib/connect';
 import { createMemoryBridge, type Bridge } from '../../src/lib/bridge';
-import { handleSoap, hashPassword, type EndUser } from '../../src/lib/qbwc';
+import { handleSoap, hashPassword, type BridgeDeps, type EndUser } from '../../src/lib/qbwc';
 import { createObject, getObject, getRequest, listObjects, rawQbxml, updateObject, v1, type V1Auth, type V1Deps } from '../../src/lib/v1/engine';
 import { apiError } from '../../src/lib/v1/errors';
 import { FakeCompanyFile, QbwcSimulator } from '../../tools/simulate-qbwc/simulator';
@@ -9,11 +9,11 @@ export const BASE = 'https://wirebook.test';
 export const SECRET = 'test-secret';
 
 /** Everything runs in process: memory bridge, a fake clock, and the Web Connector simulator standing in for QuickBooks. No network. */
-export function harness(opts: { waitMs?: number; onSuccess?: (u: EndUser, at: Date) => Promise<void> } = {}) {
+export function harness(opts: { waitMs?: number; onSuccess?: (u: EndUser, at: Date) => Promise<void>; onEvent?: BridgeDeps['onEvent'] } = {}) {
   const bridge: Bridge = createMemoryBridge();
   const clock = { now: new Date() };
   const sims = new Map<string, QbwcSimulator>();
-  const post = (xml: string) => handleSoap(xml, { ...bridge, now: () => clock.now, ...(opts.onSuccess ? { onSuccess: opts.onSuccess } : {}) });
+  const post = (xml: string) => handleSoap(xml, { ...bridge, now: () => clock.now, ...(opts.onSuccess ? { onSuccess: opts.onSuccess } : {}), ...(opts.onEvent ? { onEvent: opts.onEvent } : {}) });
 
   const deps: V1Deps & { secret: string } = {
     bridge, baseUrl: BASE, secret: SECRET, now: () => clock.now, waitMs: opts.waitMs ?? 5000,

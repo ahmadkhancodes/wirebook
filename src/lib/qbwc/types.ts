@@ -66,6 +66,8 @@ export interface JobQueue {
   expireSent(olderThanMs: number, now: Date): Promise<Job[]>;
   /** Retention: drop request bodies, parsed results and raw responses of jobs created before `before`. Metadata stays. Returns the number purged. */
   purgePayloads(o: { before: Date; projectIds?: string[]; excludeProjectIds?: string[] }, now: Date): Promise<number>;
+  /** Retention: delete finished request rows (the metadata) created before `before`. Queued and in flight work is never deleted. Returns the number deleted. */
+  deleteMetadata(o: { before: Date }): Promise<number>;
   /** Jobs of one end user, newest first (used by the health detail page). */
   listForUser(endUserId: string, limit: number): Promise<Job[]>;
 }

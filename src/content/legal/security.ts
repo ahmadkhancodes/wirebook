@@ -45,7 +45,7 @@ export const security: LegalDoc = {
         {
           list: [
             "Rate limiting on public endpoints and on the API.",
-            "Payload logging is off by default in production, so QuickBooks payloads are not written to logs.",
+            "QuickBooks payloads are kept with the request record for 14 days at most (shorter if you set it) and are then deleted. They are not written to application logs.",
             "Idempotency keys are replayed for 7 days so retries do not duplicate work.",
             "Outbound webhooks are signed so you can verify them.",
             "Dependencies are updated regularly and checked for known vulnerabilities.",

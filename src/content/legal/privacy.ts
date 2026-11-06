@@ -24,7 +24,7 @@ export const privacy: LegalDoc = {
             "Account data: your email address, name if you give one, and sign in credentials such as passkeys or two factor settings.",
             "Organization data: workspace name, members, roles, API keys (stored hashed) and the settings you configure.",
             "Billing data: your plan and subscription status. Card details go straight to Stripe and never touch our servers.",
-            "QuickBooks data: the request and response payloads that pass between your application and a connected QuickBooks Desktop company file through the Intuit Web Connector. Payload logging is off by default in production, so payloads are relayed and not kept in logs unless you turn logging on.",
+            "QuickBooks data: the request and response payloads that pass between your application and a connected QuickBooks Desktop company file through the Intuit Web Connector. We keep these payloads only for the retention period described under Retention below.",
             "Request metadata: request id, operation, state, timestamps and error codes for each API call, plus idempotency keys, which are replayed for 7 days.",
             "End user connection data: the details an end user gives when they connect a company file through a connect link, such as the company file name and connection status.",
             "Technical data: IP address, browser type and request logs, kept briefly for security, abuse prevention and debugging.",
@@ -62,7 +62,8 @@ export const privacy: LegalDoc = {
         {
           list: [
             "Account and organization data is kept while your account is open.",
-            "Request metadata is kept for the history period of your plan, then deleted. QuickBooks payloads are not stored unless payload logging is turned on.",
+            "QuickBooks payloads (request bodies, the parsed results we return, and raw qbXML responses) are stored with each request so you can read a late answer and replay it. They are deleted automatically after 14 days, or sooner if you shorten the period under Settings, Data retention. A shorter period applies to what is already stored the moment you save it, and each deletion run is written to your audit log as a count, never as content.",
+            "Request metadata (request id, operation, state, timestamps and error codes) is deleted after 90 days.",
             "After you delete your account we remove your data within 30 days, except billing records we must keep by law, which are kept for the period the law requires.",
             "Server logs are kept for up to 30 days.",
             "Backups roll off within 35 days after deletion.",

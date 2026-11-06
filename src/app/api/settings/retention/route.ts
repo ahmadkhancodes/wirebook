@@ -4,7 +4,8 @@ import { audit } from "@/lib/audit";
 import { requireOrg, requirePermission } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { json, readJson, withApi } from "@/lib/http";
-import { clampRetention, retentionFor } from "@/lib/retention";
+import { getBridge } from "@/lib/bridge";
+import { applyRetentionNow, clampRetention, retentionFor } from "@/lib/retention";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,5 +27,6 @@ export const POST = withApi(async (req) => {
   const days = clampRetention(retentionDays);
   await db.setOrgSettings(ctx.org.id, { retentionDays: days });
   await audit({ orgId: ctx.org.id, actorId: ctx.user.id, action: "retention.changed", meta: { retentionDays: days } });
-  return json({ retentionDays: days });
+  const purged = await applyRetentionNow(db, await getBridge(), ctx.org.id, days, ctx.user.id);
+  return json({ retentionDays: days, purged });
 });

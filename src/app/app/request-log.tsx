@@ -1,5 +1,8 @@
 import { CheckCircle, Clock, Question, XCircle } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
+import { CopyButton } from "@/components/app/copy-button";
+import { appUrl } from "@/lib/env";
+import { curlFor } from "@/lib/curl";
 import type { Job, RequestState } from "@/lib/qbwc";
 
 export const STATE_LABEL: Record<RequestState, string> = { queued: "Queued", sent: "Sent", succeeded: "Succeeded", failed: "Failed", outcome_unknown: "Outcome unknown" };
@@ -105,6 +108,12 @@ export function DetailPane({ job }: { job: Job }) {
           ))}
         </ol>
       </div>
+      <div className="flex flex-wrap gap-2">
+        <CopyButton value={curlFor(job, appUrl())} label="Copy as curl" />
+        <CopyButton value={job.id} label="Copy request id" />
+        {job.endUserId ? <Link href={`/app/end-users/${job.endUserId}`} className="inline-flex min-h-9 items-center px-2 caption-4 text-text underline underline-offset-4 focus-visible:focus-ring">Open company file</Link> : null}
+      </div>
+      <Payload job={job} />
       {job.error ? (
         <div role="alert" className="rounded-md border border-danger bg-danger-surface p-3 caption-4">
           <p className="font-semibold text-danger">{job.error.code}</p>
@@ -114,5 +123,32 @@ export function DetailPane({ job }: { job: Job }) {
         </div>
       ) : null}
     </aside>
+  );
+}
+
+const pretty = (v: unknown) => { try { return JSON.stringify(v, null, 2); } catch { return String(v); } };
+
+/** Request body and result, only while retention still holds them. */
+function Payload({ job }: { job: Job }) {
+  if (job.purgedAt) {
+    return <p className="rounded-md border border-border bg-surface-sunken p-3 caption-4 text-text-subtle">The request and response bodies were deleted on {day(job.purgedAt)} by your retention setting. The timeline and status above stay for 90 days.</p>;
+  }
+  const hasBody = job.body !== undefined && job.body !== null && Object.keys(job.body as object).length > 0;
+  return (
+    <div className="flex flex-col gap-2">
+      {hasBody ? (
+        <details className="rounded-md border border-border">
+          <summary className="min-h-9 cursor-pointer px-3 py-2 caption-4 font-semibold text-text focus-visible:focus-ring">Request body</summary>
+          <pre className="max-h-72 overflow-auto border-t border-border p-3 figures caption-4 text-text"><code>{pretty(job.body)}</code></pre>
+        </details>
+      ) : null}
+      {job.result ? (
+        <details className="rounded-md border border-border">
+          <summary className="min-h-9 cursor-pointer px-3 py-2 caption-4 font-semibold text-text focus-visible:focus-ring">Result ({job.result.length} {job.result.length === 1 ? "row" : "rows"})</summary>
+          <pre className="max-h-72 overflow-auto border-t border-border p-3 figures caption-4 text-text"><code>{pretty(job.result)}</code></pre>
+        </details>
+      ) : null}
+      {!hasBody && !job.result ? <p className="caption-4 text-text-subtle">No body was sent, and there is no result yet.</p> : null}
+    </div>
   );
 }

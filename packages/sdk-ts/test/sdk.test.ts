@@ -136,7 +136,7 @@ describe('idempotency and retries', () => {
     const real = fetchFor(h);
     let n = 0;
     const counting = (async (i: RequestInfo | URL, init?: RequestInit) => { n++; return real(i, init); }) as typeof fetch;
-    const err = await client({ fetch: counting }).qbd.customers.create({ bogus: 1 }).catch((e) => e);
+    const err = await client({ fetch: counting }).qbd.customers.create({ bogus: 1 } as never).catch((e) => e);
     expect(err).toBeInstanceOf(InvalidRequestError);
     expect(err.status).toBe(400);
     expect(n).toBe(1);

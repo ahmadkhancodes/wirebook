@@ -105,6 +105,11 @@ export function createMongoDb(uri: string, dbName: string, app: string): Db {
       delete rest._id;
       return rest as OrgSettings;
     },
+    async listSuspended() {
+      const docs = await (await col<{ orgId: string; suspended?: boolean; suspendedReason?: string; suspendedKeys?: string[] }>("org_settings"))
+        .find({ app, $or: [{ suspended: true }, { "suspendedKeys.0": { $exists: true } }] }).toArray();
+      return docs.map((d) => ({ orgId: d.orgId, suspended: !!d.suspended, reason: d.suspendedReason ?? "", suspendedKeys: d.suspendedKeys ?? [] }));
+    },
     async listOrgsWithRetention() {
       const docs = await (await col<{ orgId: string; retentionDays: number }>("org_settings")).find({ app, retentionDays: { $exists: true } }).toArray();
       return docs.map((d) => ({ orgId: d.orgId, retentionDays: d.retentionDays }));

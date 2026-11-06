@@ -74,3 +74,7 @@ catch (e) {
 ## Build
 
 `npm run build -w @wirebook/sdk` compiles with plain `tsc` to `dist/`. MIT licence.
+
+## Typed models
+
+Every object has `<Name>Create`, `<Name>Update` and `<Name>` types (`CustomerCreate`, `EstimateUpdate`, `Invoice`, and so on), generated from the same field specs the API validates with. `update` takes a body that must carry `revisionNumber`; transaction lines in an update carry `txnLineId` (`"-1"` adds a line). Payments cannot be updated yet, so `payments.update` does not type check. Regenerate with `npm run gen:sdk` in the repository root.

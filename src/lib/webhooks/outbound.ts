@@ -8,7 +8,7 @@ import { product } from "@/config/product";
 
 export const MAX_ATTEMPTS = 8;
 /** Backoff after attempt n (1-based): 30s, 2m, 10m, 30m, 1h, 3h, 6h, 12h (+-10% jitter). */
-const BACKOFF_S = [30, 120, 600, 1800, 3600, 10800, 21600, 43200];
+export const BACKOFF_S = [30, 120, 600, 1800, 3600, 10800, 21600, 43200];
 export function backoffMs(attempt: number, rand = Math.random): number {
   const base = BACKOFF_S[Math.min(attempt - 1, BACKOFF_S.length - 1)]! * 1000;
   return Math.round(base * (0.9 + rand() * 0.2));
@@ -29,10 +29,12 @@ export async function verifySignature(secret: string, body: string, header: stri
 }
 
 /** Queue an event to every enabled endpoint subscribed to it (or to "*"), and try once immediately. */
-export async function emitEvent(orgId: string, event: string, data: unknown, opts: { db?: Db; fetchFn?: typeof fetch; now?: Date } = {}) {
+export async function emitEvent(orgId: string, event: string, data: unknown, opts: { db?: Db; fetchFn?: typeof fetch; now?: Date; environment?: "test" | "production" } = {}) {
   const db = opts.db ?? (await getDb());
   const now = opts.now ?? new Date();
-  const eps = (await db.listWebhookEndpoints(orgId)).filter((e) => e.enabled && (e.events.includes("*") || e.events.includes(event)));
+  const eps = (await db.listWebhookEndpoints(orgId)).filter(
+    (e) => e.enabled && (e.events.includes("*") || e.events.includes(event)) && (!opts.environment || !e.environment || e.environment === opts.environment),
+  );
   const out: WebhookDelivery[] = [];
   for (const ep of eps) {
     const id = uuidv7();
@@ -89,6 +91,19 @@ export async function attemptDelivery(
   };
   await opts.db.updateDelivery(d.id, patch);
   return { ...d, ...patch };
+}
+
+/** Replay: send an existing delivery again from scratch (same body, fresh signature, attempts reset). Returns null if it is not found. */
+export async function replayDelivery(orgId: string, id: string, opts: { db?: Db; fetchFn?: typeof fetch; now?: Date } = {}): Promise<WebhookDelivery | null> {
+  const db = opts.db ?? (await getDb());
+  const now = opts.now ?? new Date();
+  const d = await db.getDelivery(orgId, id);
+  if (!d) return null;
+  const ep = await db.getWebhookEndpoint(orgId, d.endpointId);
+  if (!ep) return null;
+  const fresh: WebhookDelivery = { ...d, status: "pending", attempts: 0, nextAttemptAt: now, lastError: null, lastStatusCode: null, updatedAt: now, expireAt: new Date(now.getTime() + DELIVERY_TTL_DAYS * 864e5) };
+  await db.updateDelivery(id, { status: "pending", attempts: 0, nextAttemptAt: now, lastError: null, lastStatusCode: null, updatedAt: now, expireAt: fresh.expireAt });
+  return attemptDelivery(fresh, ep, { db, fetchFn: opts.fetchFn, now });
 }
 
 /** Cron job: retry due deliveries. */

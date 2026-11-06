@@ -22,11 +22,11 @@ export type Spec = readonly Field[];
 export const camel = (name: string): string => name.replace(/ID$/, 'Id').replace(/^./, (c) => c.toLowerCase());
 export const keyOf = (f: Field): string => f.key ?? camel(f.name);
 
-const ref: Spec = [
+export const ref: Spec = [
   { name: 'ListID', kind: 'str', max: 36 },
   { name: 'FullName', kind: 'str', max: 209 },
 ];
-const address: Spec = [
+export const address: Spec = [
   { name: 'Addr1', kind: 'str', max: 41 },
   { name: 'Addr2', kind: 'str', max: 41 },
   { name: 'Addr3', kind: 'str', max: 41 },
@@ -374,6 +374,38 @@ export const STANDARD_TERMS_ADD: Spec = [
   { name: 'DiscountPct', kind: 'str', max: 8 },
 ];
 
+/**
+ * Update (Mod) specs for the remaining objects. Hand-authored like the rest (no Intuit XSD in this build):
+ * every Mod carries the id and the EditSequence (exposed as revisionNumber), every other field becomes optional,
+ * and each line list is the XxxLineMod variant, where a line needs its txnLineId (send "-1" to add a new line).
+ */
+const optional = (s: Spec): Spec => s.map((f) => ({ ...f, required: false, ...(f.children ? { children: optional(f.children) } : {}) }));
+const modHead = (idName: 'TxnID' | 'ListID'): Spec => [
+  { name: idName, kind: 'str', required: true },
+  { name: 'EditSequence', kind: 'str', key: 'revisionNumber', required: true },
+];
+/** `lineTags` maps an XxxLineAdd element to its XxxLineMod element. */
+const txnMod = (add: Spec, lineTags: Record<string, string>): Spec => [
+  ...modHead('TxnID'),
+  ...optional(add).map((f): Field => {
+    const to = lineTags[f.name];
+    return to ? { ...f, name: to, children: [{ name: 'TxnLineID', kind: 'str', key: 'txnLineId', required: true }, ...(f.children ?? [])] } : f;
+  }),
+];
+export const INVOICE_MOD: Spec = txnMod(INVOICE_ADD, { InvoiceLineAdd: 'InvoiceLineMod' });
+export const BILL_MOD: Spec = txnMod(BILL_ADD, { ExpenseLineAdd: 'ExpenseLineMod', ItemLineAdd: 'ItemLineMod' });
+export const ESTIMATE_MOD: Spec = txnMod(ESTIMATE_ADD, { EstimateLineAdd: 'EstimateLineMod' });
+export const SALES_ORDER_MOD: Spec = txnMod(SALES_ORDER_ADD, { SalesOrderLineAdd: 'SalesOrderLineMod' });
+export const SALES_RECEIPT_MOD: Spec = txnMod(SALES_RECEIPT_ADD, { SalesReceiptLineAdd: 'SalesReceiptLineMod' });
+export const CREDIT_MEMO_MOD: Spec = txnMod(CREDIT_MEMO_ADD, { CreditMemoLineAdd: 'CreditMemoLineMod' });
+export const PURCHASE_ORDER_MOD: Spec = txnMod(PURCHASE_ORDER_ADD, { PurchaseOrderLineAdd: 'PurchaseOrderLineMod' });
+export const ITEM_SERVICE_MOD: Spec = [
+  ...modHead('ListID'),
+  ...optional(ITEM_SERVICE_ADD).map((f): Field => (f.name === 'SalesOrPurchase' ? { ...f, name: 'SalesOrPurchaseMod', key: 'salesOrPurchase' } : f)),
+];
+export const ACCOUNT_MOD: Spec = [...modHead('ListID'), ...optional(ACCOUNT_ADD)];
+export const STANDARD_TERMS_MOD: Spec = [...modHead('ListID'), ...optional(STANDARD_TERMS_ADD)];
+
 export interface OpDef {
   /** e.g. CustomerQueryRq */
   rq: string;
@@ -421,5 +453,15 @@ export const OPS = {
   'employee.mod': { rq: 'EmployeeModRq', wrapper: 'EmployeeMod', rs: 'EmployeeModRs', ret: 'EmployeeRet', spec: EMPLOYEE_MOD },
   'terms.query': { rq: 'TermsQueryRq', rs: 'TermsQueryRs', ret: 'StandardTermsRet', spec: TERMS_QUERY },
   'terms.add': { rq: 'StandardTermsAddRq', wrapper: 'StandardTermsAdd', rs: 'StandardTermsAddRs', ret: 'StandardTermsRet', spec: STANDARD_TERMS_ADD },
+  'invoice.mod': { rq: 'InvoiceModRq', wrapper: 'InvoiceMod', rs: 'InvoiceModRs', ret: 'InvoiceRet', spec: INVOICE_MOD },
+  'bill.mod': { rq: 'BillModRq', wrapper: 'BillMod', rs: 'BillModRs', ret: 'BillRet', spec: BILL_MOD },
+  'estimate.mod': { rq: 'EstimateModRq', wrapper: 'EstimateMod', rs: 'EstimateModRs', ret: 'EstimateRet', spec: ESTIMATE_MOD },
+  'salesOrder.mod': { rq: 'SalesOrderModRq', wrapper: 'SalesOrderMod', rs: 'SalesOrderModRs', ret: 'SalesOrderRet', spec: SALES_ORDER_MOD },
+  'salesReceipt.mod': { rq: 'SalesReceiptModRq', wrapper: 'SalesReceiptMod', rs: 'SalesReceiptModRs', ret: 'SalesReceiptRet', spec: SALES_RECEIPT_MOD },
+  'creditMemo.mod': { rq: 'CreditMemoModRq', wrapper: 'CreditMemoMod', rs: 'CreditMemoModRs', ret: 'CreditMemoRet', spec: CREDIT_MEMO_MOD },
+  'purchaseOrder.mod': { rq: 'PurchaseOrderModRq', wrapper: 'PurchaseOrderMod', rs: 'PurchaseOrderModRs', ret: 'PurchaseOrderRet', spec: PURCHASE_ORDER_MOD },
+  'item.mod': { rq: 'ItemServiceModRq', wrapper: 'ItemServiceMod', rs: 'ItemServiceModRs', ret: 'ItemServiceRet', spec: ITEM_SERVICE_MOD },
+  'account.mod': { rq: 'AccountModRq', wrapper: 'AccountMod', rs: 'AccountModRs', ret: 'AccountRet', spec: ACCOUNT_MOD },
+  'terms.mod': { rq: 'StandardTermsModRq', wrapper: 'StandardTermsMod', rs: 'StandardTermsModRs', ret: 'StandardTermsRet', spec: STANDARD_TERMS_MOD },
 } as const satisfies Record<string, OpDef>;
 export type OpName = keyof typeof OPS;

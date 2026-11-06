@@ -134,7 +134,7 @@ export function buildOpenApi(baseUrl: string): Json {
       required: ['data', 'hasMore', 'nextCursor', 'cursorExpiresAt'],
       properties: { data: { type: 'array', items: ref('QuickBooksRecord') }, hasMore: { type: 'boolean' }, nextCursor: { type: ['string', 'null'] }, cursorExpiresAt: { type: ['string', 'null'], format: 'date-time' } },
     };
-    if (def.mod) schemas[`${P}Update`] = toSchema(specToZod(OPS[def.mod].spec, { omit: ['listId'] }));
+    if (def.mod) schemas[`${P}Update`] = toSchema(specToZod(OPS[def.mod].spec, { omit: [def.idList === 'txnIds' ? 'txnId' : 'listId'] }));
 
     const filterParams = Object.keys(def.filters).map((name) => ({ name, in: 'query', required: false, schema: { type: 'string' }, description: `Filter: ${name}` }));
     paths[`/v1/qbd/${seg}`] = {

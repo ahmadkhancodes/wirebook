@@ -9,25 +9,7 @@ export interface QbRecord {
   [field: string]: unknown;
 }
 
-export interface Ref { listId?: string; fullName?: string }
-export interface Address { addr1?: string; addr2?: string; addr3?: string; city?: string; state?: string; postalCode?: string; country?: string }
-
-export interface Customer extends QbRecord { name?: string; isActive?: boolean; companyName?: string; email?: string; phone?: string; balance?: string; billAddress?: Address; shipAddress?: Address }
-export interface Vendor extends QbRecord { name?: string; isActive?: boolean; companyName?: string; email?: string; phone?: string; balance?: string }
-export interface Item extends QbRecord { name?: string; isActive?: boolean }
-export interface Account extends QbRecord { name?: string; accountType?: string; balance?: string }
-export interface InvoiceLine { itemRef: Ref; desc?: string; quantity?: number | string; rate?: number | string; amount?: number | string; [field: string]: unknown }
-export interface Invoice extends QbRecord { customerRef?: Ref; refNumber?: string; txnDate?: string; balanceRemaining?: string; lines?: InvoiceLine[] }
-export interface Bill extends QbRecord { vendorRef?: Ref; refNumber?: string; amountDue?: string }
-export interface Payment extends QbRecord { customerRef?: Ref; totalAmount?: string }
-export type Estimate = Invoice;
-export type SalesOrder = Invoice;
-export type SalesReceipt = Invoice;
-export type CreditMemo = Invoice;
-export type PurchaseOrder = Bill;
-export type QbClass = QbRecord;
-export type Term = QbRecord;
-export type Employee = QbRecord;
+export * from './models.js';
 
 /** Request bodies are camelCase qbXML fields; unknown fields are rejected by the API with the path of the problem. */
 export type Input = Record<string, unknown>;

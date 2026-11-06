@@ -145,7 +145,7 @@ const faq: FaqItem[] = [
   { q: "Is it real time?", a: "No. QuickBooks Desktop only talks to the Web Connector when it polls. Requests run when QuickBooks next checks in. If the connector is not running you get a 202 queued, and a guide after 30 seconds." },
   { q: "What counts as an active file?", a: "A company file counts in a month only if a data request succeeded for it that month. Sample files never count." },
   { q: "How do you stop duplicate writes?", a: "Send an Idempotency-Key on every write. We replay the first result for 7 days. The same key with a different body returns 409. If a request times out after it was sent, we reconcile by RefNumber before you retry." },
-  { q: "What do you log, and who sees it?", a: "Payload logging is off by default in production. No email API, analytics service or AI model is in the data path." },
+  { q: "What do you log, and who sees it?", a: "Request and response bodies are deleted after 14 days, sooner if you set it, and request metadata after 90. No email API, analytics service or AI model is in the data path." },
   { q: "Do you have SOC 2?", a: "No, not at launch. We offer a self attested security pack and a DPA." },
   { q: "Which QuickBooks versions work?", a: "QuickBooks Desktop 2024 is fully supported. Version 2023 and older is best effort. Pro, Premier and Enterprise on Windows are supported." },
   { q: "Does it work with QuickBooks for Mac or UK QuickBooks Desktop?", a: "No. The Web Connector runs on Windows, and we do not support the UK edition." },
@@ -182,7 +182,7 @@ export default function HomePage() {
       <CompareStrip />
       <FitSection
         yes="Vertical SaaS (construction, field service, distribution, logistics, property management, nonprofits) and fintech teams that sync to the ledger of customers who keep books in QuickBooks Desktop on Windows."
-        no="QuickBooks for Mac, UK QuickBooks Desktop, on premise only processing, and teams that need SOC 2 Type II or a HIPAA BAA on day one. We have a self attested security pack, a DPA, and payload logging is off by default."
+        no="QuickBooks for Mac, UK QuickBooks Desktop, on premise only processing, and teams that need SOC 2 Type II or a HIPAA BAA on day one. We have a self attested security pack, a DPA, and request bodies are deleted after 14 days at most."
       />
       <Faq title="Questions, answered" items={faq} />
       <FinalCta

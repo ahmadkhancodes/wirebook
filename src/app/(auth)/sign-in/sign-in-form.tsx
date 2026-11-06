@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Notice } from "@/components/ui/states";
 import { authClient } from "@/lib/auth/client";
+import { solveAltcha } from "@/lib/security/altcha-client";
 
 type Phase = "idle" | "sending" | "sent";
 
@@ -24,15 +25,30 @@ export function SignInForm({ callbackURL, expiredLink }: { callbackURL: string; 
     }
     setError(null);
     setPhase("sending");
+    let proof: string;
+    try {
+      proof = await solveAltcha();
+    } catch {
+      setPhase("idle");
+      setError("We could not run the spam check. Reload the page and try again.");
+      return;
+    }
     const { error: err } = await authClient.signIn.magicLink({
       email: value,
       callbackURL,
       newUserCallbackURL: `/onboarding?next=${encodeURIComponent(callbackURL)}`,
       errorCallbackURL: "/sign-in",
+      fetchOptions: { headers: { "x-altcha": proof } },
     });
     if (err) {
       setPhase("idle");
-      setError(authError(err, "We could not send the link. Check the address and try again."));
+      const code = (err as { code?: string }).code;
+      setError(
+        code === "DISPOSABLE_EMAIL" ? "Use a work or personal address. Throwaway email domains are not accepted."
+        : code === "SIGNUPS_CLOSED" ? "Sign-ups are paused for a moment. Try again later."
+        : code === "RATE_LIMITED" ? "Too many attempts from here. Wait ten minutes and try again."
+        : authError(err, "We could not send the link. Check the address and try again."),
+      );
       return;
     }
     setPhase("sent");

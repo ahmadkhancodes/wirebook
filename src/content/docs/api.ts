@@ -16,7 +16,7 @@ export const api: DocPage = {
     {
       heading: "Objects",
       body: [
-        "customers, vendors, items, accounts, invoices, bills, payments, estimates, sales-orders, sales-receipts, credit-memos, purchase-orders, classes, terms and employees. GET /v1/qbd/{object} lists, GET /v1/qbd/{object}/{id} retrieves, POST /v1/qbd/{object} creates and returns 201 with the created object. POST /v1/qbd/{object}/{id} updates customers, vendors, classes and employees; send the revisionNumber you read, and a stale one returns 409. Terms are standard terms. Items are created as service items for now. Payments are customer payments (ReceivePayment).",
+        "customers, vendors, items, accounts, invoices, bills, payments, estimates, sales-orders, sales-receipts, credit-memos, purchase-orders, classes, terms and employees. GET /v1/qbd/{object} lists, GET /v1/qbd/{object}/{id} retrieves, POST /v1/qbd/{object} creates and returns 201 with the created object. POST /v1/qbd/{object}/{id} updates every object except payments, which returns 405 not_supported; send the revisionNumber you read, and a stale one returns 409. Terms are standard terms. Items are created as service items for now. Payments are customer payments (ReceivePayment).",
         "If QuickBooks has not answered within the wait (55 seconds), you get 202 with a request id and a Location header. Poll GET /v1/requests/{id}. Send Prefer: respond-async to get the 202 straight away.",
       ],
       code: { lang: "bash", code: `curl ${p.url}/v1/qbd/customers?limit=25 \
@@ -69,12 +69,14 @@ export const api: DocPage = {
     {
       heading: "Rate limits",
       body: [
-        "Each API key can make 600 requests per minute, and ten bad keys from one address earn a minute of 429s. Beyond that you get a 429 status with the error code rate_limited. Wait for the next minute and retry with exponential backoff.",
+        `Each API key can make ${p.abuse.keyPerMinute} requests per minute and each source address ${p.abuse.ipPerMinute}. Each organization also has a daily cap on requests (UTC day, test and production together): ${p.abuse.dailyRequests.free.toLocaleString("en-US")} on the Developer plan. Beyond a limit you get 429 with rate_limited or daily_cap_reached and a Retry-After header. See the limits guide.`,
       ],
     },
     {
-      heading: "Coming in v1",
-      body: ["Webhooks, a C# SDK, and a hosted MCP server with read only mode. These are roadmap items and are not available yet."],
+      heading: "More guides",
+      body: [
+        "Each object has its own page of fields, starting at the resources guide. Webhooks, idempotency, the SDKs, limits, data retention and troubleshooting have their own guides. A C# SDK and a hosted MCP server with read only mode are roadmap items and are not available yet.",
+      ],
     },
     {
       heading: "Account export and deletion",

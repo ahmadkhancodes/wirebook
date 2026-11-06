@@ -45,3 +45,10 @@ https://tmsearch.uspto.gov/
 - Set `SYNC_WAIT_MS=90000` on Vercel Pro (default 55 s fits Hobby). Raise `maxDuration` in the `/v1/qbd` routes at the same time.
 - Retention check for legal: raw passthrough jobs keep the qbXML response on the request record so it can be returned to the caller; a purge of that body is M3 work. Dashboard request rows keep no other body.
 - Existing API keys have no `metadata.environment` and are treated as test keys. Create production keys under Settings, API keys.
+
+## M4 follow-ups (owner, before launch)
+- **Redeploy the Cloudflare cron worker** (`cd infra/cron-worker && npx wrangler deploy`). `webhook-retries` and `health-tick` are already in `JOBS`; without the worker, `vercel.json` retries failed webhooks once a day (Hobby allows 2 daily crons, both used by `webhook-retries` and `purge`). On Vercel Pro the schedule of `webhook-retries` in `vercel.json` can be changed to `*/5 * * * *`.
+- **CI workflow:** no change needed for M4. If CI should run the new SDK model check, it already runs under `npm test` (`tests/sdk-models.test.ts`). To run the Python SDK tests in CI add a step `cd packages/sdk-py && python3 -m unittest discover -s tests` to `.github/workflows/ci.yml` (not touched here).
+- **Run `npm run db:indexes`** again once MongoDB exists: nothing new is required, but the `org_settings` documents now also hold `suspended` and `suspendedKeys`.
+- **Review the privacy text** (`src/content/legal/privacy.ts`, DPA, security page): it now says payloads are kept for 14 days at most and request metadata 90 days, which is what the code does. Confirm with counsel.
+- **Pricing copy:** the plan highlights now state a daily API cap (Developer 5,000, Production and Starter Pack 250,000, Volume 1,000,000). Change the numbers in `product.abuse.dailyRequests` if you want different caps.

@@ -193,7 +193,7 @@ export async function updateObject(deps: V1Deps, req: Request, objectName: strin
   const d = def(objectName);
   if (!d.mod) throw apiError('not_supported');
   const input = await readBody(req);
-  const body = { ...input, listId: id };
+  const body = { ...input, [d.idList === 'txnIds' ? 'txnId' : 'listId']: id };
   validate(d.mod as Exclude<JobOp, 'raw'>, body);
   const endUser = await resolveEndUser(deps, auth, req);
   return submit(deps, req, {

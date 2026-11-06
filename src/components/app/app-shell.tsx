@@ -1,7 +1,7 @@
 "use client";
 import { hardNavigate } from "./api";
 import {
-  ClipboardText, CreditCard, Database, Gauge, Key, List, Plugs, ShieldCheck, SignOut, SquaresFour, User, UsersThree, WebhooksLogo, X,
+  ChartBar, ClipboardText, CreditCard, Database, Gauge, Key, List, Plugs, ShieldCheck, SignOut, SquaresFour, User, UsersThree, WebhooksLogo, X,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,6 +17,7 @@ interface NavItem { href: string; label: string; icon: IconType }
 const MAIN: NavItem[] = [
   { href: "/app", label: "Requests", icon: SquaresFour },
   { href: "/app/end-users", label: "End users", icon: Plugs },
+  { href: "/app/usage", label: "Usage", icon: ChartBar },
 ];
 const SETTINGS: NavItem[] = [
   { href: "/app/settings/profile", label: "Profile", icon: User },

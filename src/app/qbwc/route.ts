@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/billing/stripe";
 import { onFileSynced } from "@/lib/billing/metering";
 import { getDb } from "@/lib/db";
 import { handleSoap, wsdl } from "@/lib/qbwc";
+import { checkFilesThreshold, webhookSink } from "@/lib/webhooks/events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,8 @@ export async function POST(req: Request) {
   const xml = await req.text();
   if (xml.length > 5_000_000) return new Response("payload too large", { status: 413 });
   const bridge = await getBridge();
-  const r = await handleSoap(xml, { ...bridge, onSuccess: async (u, at) => onFileSynced(await getDb(), getStripe(), u.projectId, u.id, at), holdMs: Number(process.env.QBWC_HOLD_MS) || 0 });
+  const db = await getDb();
+  const r = await handleSoap(xml, { ...bridge, onEvent: webhookSink(db), onSuccess: async (u, at) => { await onFileSynced(db, getStripe(), u.projectId, u.id, at); await checkFilesThreshold(db, u.projectId, { now: at }); }, holdMs: Number(process.env.QBWC_HOLD_MS) || 0 });
   return new Response(r.body, { status: r.status, headers: { ...r.headers, "cache-control": "no-store" } });
 }
 
