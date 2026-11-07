@@ -9,11 +9,11 @@ export const BASE = 'https://wirebook.test';
 export const SECRET = 'test-secret';
 
 /** Everything runs in process: memory bridge, a fake clock, and the Web Connector simulator standing in for QuickBooks. No network. */
-export function harness(opts: { waitMs?: number; onSuccess?: (u: EndUser, at: Date) => Promise<void>; onEvent?: BridgeDeps['onEvent'] } = {}) {
+export function harness(opts: { waitMs?: number; onSuccess?: (u: EndUser, at: Date) => Promise<void>; onEvent?: BridgeDeps['onEvent']; admit?: BridgeDeps['admit'] } = {}) {
   const bridge: Bridge = createMemoryBridge();
   const clock = { now: new Date() };
   const sims = new Map<string, QbwcSimulator>();
-  const post = (xml: string) => handleSoap(xml, { ...bridge, now: () => clock.now, ...(opts.onSuccess ? { onSuccess: opts.onSuccess } : {}), ...(opts.onEvent ? { onEvent: opts.onEvent } : {}) });
+  const post = (xml: string) => handleSoap(xml, { ...bridge, now: () => clock.now, ...(opts.onSuccess ? { onSuccess: opts.onSuccess } : {}), ...(opts.onEvent ? { onEvent: opts.onEvent } : {}), ...(opts.admit ? { admit: opts.admit } : {}) });
 
   const deps: V1Deps & { secret: string } = {
     bridge, baseUrl: BASE, secret: SECRET, now: () => clock.now, waitMs: opts.waitMs ?? 5000,

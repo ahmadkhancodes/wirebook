@@ -11,7 +11,7 @@ declare global {
 
 export function mongoClient(uri: string): Promise<MongoClient> {
   if (globalThis.__kitMongo?.uri === uri) return globalThis.__kitMongo.client;
-  const client = new MongoClient(uri, { maxPoolSize: 10, serverSelectionTimeoutMS: 8000, appName: "buffersol-kit" }).connect();
+  const client = new MongoClient(uri, { maxPoolSize: 10, serverSelectionTimeoutMS: 5000, connectTimeoutMS: 5000, socketTimeoutMS: 20_000, appName: "buffersol-kit" }).connect();
   globalThis.__kitMongo = { uri, client };
   client.catch(() => {
     if (globalThis.__kitMongo?.client === client) globalThis.__kitMongo = undefined;

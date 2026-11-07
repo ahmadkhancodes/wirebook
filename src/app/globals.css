@@ -46,6 +46,7 @@
   --warning: #7a5200;
   --warning-surface: #fff3d6;
   --danger: #b3261e; /* redpencil */
+  --danger-text: #ffffff;
   --danger-surface: #fbe9e7;
   --highlight: #fff1a8;
     --shadow-color: 150 25% 10%;
@@ -72,6 +73,7 @@
   --warning: #f2c14e;
   --warning-surface: #2a2210;
   --danger: #ff8a80;
+  --danger-text: #2a1614; /* 7.5:1 on the dark danger fill; white was 2.3:1 */
   --danger-surface: #2a1614;
   --highlight: #3b3a14;
     --shadow-color: 0 0% 0%;
@@ -108,6 +110,7 @@
   --color-warning: var(--warning);
   --color-warning-surface: var(--warning-surface);
   --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
   --color-danger-surface: var(--danger-surface);
 
   /* Spacing restricted to the playbook scale: 0 2 4 8 12 16 24 32 40 48 64 80 96 (+ layout widths). */
@@ -194,7 +197,7 @@
 @media (prefers-reduced-motion: reduce) {
   .kit-reveal { transform: none; transition: opacity 300ms var(--ease-out-kit); }
   .kit-word { opacity: 1; transition: none; }
-  *, *::before, *::after { animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
 /* ---- Ledger signature: tabular mono figures, perforated gutter, double rule footing, ticks. ---- */

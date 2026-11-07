@@ -5,7 +5,8 @@ import { defaultStatements, adminAc, ownerAc } from "better-auth/plugins/organiz
 export const statements = {
   ...defaultStatements,
   billing: ["read", "manage"],
-  apiKey: ["read", "manage"],
+  // create/update/delete are what Better Auth's api-key plugin checks; "manage" is what our UI guards check
+  apiKey: ["read", "manage", "create", "update", "delete"],
   webhook: ["read", "manage"],
   audit: ["read"],
   data: ["read", "write"],
@@ -16,7 +17,7 @@ export const ac = createAccessControl(statements);
 export const owner = ac.newRole({
   ...ownerAc.statements,
   billing: ["read", "manage"],
-  apiKey: ["read", "manage"],
+  apiKey: ["read", "manage", "create", "update", "delete"],
   webhook: ["read", "manage"],
   audit: ["read"],
   data: ["read", "write"],
@@ -25,7 +26,7 @@ export const owner = ac.newRole({
 export const admin = ac.newRole({
   ...adminAc.statements,
   billing: ["read"],
-  apiKey: ["read", "manage"],
+  apiKey: ["read", "manage", "create", "update", "delete"],
   webhook: ["read", "manage"],
   audit: ["read"],
   data: ["read", "write"],

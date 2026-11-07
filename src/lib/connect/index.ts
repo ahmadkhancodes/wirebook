@@ -88,7 +88,7 @@ export async function createConnectLink(deps: V1Deps & { secret: string }, req: 
     const now = (deps.now ?? (() => new Date()))();
     let user = await deps.bridge.users.getByExternalId(projectId, input.externalId);
     if (user?.firstSyncAt && user.status !== 'broken' && user.status !== 'asleep') throw apiError('already_connected');
-    await deps.checkFile?.(auth, user?.id ?? null);
+    await deps.checkFile?.(auth, user ?? null);
     if (!user) {
       const id = newId('end');
       user = {

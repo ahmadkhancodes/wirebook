@@ -20,9 +20,28 @@ export interface BridgeDeps {
   onSuccess?: (user: EndUser, at: Date) => Promise<void>;
   /** Outbound events (webhooks): request completed, company file connected or broken. Must not throw into the SOAP reply. */
   onEvent?: (e: BridgeEvent) => Promise<void>;
+  /**
+   * Plan gate, asked when the Web Connector asks for work. Return an error to refuse this file's queued requests
+   * (they fail with it, nothing reaches QuickBooks). Errors thrown here fail open so billing never stalls a sync.
+   */
+  admit?: (user: EndUser) => Promise<QbError | null>;
   /** session lifetime */
   sessionTtlMs?: number;
+  /** a request sent this long ago without an answer is given up as outcome_unknown, so the file's queue moves on */
+  sentTimeoutMs?: number;
 }
+
+/** 15 minutes: far beyond any Web Connector exchange; after that the session that took the request is gone. */
+export const SENT_TIMEOUT_MS = 15 * 60_000;
+
+/** QuickBooks sample company files are installed as sample_<kind>.qbw (in "Sample Company Files"). They are free. */
+export function isSampleCompanyFile(path: string): boolean {
+  const base = path.split(/[\\/]/).pop() ?? '';
+  return /^sample_.*\.qbw$/i.test(base.trim());
+}
+
+/** Reads change nothing in QuickBooks; everything else may have been applied when we lose sight of it. */
+const isRead = (job: Job) => job.op !== 'raw' && job.op.endsWith('.query');
 
 export type BridgeEvent =
   | { type: 'request.completed'; job: Job; user: EndUser; at: Date }
@@ -94,12 +113,29 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       const version = negotiateVersion(args.qbXMLMajorVers ?? '', args.qbXMLMinorVers ?? '0');
       await deps.sessions.update(s.ticket, { qbxmlVersion: version });
       // Connect flow step 3: the Web Connector reached QuickBooks and the app is authorised
-      const who = await deps.users.get(s.endUserId);
-      if (who && !who.firstSessionAt) await deps.users.update(who.id, { firstSessionAt: now() });
+      let who = await deps.users.get(s.endUserId);
+      const file = (args.strCompanyFileName ?? '').trim();
+      if (who) {
+        const patch: Partial<EndUser> = {
+          ...(!who.firstSessionAt ? { firstSessionAt: now() } : {}),
+          ...(file && file !== who.companyFile ? { companyFile: file, sampleFile: isSampleCompanyFile(file) } : {}),
+        };
+        if (Object.keys(patch).length) { await deps.users.update(who.id, patch); who = { ...who, ...patch }; }
+      }
+      // a request whose session died after the send blocks the file's serial queue: give it up as outcome_unknown
+      const stuck = await deps.queue.inFlight(s.endUserId);
+      if (stuck?.sentAt && now().getTime() - stuck.sentAt.getTime() > (deps.sentTimeoutMs ?? SENT_TIMEOUT_MS)) {
+        await finish(stuck, { state: 'outcome_unknown', error: errorFor('outcome_unknown') }, now());
+      }
+      const refusal = who && deps.admit ? await deps.admit(who).catch(() => null) : null;
       const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
       const deadline = now().getTime() + (deps.holdMs ?? 0);
       for (;;) {
         const job = await deps.queue.claim(s.endUserId, now());
+        if (job && refusal) {
+          await finish(job, { state: 'failed', error: refusal }, now());
+          continue; // nothing reaches QuickBooks for a refused file
+        }
         if (job) {
           try {
             if (job.op === 'raw') return ok(simpleResponse(op, String((job.body as { qbxml?: string }).qbxml ?? '')));
@@ -130,6 +166,10 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       if (job) {
         try {
           const r = parseResponse(args.response ?? '');
+          // An answer to another request (a late reply from a dead session) must never complete this one.
+          if (job.op !== 'raw' && r.requestId !== null && String(r.requestId) !== job.id) {
+            return ok(simpleResponse(op, (await deps.queue.queuedCount(s.endUserId)) > 0 ? '50' : '100'));
+          }
           const err = fromStatusCode(r.statusCode, r.message);
           const extra = {
             ...(job.op === 'raw' ? { rawResponse: args.response ?? '' } : {}),
@@ -159,7 +199,8 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       if (!s) return ok(simpleResponse(op, 'done'));
       const err = fromHresult(args.hresult ?? '');
       const job = await deps.queue.inFlight(s.endUserId);
-      if (job) await finish(job, { state: 'failed', error: err }, now());
+      // a write still in flight from an earlier session may have reached QuickBooks: never report it as failed
+      if (job) await finish(job, isRead(job) ? { state: 'failed', error: err } : { state: 'outcome_unknown', error: errorFor('outcome_unknown') }, now());
       const lastError = `${args.hresult ?? ''} ${args.message ?? ''}`.trim();
       const who = await deps.users.get(s.endUserId);
       await deps.users.update(s.endUserId, { status: 'broken', lastError });

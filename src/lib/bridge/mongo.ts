@@ -2,7 +2,7 @@ import type { Collection, Document } from 'mongodb';
 import { mongoClient } from '@/lib/db/mongo';
 import { uuidv7 } from '@/lib/ids';
 import type { EndUser, EndUserRepo, HealthEvent, HealthLog, Job, JobQueue, ListFilter, Session, SessionStore } from '@/lib/qbwc';
-import type { Bridge, ConnectLink, ConnectLinkStore, IdempotencyRecord, IdempotencyStore } from './store';
+import { newRequestId, type Bridge, type ConnectLink, type ConnectLinkStore, type IdempotencyRecord, type IdempotencyStore } from './store';
 
 /** Mongo drivers for the bridge. Collections: requests, endUsers, qbwcSessions, idempotencyKeys, connectLinks. Indexes: ensureBridgeIndexes. */
 type Doc<T> = Omit<T, 'id'> & { _id: string };
@@ -20,7 +20,7 @@ class MongoQueue implements JobQueue {
   constructor(private cols: Cols) {}
   private c() { return this.cols<Doc<Job>>('requests'); }
   async enqueue(j: Parameters<JobQueue['enqueue']>[0]) {
-    const doc = { _id: `req_${uuidv7().replace(/-/g, '')}`, endUserId: j.endUserId, op: j.op, body: j.body, state: 'queued' as const, createdAt: new Date(), ...clean({ iterator: j.iterator, meta: j.meta }) } as Doc<Job>;
+    const doc = { _id: j.id ?? newRequestId(), endUserId: j.endUserId, op: j.op, body: j.body, state: 'queued' as const, createdAt: new Date(), ...clean({ iterator: j.iterator, meta: j.meta }) } as Doc<Job>;
     await (await this.c()).insertOne(doc as never);
     return fromDoc<Job>(doc)!;
   }

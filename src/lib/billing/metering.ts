@@ -7,8 +7,8 @@ import { periodOf } from "./usage";
 
 /**
  * Billing metering: the meter is ACTIVE COMPANY FILES. A production file is active in a period once a request
- * synced successfully for it in that period (calendar month, UTC). Sample/test-environment files are free and
- * never counted. Money is integer US cents, computed from product.ts only.
+ * synced successfully for it in that period (calendar month, UTC). QuickBooks sample company files are free and
+ * never counted, in either environment (isBillableFile). Money is integer US cents, computed from product.ts only.
  */
 
 /** Project ids are `${orgId}__${environment}` (see v1 engine projectIdOf). */
@@ -81,20 +81,39 @@ export function fileAllowance(planId: PlanId): number {
   return planId === "free" ? product.billing.developerFiles : Number.POSITIVE_INFINITY;
 }
 
-/** Count a successful sync. Returns true if this file became active for the period (and so changed the quantity). */
-export async function recordActiveFile(db: Db, projectId: string, endUserId: string, now = new Date()): Promise<boolean> {
+/**
+ * Is this company file billable? QuickBooks sample company files are free in both environments; any other file is
+ * metered, whatever the key's environment (a test key on a real company file is not free). Before the Web Connector
+ * has told us the file name, the environment decides.
+ */
+export function isBillableFile(u: { projectId: string; sampleFile?: boolean }): boolean {
+  if (u.sampleFile !== undefined) return !u.sampleFile;
+  return splitProjectId(u.projectId).environment === "production";
+}
+
+/**
+ * Count a successful sync. Returns true if this file became active for the period (and so changed the quantity).
+ * `billable` defaults to the environment rule; pass isBillableFile(user) when the end user is known.
+ * On a capped plan a file over the allowance is not recorded (the admission gate refuses its next requests).
+ */
+export async function recordActiveFile(db: Db, projectId: string, endUserId: string, now = new Date(), billable?: boolean): Promise<boolean> {
   const { orgId, environment } = splitProjectId(projectId);
-  if (environment !== "production") return false; // sample files are free
+  if (!(billable ?? environment === "production")) return false; // sample files are free
   const period = periodOf(now);
+  const allowance = fileAllowance(effectivePlan(await db.getEntitlement(orgId), now.getTime()).id);
+  if (allowance !== Number.POSITIVE_INFINITY) {
+    const active = await db.listActiveFiles(orgId, period);
+    if (active.includes(endUserId) || active.length >= allowance) return false;
+  }
   const added = await db.markActiveFile(orgId, period, endUserId, now);
   if (added) await db.incUsage(orgId, "files", period, 1);
   return added;
 }
 
 /** True when this org may put one more production file into use this period. Throws nothing: the caller maps it to the 402 error. */
-export async function canActivateFile(db: Db, projectId: string, endUserId: string | null, now = new Date()): Promise<boolean> {
+export async function canActivateFile(db: Db, projectId: string, endUserId: string | null, now = new Date(), billable?: boolean): Promise<boolean> {
   const { orgId, environment } = splitProjectId(projectId);
-  if (environment !== "production") return true;
+  if (!(billable ?? environment === "production")) return true;
   const plan = effectivePlan(await db.getEntitlement(orgId), now.getTime());
   const allowance = fileAllowance(plan.id);
   if (allowance === Number.POSITIVE_INFINITY) return true;
@@ -149,9 +168,9 @@ export async function syncStripeQuantity(stripe: MeterStripe, db: Db, orgId: str
 }
 
 /** Hook for the /qbwc route: count the file, and when the quantity changed, tell Stripe. Never throws (the SOAP reply must not fail on billing). */
-export async function onFileSynced(db: Db, stripe: MeterStripe | null, projectId: string, endUserId: string, now = new Date()): Promise<void> {
+export async function onFileSynced(db: Db, stripe: MeterStripe | null, projectId: string, endUserId: string, now = new Date(), billable?: boolean): Promise<void> {
   try {
-    if (!(await recordActiveFile(db, projectId, endUserId, now))) return;
+    if (!(await recordActiveFile(db, projectId, endUserId, now, billable))) return;
     if (stripe) await syncStripeQuantity(stripe, db, splitProjectId(projectId).orgId, now);
   } catch (e) {
     log.error("metering_failed", { message: (e as Error).message });

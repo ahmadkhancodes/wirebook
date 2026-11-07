@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { XMLValidator, XMLParser } from 'fast-xml-parser';
 import type { Bridge } from '@/lib/bridge';
-import { IDEMPOTENCY_TTL_MS } from '@/lib/bridge';
+import { IDEMPOTENCY_TTL_MS, newRequestId } from '@/lib/bridge';
 import { errorFor } from '@/lib/errors/catalogue';
 import { b64url, fromB64url, sha256 } from '@/lib/ids';
 import { buildRequest, parseResponse, QbxmlValidationError } from '@/lib/qbxml';
@@ -16,8 +16,8 @@ export interface V1Deps {
   bridge: Bridge;
   /** Verifies the API key. Throws ApiError (missing_api_key, invalid_api_key, rate_limited). */
   authenticate(req: Request): Promise<V1Auth>;
-  /** Plan gate: may this production file be used this month? Throws ApiError file_limit_reached. `endUserId` is null for a file that does not exist yet. */
-  checkFile?(auth: V1Auth, endUserId: string | null): Promise<void>;
+  /** Plan gate: may this billable file be used this month? Throws ApiError file_limit_reached. `endUser` is null for a file that does not exist yet. The bridge's admit hook enforces it again when the Web Connector asks for work. */
+  checkFile?(auth: V1Auth, endUser: EndUser | null): Promise<void>;
   /** public origin, no trailing slash; used for guide links, Location and connect URLs */
   baseUrl: string;
   now?: () => Date;
@@ -126,33 +126,40 @@ const failure = (deps: V1Deps, job: Job): Response =>
 async function submit(deps: V1Deps, req: Request, s: Submit): Promise<Response> {
   const projectId = projectIdOf(s.auth);
   const now = nowOf(deps);
-  await deps.checkFile?.(s.auth, s.endUser.id);
+  await deps.checkFile?.(s.auth, s.endUser);
   const key = s.idempotencyKey ?? undefined;
   if (key !== undefined && (key.length < 1 || key.length > 255 || !/^[\x20-\x7e]+$/.test(key))) throw apiError('invalid_request', { path: 'Idempotency-Key' }, { message: 'Idempotency-Key: must be 1 to 255 printable characters' });
   const bodyHash = await sha256(s.hashSource);
-  let job: Job | null = null;
+  let job: Job;
   let replay = false;
 
+  const spec = { endUserId: s.endUser.id, op: s.op, body: s.body, ...(s.iterator ? { iterator: s.iterator } : {}), meta: { projectId, method: s.method, path: s.path, objectType: s.objectType, ...(key ? { idempotencyKey: key } : {}) } };
+  /** Enqueue under a reserved id; if another request with the same key got there first, use its job (same key, same body). */
+  const enqueueAs = async (id: string): Promise<Job> => {
+    try {
+      return await deps.bridge.queue.enqueue({ id, ...spec });
+    } catch (e) {
+      const won = await deps.bridge.queue.get(id);
+      if (won) return won;
+      throw e;
+    }
+  };
+
   if (key) {
-    const existing = await deps.bridge.idempotency.get(projectId, key, now);
-    if (existing) {
-      if (existing.bodyHash !== bodyHash) throw apiError('idempotency_conflict');
-      job = await deps.bridge.queue.get(existing.requestId);
-      replay = !!job;
+    // Reserve the key BEFORE anything is queued: a concurrent retry can then never queue a second write.
+    const id = newRequestId();
+    const prior = (await deps.bridge.idempotency.get(projectId, key, now))
+      ?? (await deps.bridge.idempotency.put({ projectId, key, bodyHash, requestId: id, createdAt: now, expiresAt: new Date(now.getTime() + IDEMPOTENCY_TTL_MS) }));
+    if (prior) {
+      if (prior.bodyHash !== bodyHash) throw apiError('idempotency_conflict');
+      // the first request may still be between reserving and queueing: queueing under its id is safe either way
+      job = (await deps.bridge.queue.get(prior.requestId)) ?? (await enqueueAs(prior.requestId));
+      replay = true;
+    } else {
+      job = await enqueueAs(id);
     }
-  }
-  if (!job) {
-    job = await deps.bridge.queue.enqueue({ endUserId: s.endUser.id, op: s.op, body: s.body, ...(s.iterator ? { iterator: s.iterator } : {}), meta: { projectId, method: s.method, path: s.path, objectType: s.objectType, ...(key ? { idempotencyKey: key } : {}) } });
-    if (key) {
-      const clash = await deps.bridge.idempotency.put({ projectId, key, bodyHash, requestId: job.id, createdAt: now, expiresAt: new Date(now.getTime() + IDEMPOTENCY_TTL_MS) });
-      if (clash) {
-        // a concurrent request with the same key won the race: cancel ours, answer with theirs
-        await deps.bridge.queue.complete(job.id, { state: 'failed', error: errorFor('idempotency_conflict') }, now);
-        if (clash.bodyHash !== bodyHash) throw apiError('idempotency_conflict');
-        job = (await deps.bridge.queue.get(clash.requestId)) ?? job;
-        replay = true;
-      }
-    }
+  } else {
+    job = await deps.bridge.queue.enqueue(spec);
   }
 
   const async = /respond-async/i.test(req.headers.get('prefer') ?? '');

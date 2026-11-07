@@ -18,7 +18,7 @@ export function FilesPanel({ s }: { s: Summary }) {
     ...(free ? [] : [[s.planId === "production" ? "Billed files" : "Files billed on top", fmt(s.planId === "volume" ? s.billableFiles : s.extra)] as [string, string]]),
   ];
   return (
-    <Panel title={`Active company files, ${monthName(s.period)}`} description="A file counts once a request has succeeded for it this month. Sample and test files are free and never counted.">
+    <Panel title={`Active company files, ${monthName(s.period)}`} description="A file counts once a request has succeeded for it this month. QuickBooks sample company files are free and never counted, with test or production keys.">
       <div className="grid gap-6 lg:grid-cols-2">
         <dl className="flex flex-col gap-3">
           {rows.map(([k, v]) => (

@@ -12,7 +12,7 @@ const variants: Record<Variant, string> = {
   primary: "bg-action text-action-text hover:bg-action-hover",
   secondary: "border border-border-strong bg-surface text-text hover:bg-surface-raised",
   tertiary: "text-text-subtle hover:text-text hover:bg-surface-raised",
-  danger: "bg-danger text-white hover:opacity-90",
+  danger: "bg-danger text-danger-text hover:opacity-90",
 };
 const sizes: Record<Size, string> = {
   sm: "button-sm min-h-8 px-3 py-1",

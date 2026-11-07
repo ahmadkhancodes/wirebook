@@ -1,5 +1,5 @@
 import { product } from "@/config/product";
-import { appUrl, env } from "@/lib/env";
+import { appUrl, env, secretOr } from "@/lib/env";
 import { getDb } from "@/lib/db";
 import { hmacSha256Hex } from "@/lib/ids";
 import { consoleTransport, resendTransport, smtpTransport } from "./transports";
@@ -15,7 +15,7 @@ export function transportFromEnv(): MailTransport {
   return consoleTransport();
 }
 
-const unsubSecret = () => env().BETTER_AUTH_SECRET ?? "dev-unsubscribe-secret";
+const unsubSecret = () => secretOr(env().BETTER_AUTH_SECRET, "dev-unsubscribe-secret", "BETTER_AUTH_SECRET");
 
 /** Signed one-click unsubscribe token (RFC 8058). */
 export async function unsubscribeToken(email: string, scope: string) {

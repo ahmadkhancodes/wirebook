@@ -35,6 +35,13 @@ export const appUrl = (e: Env = env()) =>
   (e.NEXT_PUBLIC_APP_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000")).replace(/\/$/, "");
 export const isProd = () => process.env.NODE_ENV === "production";
 
+/** A secret with a development fallback. In production a missing secret is a hard error: the fallback is public in the repo. */
+export function secretOr(value: string | undefined, devFallback: string, name: string): string {
+  if (value) return value;
+  if (isProd()) throw new Error(`${name} is not set`);
+  return devFallback;
+}
+
 /** DB driver: explicit DB_DRIVER, else mongo when MONGODB_URI is set, else memory (stub mode). */
 export const dbDriver = (e: Env = env()) => e.DB_DRIVER ?? (e.MONGODB_URI ? "mongo" : "memory");
 

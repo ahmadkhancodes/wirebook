@@ -45,7 +45,7 @@ export const api: DocPage = {
     {
       heading: "Request lifecycle",
       body: [
-        "Every request to a company file has one of five states: queued, sent, succeeded, failed or outcome_unknown. A request is queued until QuickBooks next polls. If a write times out after it was sent, it becomes outcome_unknown, and we reconcile by RefNumber before you retry.",
+        "Every request to a company file has one of five states: queued, sent, succeeded, failed or outcome_unknown. A request is queued until QuickBooks next polls. If a write times out after it was sent, it becomes outcome_unknown and is never retried for you. Look it up by RefNumber before you send it again.",
         "Only one request is in flight per company file at a time. The rest wait in order.",
       ],
     },

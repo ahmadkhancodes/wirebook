@@ -52,3 +52,11 @@ https://tmsearch.uspto.gov/
 - **Run `npm run db:indexes`** again once MongoDB exists: nothing new is required, but the `org_settings` documents now also hold `suspended` and `suspendedKeys`.
 - **Review the privacy text** (`src/content/legal/privacy.ts`, DPA, security page): it now says payloads are kept for 14 days at most and request metadata 90 days, which is what the code does. Confirm with counsel.
 - **Pricing copy:** the plan highlights now state a daily API cap (Developer 5,000, Production and Starter Pack 250,000, Volume 1,000,000). Change the numbers in `product.abuse.dailyRequests` if you want different caps.
+
+## M5 pre-launch review (owner, before launch; details in docs/REVIEW.md)
+- **Launch blocker: legal placeholders.** Fill `product.legal.jurisdiction` and `product.legal.address` in `src/config/product.ts`, plus `{{refund policy}}` and `{{cap}}` in `src/content/legal/terms.ts`. Today they render on the public Terms page.
+- **Required production env vars on Vercel** (the app refuses to run without the first one): `BETTER_AUTH_SECRET` (32+ random chars; rotating it breaks every Web Connector password), `CRON_SECRET`, `MONGODB_URI`, `MONGODB_DB=wirebook`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`, `ADMIN_EMAILS`, `NEXT_PUBLIC_APP_URL`. Optional: `ALTCHA_HMAC_KEY`, `SYNC_WAIT_MS`, `QBWC_HOLD_MS`.
+- **On the real QuickBooks machine (item 6):** confirm the sample company file names (`sample_product-based business.qbw`, `sample_service-based business.qbw`, and so on) as the Web Connector reports them in `strCompanyFileName`. Only `sample_*.qbw` files are free (DECISIONS M5).
+- **Deploy the Cloudflare cron worker:** `health-tick` now also unblocks requests stuck in `sent`. Without the worker this happens only when the file polls again.
+- **Uptime check:** point it at `/api/health`, which now returns 503 when Mongo is down.
+- **Decide the SDK package names** (`@wirebook/sdk` and `wirebook` in code, against `@buffersol/wirebook` in item 5) before publishing.

@@ -1,3 +1,4 @@
+import { uuidv7 } from '@/lib/ids';
 import { MemoryEndUsers, MemoryHealthLog, MemoryQueue, MemorySessions, type EndUserRepo, type HealthLog, type JobQueue, type SessionStore } from '@/lib/qbwc';
 
 export interface IdempotencyRecord {
@@ -9,6 +10,8 @@ export interface IdempotencyRecord {
   /** 7 days after creation; a Date so the Mongo TTL index works */
   expiresAt: Date;
 }
+/** Request ids: time ordered (uuidv7), so the log sorts by id too. */
+export const newRequestId = () => `req_${uuidv7().replace(/-/g, '')}`;
 export const IDEMPOTENCY_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface IdempotencyStore {

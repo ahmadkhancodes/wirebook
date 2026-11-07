@@ -62,8 +62,8 @@ describe('active file counting and the plan gate', () => {
   it('REST: the 4th production file gets 402 file_limit_reached with a guide', async () => {
     const db = createMemoryDb('wirebook');
     const h = harness({ onSuccess: async (u, at) => { await onFileSynced(db, null, u.projectId, u.id, at); } });
-    h.deps.checkFile = async (auth, id) => {
-      if (!(await canActivateFile(db, `${auth.orgId}__${auth.environment}`, id, h.clock.now))) throw (await import('../../src/lib/v1/errors')).apiError('file_limit_reached');
+    h.deps.checkFile = async (auth, u) => {
+      if (!(await canActivateFile(db, `${auth.orgId}__${auth.environment}`, u?.id ?? null, h.clock.now))) throw (await import('../../src/lib/v1/errors')).apiError('file_limit_reached');
     };
     for (const id of ['end_a', 'end_b', 'end_c', 'end_d']) await h.addUser(id, { projectId: 'org_1__production' });
     for (const id of ['end_a', 'end_b', 'end_c']) expect((await h.call('GET', '/v1/qbd/customers', { auth: h.key('production'), user: id })).status).toBe(200); // an empty file answers status 1, which is a 200 with no rows

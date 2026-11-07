@@ -1,6 +1,7 @@
 import { emitEvent } from "@/lib/webhooks/outbound";
 import { handleStripeWebhook } from "@/lib/billing/webhook";
 import { getStripe } from "@/lib/billing/stripe";
+import { syncStripeQuantity } from "@/lib/billing/metering";
 import { getDb } from "@/lib/db";
 import { env } from "@/lib/env";
 import { json } from "@/lib/http";
@@ -21,6 +22,8 @@ export async function POST(req: Request) {
       db,
       secret,
       onChange: async (orgId, type) => {
+        // files already active this month must be billed from the moment a plan starts or changes (no-op when Stripe already matches)
+        await syncStripeQuantity(stripe, db, orgId).catch((e) => log.error("quantity_sync_failed", { message: (e as Error).message }));
         const ent = await db.getEntitlement(orgId);
         await emitEvent(orgId, "billing.updated", { stripeEvent: type, plan: ent?.plan, status: ent?.status }, { db }).catch(() => []);
       },
