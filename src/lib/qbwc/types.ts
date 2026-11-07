@@ -53,7 +53,8 @@ export interface Job {
 
 /** Per company file serial queue. Mongo implementation in M2; Valkey/BullMQ on the VPS later. */
 export interface JobQueue {
-  enqueue(job: { endUserId: string; op: JobOp; body: unknown; iterator?: JobIterator; meta?: JobMeta }): Promise<Job>;
+  /** `id` lets a caller reserve the request id first (idempotency); enqueueing an id that exists throws. */
+  enqueue(job: { id?: string; endUserId: string; op: JobOp; body: unknown; iterator?: JobIterator; meta?: JobMeta }): Promise<Job>;
   /** Atomically move the oldest queued job of this end user to sent. Returns null if none, or one is already in flight. */
   claim(endUserId: string, now: Date): Promise<Job | null>;
   inFlight(endUserId: string): Promise<Job | null>;
@@ -96,6 +97,10 @@ export interface EndUser {
   firstSyncAt?: Date;
   /** Set when the Broken email for the current incident went out; cleared on recovery (one email per incident). */
   brokenNotifiedAt?: Date;
+  /** Full path of the company file the Web Connector last opened (sendRequestXML strCompanyFileName). */
+  companyFile?: string;
+  /** True when that file is a QuickBooks sample company file (free, never billed). Unknown until the first sendRequestXML. */
+  sampleFile?: boolean;
 }
 
 export type HealthStatus = EndUser['status'];

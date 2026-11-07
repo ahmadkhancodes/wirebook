@@ -5,8 +5,14 @@ import type { EndUser, EndUserRepo, HealthEvent, HealthLog, Job, JobQueue, ListF
 export class MemoryQueue implements JobQueue {
   private jobs = new Map<string, Job>();
   private seq = 0;
+  /** insertion order: ids given by the caller do not sort like the generated ones */
+  private order = new Map<string, number>();
+  private ord = (id: string) => this.order.get(id) ?? 0;
   async enqueue(j: Parameters<JobQueue['enqueue']>[0]): Promise<Job> {
-    const id = `req_${String(++this.seq).padStart(6, '0')}`;
+    const n = ++this.seq;
+    const id = j.id ?? `req_${String(n).padStart(6, '0')}`;
+    if (this.jobs.has(id)) throw new Error(`duplicate job ${id}`);
+    this.order.set(id, n);
     const job: Job = { id, endUserId: j.endUserId, op: j.op, body: j.body, state: 'queued', createdAt: new Date(), ...(j.iterator ? { iterator: j.iterator } : {}), ...(j.meta ? { meta: j.meta } : {}) };
     this.jobs.set(id, job);
     return { ...job };
@@ -19,7 +25,7 @@ export class MemoryQueue implements JobQueue {
   /** The check and the state change must not be separated by an await (atomic). The Mongo driver enforces the same with a unique partial index on (endUserId) where state = 'sent'. */
   async claim(endUserId: string, now: Date) {
     if (this.inFlightSync(endUserId)) return null;
-    const next = [...this.jobs.values()].filter((j) => j.endUserId === endUserId && j.state === 'queued').sort((a, b) => a.id.localeCompare(b.id))[0];
+    const next = [...this.jobs.values()].filter((j) => j.endUserId === endUserId && j.state === 'queued').sort((a, b) => this.ord(a.id) - this.ord(b.id))[0];
     if (!next) return null;
     next.state = 'sent';
     next.sentAt = now;
@@ -42,8 +48,8 @@ export class MemoryQueue implements JobQueue {
       .filter((j) => !f.state || j.state === f.state)
       .filter((j) => !f.objectType || j.meta?.objectType === f.objectType)
       .filter((j) => !f.id || j.id === f.id)
-      .filter((j) => !f.before || j.id < f.before.id)
-      .sort((a, b) => b.id.localeCompare(a.id))
+      .filter((j) => !f.before || this.ord(j.id) < this.ord(f.before.id))
+      .sort((a, b) => this.ord(b.id) - this.ord(a.id))
       .slice(0, f.limit)
       .map((j) => ({ ...j }));
   }
@@ -67,7 +73,7 @@ export class MemoryQueue implements JobQueue {
     return n;
   }
   async listForUser(endUserId: string, limit: number) {
-    return [...this.jobs.values()].filter((j) => j.endUserId === endUserId).sort((a, b) => b.id.localeCompare(a.id)).slice(0, limit).map((j) => ({ ...j }));
+    return [...this.jobs.values()].filter((j) => j.endUserId === endUserId).sort((a, b) => this.ord(b.id) - this.ord(a.id)).slice(0, limit).map((j) => ({ ...j }));
   }
   async expireSent(olderThanMs: number, now: Date) {
     const out: Job[] = [];

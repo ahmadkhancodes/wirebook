@@ -1,7 +1,8 @@
 import { getBridge } from "@/lib/bridge";
 import { appUrl } from "@/lib/env";
 import { getStripe } from "@/lib/billing/stripe";
-import { onFileSynced } from "@/lib/billing/metering";
+import { canActivateFile, isBillableFile, onFileSynced } from "@/lib/billing/metering";
+import { errorFor } from "@/lib/errors/catalogue";
 import { getDb } from "@/lib/db";
 import { handleSoap, wsdl } from "@/lib/qbwc";
 import { checkFilesThreshold, webhookSink } from "@/lib/webhooks/events";
@@ -16,7 +17,14 @@ export async function POST(req: Request) {
   if (xml.length > 5_000_000) return new Response("payload too large", { status: 413 });
   const bridge = await getBridge();
   const db = await getDb();
-  const r = await handleSoap(xml, { ...bridge, onEvent: webhookSink(db), onSuccess: async (u, at) => { await onFileSynced(db, getStripe(), u.projectId, u.id, at); await checkFilesThreshold(db, u.projectId, { now: at }); }, holdMs: Number(process.env.QBWC_HOLD_MS) || 0 });
+  const r = await handleSoap(xml, {
+    ...bridge,
+    onEvent: webhookSink(db),
+    // plan gate when the Web Connector asks for work: the Developer cap holds even for files whose requests were queued before the cap was reached
+    admit: async (u) => ((await canActivateFile(db, u.projectId, u.id, new Date(), isBillableFile(u))) ? null : errorFor("file_limit_reached")),
+    onSuccess: async (u, at) => { await onFileSynced(db, getStripe(), u.projectId, u.id, at, isBillableFile(u)); await checkFilesThreshold(db, u.projectId, { now: at }); },
+    holdMs: Number(process.env.QBWC_HOLD_MS) || 0,
+  });
   return new Response(r.body, { status: r.status, headers: { ...r.headers, "cache-control": "no-store" } });
 }
 

@@ -61,6 +61,8 @@ export async function attemptDelivery(
   let code: number | null = null;
   let error: string | null = null;
   try {
+    // the URL was checked when saved, but a public name can resolve to a private address: check what it resolves to now
+    if (!opts.fetchFn && !(await resolvesPublic(ep.url))) throw Object.assign(new Error("blocked"), { name: "BlockedAddress" });
     const ctrl = AbortSignal.timeout(10_000);
     const res = await fetchFn(ep.url, {
       method: "POST",
@@ -78,7 +80,8 @@ export async function attemptDelivery(
     code = res.status;
     if (!res.ok) error = `http_${res.status}`;
   } catch (e) {
-    error = (e as Error).name === "TimeoutError" ? "timeout" : "network_error";
+    const name = (e as Error).name;
+    error = name === "TimeoutError" ? "timeout" : name === "BlockedAddress" ? "blocked_address" : "network_error";
   }
   const ok = !error;
   const patch: Partial<WebhookDelivery> = {
@@ -134,4 +137,28 @@ export function isSafeWebhookUrl(raw: string): boolean {
   if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h)) return false;
   if (h.startsWith("[") || h === "::1") return false;
   return true;
+}
+
+/** True for loopback, private, link-local, CGNAT, unspecified and unique-local addresses (IPv4, IPv6, IPv4-mapped). */
+export function isPrivateAddress(ip: string): boolean {
+  const v = ip.toLowerCase().replace(/^\[|\]$/g, "");
+  const m4 = v.match(/^(?:::ffff:)?(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (m4) {
+    const [a, b] = [Number(m4[1]), Number(m4[2])];
+    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+  }
+  return v === "::" || v === "::1" || /^f[cd]/.test(v) || /^fe[89ab]/.test(v) || v.startsWith("::ffff:");
+}
+
+/** Resolve the webhook host and refuse it if any address is private (SSRF through DNS). */
+export async function resolvesPublic(raw: string, lookup?: (host: string) => Promise<{ address: string }[]>): Promise<boolean> {
+  let host: string;
+  try { host = new URL(raw).hostname; } catch { return false; }
+  try {
+    const look = lookup ?? (async (h: string) => (await import("node:dns/promises")).lookup(h, { all: true, verbatim: true }));
+    const addrs = await look(host.replace(/^\[|\]$/g, ""));
+    return addrs.length > 0 && addrs.every((a) => !isPrivateAddress(a.address));
+  } catch {
+    return false;
+  }
 }

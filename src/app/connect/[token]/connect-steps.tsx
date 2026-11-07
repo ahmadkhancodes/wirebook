@@ -28,6 +28,8 @@ export function ConnectSteps({ token, company, username, password, initial }: { 
     async function tick() {
       try {
         const r = await fetch(`/connect/${token}/status`, { cache: "no-store" });
+        // expired or already used: the server renders that state, so show it instead of "reconnecting" forever
+        if (r.status === 404 || r.status === 410) { stop = true; clearInterval(t); window.location.reload(); return; }
         if (!r.ok) throw new Error(String(r.status));
         const j = (await r.json()) as { steps: Step[] };
         if (!stop) { setSteps(j.steps); setLost(false); }
@@ -53,6 +55,7 @@ export function ConnectSteps({ token, company, username, password, initial }: { 
           The Web Connector only runs on Windows next to QuickBooks Desktop. Copy this page address and open it there.
         </Notice>
       ) : null}
+      <p className="sr-only" aria-live="polite">{done ? "Connected. The first sync finished." : `${steps.filter((x) => x.done).length} of ${steps.length} steps done.`}</p>
       {lost ? <Notice tone="warning" title="We lost touch for a moment">Reconnecting. The steps below may be a few seconds behind.</Notice> : null}
 
       <ol className="flex flex-col rounded-lg border border-border bg-surface">

@@ -1,0 +1,65 @@
+# Wirebook pre-launch review (M5, 7 Nov 2026)
+
+Scope: data correctness, tenant isolation, security, billing, public claims, accessibility, ops. I read the code; I did not rely on PROGRESS. Everything still runs against the Web Connector simulator only. Real QuickBooks remains the biggest open risk (MANUAL_STEPS 6).
+
+Each finding gives the file and line, the failure scenario, and the fix. **Fixed** means it was fixed in this task, with a test in `tests/unit/m5-review.test.ts` (or `tests/e2e`) that fails on the old code and passes now. Line numbers refer to the code after this task.
+
+## P0: must fix before launch (all fixed)
+
+| # | Area | Where | Failure scenario | Fix |
+|---|---|---|---|---|
+| P0-1 | Data | `src/lib/qbwc/handler.ts:126`, `src/lib/cron/jobs.ts` | The Web Connector takes a request (`sent`), then the PC sleeps or the session dies before `receiveResponseXML`. `claim` refuses while a job is `sent`, and nothing in production called `expireSent`, so that company file's queue was **blocked forever**: every later request stayed queued and returned 202. | `sendRequestXML` now gives up a job that has been `sent` for longer than 15 min (`SENT_TIMEOUT_MS`) as `outcome_unknown`, emits `request.completed`, and then serves the next job. `health-tick` also sweeps every file with `expireSent`, which covers files that never poll again. **Fixed.** |
+| P0-2 | Data | `src/lib/v1/engine.ts:149` | Two concurrent retries with the same `Idempotency-Key`: both looked the key up and found nothing, and both queued a job. The loser cancelled its job with `complete(failed)` even if `sendRequestXML` had already handed it to QuickBooks. QuickBooks then created a **second invoice**, and the loser's reply was dropped because the job was no longer `sent`. | The key is reserved first, with a pre-generated request id; only the winner's id is ever queued. A concurrent request queues under the same id, so a duplicate insert collapses to the same job. `JobQueue.enqueue` accepts an optional `id`. **Fixed** (the test forces the interleaving). |
+| P0-3 | Billing | `src/lib/billing/metering.ts:89`, `src/lib/qbwc/handler.ts:38` | Every test-environment file was free and unlimited, without any check that it was a sample file. A customer could run production workloads on `sk_test_` keys against real company files and pay **$0** (brief: "sample files never billed", "up to 3 non-production files"). | `sendRequestXML` records `strCompanyFileName`, and `isSampleCompanyFile` (basename `sample_*.qbw`) sets `EndUser.sampleFile`. `isBillableFile` means "not a sample file" in either environment; before the file name is known, the environment decides. A test key on a real file now counts as active and is capped like any other file. **Fixed.** Heuristic: a renamed file can still pass as a sample, so the names need confirming on a real install (MANUAL_STEPS). |
+| P0-4 | Billing | `src/app/qbwc/route.ts:24`, `src/lib/billing/metering.ts:104` | The Developer cap of 3 was checked only when a request was queued, and a file became active only after a success. Creating 10 connect links before any of them synced let all 10 probes pass the check. All 10 files then became active, and from then on `active.includes(id)` allowed them: **unlimited free production files**. | The new bridge hook `admit` runs the plan gate again when the Web Connector asks for work. Refused requests fail with 402 `file_limit_reached` and nothing reaches QuickBooks. `recordActiveFile` also never records a file beyond a capped plan's allowance. **Fixed.** |
+| P0-5 | Security | `src/lib/v1/deps.ts:13`, `src/lib/mail/index.ts:18`, `src/lib/security/altcha.ts:9` | With `BETTER_AUTH_SECRET` unset in production, the Web Connector passwords (HMAC of the end user id) would be derived from the public string `wirebook-dev-secret`, and unsubscribe tokens and ALTCHA challenges would be forgeable. | `secretOr()` in `src/lib/env.ts` throws in production when the secret is missing. **Fixed.** |
+| P0-6 | Claims | `src/app/(marketing)/page.tsx` (features, FAQ), `src/content/docs/api.ts:48` | The site said "If a request times out after it was sent, **we reconcile by RefNumber before you retry**". No reconciliation exists. A customer relying on it would resend and could create a duplicate. | The copy now says it is marked `outcome_unknown`, is never retried for you, and should be looked up by RefNumber before resending. The catalogue text "We will check before anything is retried" became "Nothing is retried automatically." **Fixed.** |
+| P0-7 | Claims | `src/config/product.ts:78`, `src/app/(marketing)/pricing/page.tsx:20`, `files-panel.tsx:21`, `docs/limits.ts:37`, `docs/getting-started.ts:26`, catalogue `file_limit_reached` | The copy said "test files are free" and "3 non-production files on request", which contradicts the code after P0-3. | The copy now says "QuickBooks sample company files are free" and "up to 3 real company files a month". **Fixed.** |
+| P0-8 | Claims / legal | `src/config/product.ts:44-45`, `src/content/legal/terms.ts:13,51,90,101` | `{{jurisdiction}}`, `{{registered address}}`, `{{refund policy}}` and `{{cap}}` render on the public Terms page. | These are facts only the owner has. **Owner action, launch blocker** (MANUAL_STEPS, legal placeholders). Not fixable in code without inventing legal terms. |
+
+## P1: should fix soon
+
+Fixed in this task (small and safe):
+- **API keys: admins could not create keys.** `src/lib/auth/roles.ts`. Better Auth's api-key plugin checks `apiKey:create/update/delete`, but our roles only granted `read`/`manage`. Admins saw the button and got a 403; only the org creator worked. The statements are added for owner and admin. Test added.
+- **Webhook SSRF through DNS.** `src/lib/webhooks/outbound.ts:65`. `isSafeWebhookUrl` checked only the literal host, so a public name resolving to `127.0.0.1` or `169.254.169.254` passed. Every delivery now resolves the host and refuses private, loopback, link-local, CGNAT and unique-local addresses (`blocked_address`). A DNS-rebinding race between the lookup and `fetch` remains (P2).
+- **Late replies.** `src/lib/qbwc/handler.ts:169`. A reply whose `requestID` is not the in-flight job's id (a late answer from a dead session) is ignored instead of completing the wrong request.
+- **Connection errors.** `src/lib/qbwc/handler.ts:202`. `connectionError` marked an in-flight **write** from an earlier session as `failed`, though QuickBooks may have applied it. A retry with a new key would then duplicate it. Writes now become `outcome_unknown`; reads stay `failed`.
+- **Upgrade quantity.** `src/app/api/stripe/webhook/route.ts`. The Stripe quantity was synced only when a new file became active, so an org upgrading with 3 active files was billed for 1 until a 4th appeared. Every relevant Stripe event now runs `syncStripeQuantity`, which is a no-op when Stripe already matches.
+- **Health check.** `src/app/api/health/route.ts` now pings Mongo with a 2 s budget and returns 503 when it is down. Mongo client timeouts were tightened (`connectTimeoutMS` 5 s, `socketTimeoutMS` 20 s, server selection 5 s) in `src/lib/db/mongo.ts`.
+- **Connect page.** `src/app/connect/[token]/connect-steps.tsx`. An expired or used link showed "We lost touch… Reconnecting" forever; a 404 or 410 now reloads into the server-rendered state. A polite live region announces step progress.
+- **Dark danger button contrast.** White on `#ff8a80` was 2.3:1. A new `--danger-text` token (`#2a1614` in dark) gives 7.5:1 (`src/app/globals.css`, `src/components/ui/button.tsx`).
+- **Reduced motion** now also zeroes transitions.
+- **Copy:** webhooks are shipped but the copy called them "roadmap" (`compare.ts:38`, landing "Coming in v1", Starter Pack highlight). The connect link is valid 24 h, not 7 days (`connect-flow.ts:12`, landing). The landing snippet showed a non-existent `POST /v1/end-users`. "QuickBooks Desktop 2024 is fully supported" now says it has been validated against the simulator, with the real run pending.
+
+Open:
+- **Stripe quantity at month rollover.** `src/lib/billing/metering.ts:121`. The calendar-month meter resets on the 1st. The first sync of the month sets the Stripe quantity to 1 (a proration credit), and later syncs step it back up (proration charges). The net is roughly right when files sync early in the month, but invoices are noisy and depend on timing. Fix: report the previous month's active-file count once at the period boundary (cron), or move to Stripe metered usage. Needs a real Stripe sandbox run (MANUAL_STEPS 1).
+- **No way to revoke a company file.** No API or dashboard action disables an end user or rotates its Web Connector password. The password is derived from the end user id, so a reconnect link shows the same one. Fix: `DELETE /v1/end-users/{id}` (or disable), which blanks `qbwcPasswordHash` and fails queued jobs; add a password version to the derivation.
+- **Suspension.** An admin-suspended org or key stops the REST API only. The Web Connector still drains already-queued jobs. Fix: check `org_settings.suspended` in the `admit` hook.
+- **Plan downgrade mid-month.** A Production org that downgrades to Developer keeps all of this month's active files usable, since `active.includes(id)` lets them through. The cap applies again next month.
+- **SDK package names.** `@wirebook/sdk` and `wirebook` in code and docs, against `@buffersol/wirebook` and `buffersol-wirebook` in MANUAL_STEPS 5. `src/content/docs/sdks.ts` says unpublished but shows `npm install`. Pick one name before publishing.
+- **"$0 for 2 months" migration offer.** `pricing/page.tsx:23`, `billing.ts:30`. There is no mechanism; it is applied by hand on request. Say "contact us" or build a coupon.
+- **Mail in production without `RESEND_API_KEY`.** It falls back to the console transport: no link leaks, but nobody can sign in. Fix: fail loudly (503 plus log) in production.
+- **Env docs.** No single table lists the required production vars (`BETTER_AUTH_SECRET`, `CRON_SECRET`, `MONGODB_URI`, `MONGODB_DB`, `STRIPE_WEBHOOK_SECRET`, `MAIL_FROM`, `ADMIN_EMAILS`). Added to MANUAL_STEPS.
+- **Accessibility.** Delete-key buttons have no per-row accessible name (`api-keys-client.tsx`). The request-log time link's `aria-label` does not contain its visible text (WCAG 2.5.3). `Button size="sm"` is 32 px and the environment switcher about 28 px, both under 44 px at 375 px. `aria-selected` on a `<tr>` should be `aria-current`.
+- **Compare page.** It is dated, but "Webhooks: None, per Apideck" rests on one third-party source; add a "Source: brief tab 04" line.
+
+## P2
+
+- Webhook DNS-rebinding window between `lookup` and `fetch` (pin the resolved IP when there is a VPS).
+- `/api/cron/health-tick` cleanup (`expireSent`) does not emit `request.completed` webhooks; the handler path does.
+- Missing indexes: `org_settings {app:1}`, `config {app:1}`, Better Auth `member.userId`, `session.userId`, `account.userId`.
+- `heartbeat` cron is registered but never scheduled. The comment on `health-tick` said every 5 minutes; the worker runs every minute (comment fixed).
+- `ConfirmDialog`: no `aria-describedby`, and Escape is not blocked while busy.
+- The `text-subtle` and `text-muted` tokens are identical.
+- "Half the price" ($24.99 against $49, 51%) is accurate; the compare FAQ could say "about half".
+
+## Checked and fine
+
+- **Tenant isolation.** Every REST path resolves the end user and the request through `projectIdOf(auth)` (`engine.ts`). `GET /v1/requests/{id}` checks `meta.projectId`. Dashboard routes use `ownsUser(org)` and `${org.id}__${env}`, webhook routes and deliveries are scoped by `orgId`, and cursors are bound to object and end user. Tickets are bound to one end user.
+- **API keys.** Hashed by Better Auth. The environment comes from server-side key metadata, and a missing value means test. Revoked keys fail `verifyApiKey`. Org membership and role are checked by the plugin.
+- **XML.** fast-xml-parser 5.12 refuses external entities (no XXE) and nested entity expansion; checked with a billion-laughs payload. `/qbwc` caps the body at 5 MB, REST at 1 MB.
+- **Web Connector auth.** scrypt hashes with `timingSafeEqual`, lockout after 20 failures an hour, and an unknown ticket ends the session instead of faulting.
+- **Stripe webhook.** Signature on the raw body, event id recorded after success, entitlement recomputed from Stripe (order independent), other apps' customers and subscriptions ignored. Checkout takes the plan from an enum, and no client flag grants a plan.
+- **Outbound webhooks.** HMAC `t.body` signing, 8 attempts, `redirect: manual`, 10 s timeout, payloads carry ids and statuses only (no QuickBooks data), the secret is shown once.
+- **Logs.** Error logs carry messages and paths only, no request bodies.
+- **CSRF.** Origin check on cookie-authenticated state changes (`withApi`); API-key requests are exempt by design.

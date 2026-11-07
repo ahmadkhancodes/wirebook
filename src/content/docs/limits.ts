@@ -34,7 +34,7 @@ export const limits: DocPage = {
     {
       heading: "Company files",
       body: [
-        `The ${planName("free")} plan includes ${p.billing.developerFiles} active production files per month. Sample files in the test environment are free and unlimited. Starting a ${p.billing.developerFiles + 1}th production file returns 402 file_limit_reached. See Plans and billing.`,
+        `The ${planName("free")} plan includes ${p.billing.developerFiles} active company files per month. QuickBooks sample company files are free and unlimited, with test or production keys; a real company file counts whichever key you use. Starting a ${p.billing.developerFiles + 1}th real company file returns 402 file_limit_reached. See Plans and billing.`,
       ],
     },
     {

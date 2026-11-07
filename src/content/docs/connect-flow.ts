@@ -9,7 +9,7 @@ export const connectFlow: DocPage = {
     {
       heading: "What your customer does",
       body: [
-        "You create an end user and send them a connect link. The link is valid for 7 days. They open it on the PC where QuickBooks Desktop runs and follow four steps. Each step turns green only when our server saw it happen, so nobody is told they are done when they are not.",
+        "You create an end user and send them a connect link. The link is valid for 24 hours. They open it on the PC where QuickBooks Desktop runs and follow four steps. Each step turns green only when our server saw it happen, so nobody is told they are done when they are not.",
       ],
     },
     {
@@ -30,7 +30,7 @@ export const connectFlow: DocPage = {
     {
       heading: "Requirements",
       body: [
-        "QuickBooks Desktop 2024 is fully supported. Version 2023 and older is best effort. Pro, Premier and Enterprise on Windows are supported. QuickBooks for Mac and UK QuickBooks Desktop are not.",
+        "QuickBooks Desktop 2024 is our target version, so far validated against a Web Connector simulator; the run on a real install is pending. Version 2023 and older is best effort. Pro, Premier and Enterprise on Windows are supported. QuickBooks for Mac and UK QuickBooks Desktop are not.",
       ],
     },
   ],

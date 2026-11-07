@@ -2,11 +2,11 @@ import { createChallenge, randomInt, verifySolution, type Challenge } from "altc
 import { deriveKey } from "altcha-lib/algorithms/pbkdf2";
 import { getDb } from "@/lib/db";
 import type { Db } from "@/lib/db/types";
-import { env } from "@/lib/env";
+import { env, secretOr } from "@/lib/env";
 
 // ALTCHA: self-hosted proof-of-work on public forms (no third party). Replay protection via the rate-limit store.
 const secrets = () => {
-  const base = env().ALTCHA_HMAC_KEY ?? env().BETTER_AUTH_SECRET ?? "dev-altcha-secret-change-me";
+  const base = secretOr(env().ALTCHA_HMAC_KEY ?? env().BETTER_AUTH_SECRET, "dev-altcha-secret-change-me", "BETTER_AUTH_SECRET");
   return { sig: `${base}:sig`, key: `${base}:key` };
 };
 const COST = 5_000;

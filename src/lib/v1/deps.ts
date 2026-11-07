@@ -1,16 +1,16 @@
 import { product } from '@/config/product';
 import { getBridge } from '@/lib/bridge';
 import { getDb } from '@/lib/db';
-import { appUrl, env } from '@/lib/env';
+import { appUrl, env, secretOr } from '@/lib/env';
 import { authApiKey } from '@/lib/auth/session';
 import { HttpError } from '@/lib/http';
-import { canActivateFile } from '@/lib/billing/metering';
+import { canActivateFile, isBillableFile } from '@/lib/billing/metering';
 import { enforceBadKeyLimit, enforceIpLimit, guardKey } from '@/lib/security/abuse';
 import { apiError } from './errors';
 import type { Environment, V1Deps } from './engine';
 
 /** Secret behind the derived Web Connector passwords. */
-export const connectSecret = () => env().BETTER_AUTH_SECRET ?? 'wirebook-dev-secret';
+export const connectSecret = () => secretOr(env().BETTER_AUTH_SECRET, 'wirebook-dev-secret', 'BETTER_AUTH_SECRET');
 
 /** Hobby caps functions at 60 s, so the sync wait is 55 s; set SYNC_WAIT_MS=90000 on Pro. */
 export const syncWaitMs = () => Number(process.env.SYNC_WAIT_MS) || product.abuse.syncWaitMs;
@@ -23,8 +23,10 @@ export async function defaultDeps(req: Request): Promise<V1Deps & { secret: stri
     baseUrl: appUrl(),
     waitMs: syncWaitMs(),
     secret: connectSecret(),
-    async checkFile(auth, endUserId) {
-      if (!(await canActivateFile(await getDb(), `${auth.orgId}__${auth.environment}`, endUserId))) throw apiError('file_limit_reached');
+    async checkFile(auth, endUser) {
+      const projectId = `${auth.orgId}__${auth.environment}`;
+      const billable = endUser ? isBillableFile(endUser) : auth.environment === 'production';
+      if (!(await canActivateFile(await getDb(), projectId, endUser?.id ?? null, new Date(), billable))) throw apiError('file_limit_reached');
     },
     async authenticate(r) {
       const db = await getDb();

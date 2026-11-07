@@ -110,8 +110,8 @@ function KeyPanel() {
 const features: Feature[] = [
   { title: "One call, one invoice, never two", body: "Send an Idempotency-Key on every write. We replay it for 7 days. A different body with the same key returns 409.", span: 4, visual: <Replayed /> },
   { title: "Errors that say what to do", body: "One error object: type, code, userFacingMessage, guideUrl, retryable, requestId. Thirty guides at launch. Same input, same message, no AI model.", span: 2, visual: <ErrorFragment /> },
-  { title: "A request log with lifecycle states", body: "queued, sent, succeeded, failed, outcome_unknown. If a request times out after it was sent, we reconcile by RefNumber before you retry.", span: 2, visual: <Timeline /> },
-  { title: "A connect flow your customer finishes alone", body: "Four steps, and each one turns green only when our server saw it. The link is valid for 7 days.", span: 4, visual: <Rail /> },
+  { title: "A request log with lifecycle states", body: "queued, sent, succeeded, failed, outcome_unknown. If a request was sent but no answer came back, it is marked outcome_unknown and never retried for you.", span: 2, visual: <Timeline /> },
+  { title: "A connect flow your customer finishes alone", body: "Four steps, and each one turns green only when our server saw it. The link is valid for 24 hours.", span: 4, visual: <Rail /> },
   { title: "Typed SDKs and a raw escape hatch", body: "TypeScript with async iterators and retries, and Python with sync and async clients, both generated from OpenAPI 3.1. Any valid qbXML works through passthrough.", span: 3, visual: <SdkTabs /> },
   { title: "Test and Production keys, kept apart", body: "Keys are shown once, stored as SHA-256 hashes and revocable within 5 seconds.", span: 3, visual: <KeyPanel /> },
 ];
@@ -119,8 +119,8 @@ const features: Feature[] = [
 const steps: Step[] = [
   {
     title: "Create a key and an end user",
-    body: "Sign up, create an sk_test_ key, add your customer and get a connect link valid for 7 days.",
-    visual: <div className="rounded-md border border-border bg-surface-raised p-4 figures caption-4 text-text">POST /v1/end-users<br />{"{ \"name\": \"Acme Builders\" }"}<br /><span className="text-text-subtle">connect link: valid 7 days (sample)</span></div>,
+    body: "Sign up, create an sk_test_ key, add your customer and get a connect link valid for 24 hours.",
+    visual: <div className="rounded-md border border-border bg-surface-raised p-4 figures caption-4 text-text">POST /v1/connect-links<br />{"{ \"externalId\": \"acme-42\" }"}<br /><span className="text-text-subtle">connect link: valid 24 hours (sample)</span></div>,
   },
   {
     title: "Your customer connects",
@@ -144,10 +144,10 @@ const faq: FaqItem[] = [
   { q: "Will a two person vendor be around in three years?", a: `We cannot promise that. What we can do is keep you unlocked: any valid qbXML works through passthrough, every price is published, and your request history is yours to export.` },
   { q: "Is it real time?", a: "No. QuickBooks Desktop only talks to the Web Connector when it polls. Requests run when QuickBooks next checks in. If the connector is not running you get a 202 queued, and a guide after 30 seconds." },
   { q: "What counts as an active file?", a: "A company file counts in a month only if a data request succeeded for it that month. Sample files never count." },
-  { q: "How do you stop duplicate writes?", a: "Send an Idempotency-Key on every write. We replay the first result for 7 days. The same key with a different body returns 409. If a request times out after it was sent, we reconcile by RefNumber before you retry." },
+  { q: "How do you stop duplicate writes?", a: "Send an Idempotency-Key on every write. We replay the first result for 7 days. The same key with a different body returns 409. If a request was sent but no answer came back, it is marked outcome_unknown and never retried for you: look it up by RefNumber before you send it again." },
   { q: "What do you log, and who sees it?", a: "Request and response bodies are deleted after 14 days, sooner if you set it, and request metadata after 90. No email API, analytics service or AI model is in the data path." },
   { q: "Do you have SOC 2?", a: "No, not at launch. We offer a self attested security pack and a DPA." },
-  { q: "Which QuickBooks versions work?", a: "QuickBooks Desktop 2024 is fully supported. Version 2023 and older is best effort. Pro, Premier and Enterprise on Windows are supported." },
+  { q: "Which QuickBooks versions work?", a: "QuickBooks Desktop 2024 is our target version, so far validated against a Web Connector simulator; the run on a real install is pending. Version 2023 and older is best effort. Pro, Premier and Enterprise on Windows are supported." },
   { q: "Does it work with QuickBooks for Mac or UK QuickBooks Desktop?", a: "No. The Web Connector runs on Windows, and we do not support the UK edition." },
   { q: "Can I try it without buying QuickBooks?", a: "Yes. Sample company files are unlimited on the free Developer tier. No card." },
   { q: "What does migration cost?", a: "The first 2 months are $0 for files moved from another QuickBooks Desktop API or a home grown Web Connector server." },
@@ -174,7 +174,7 @@ export default function HomePage() {
       <TaglineReveal text="Your app makes a normal API call. Wirebook by BufferSol handles the Web Connector." />
       <Features
         title="What you get"
-        intro={<>Coming in v1: webhooks, a C# SDK, and a hosted MCP server with read only mode.</>}
+        intro={<>Coming in v1: a C# SDK and a hosted MCP server with read only mode.</>}
         items={features}
       />
       <HowItWorks title="From sign up to first request" steps={steps} />

@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { appUrl } from "@/lib/env";
 import { healthTick, ownerEmailFor } from "@/lib/health";
 import { sendMail } from "@/lib/mail";
+import { SENT_TIMEOUT_MS } from "@/lib/qbwc";
 import { purgePayloads } from "@/lib/retention";
 import { webhookSink } from "@/lib/webhooks/events";
 import { retryDueDeliveries } from "@/lib/webhooks/outbound";
@@ -10,8 +11,13 @@ import { retryDueDeliveries } from "@/lib/webhooks/outbound";
 /** Register cron jobs here. Each must be idempotent and finish well inside maxDuration. */
 export const cronJobs: Record<string, () => Promise<unknown>> = {
   "webhook-retries": () => retryDueDeliveries({ limit: 100 }),
-  /** every 5 minutes (Cloudflare Worker cron, see infra/cron-worker): Asleep/Broken from the last poll, one Broken email per incident */
-  "health-tick": async () => healthTick({ bridge: await getBridge(), ownerEmail: ownerEmailFor, send: (m) => sendMail(m), baseUrl: appUrl(), onEvent: webhookSink(await getDb()) }),
+  /** every minute (Cloudflare Worker cron, see infra/cron-worker): Asleep/Broken from the last poll, one Broken email per incident */
+  "health-tick": async () => {
+    const bridge = await getBridge();
+    // requests whose Web Connector session died after the send and never came back: give them up as outcome_unknown
+    const expired = (await bridge.queue.expireSent(SENT_TIMEOUT_MS, new Date())).length;
+    return { expired, ...(await healthTick({ bridge, ownerEmail: ownerEmailFor, send: (m) => sendMail(m), baseUrl: appUrl(), onEvent: webhookSink(await getDb()) })) };
+  },
   /** daily 03:00 UTC: retention purge of payloads, with an audit entry */
   purge: async () => purgePayloads(await getDb(), await getBridge()),
   heartbeat: async () => ({ at: new Date().toISOString() }),

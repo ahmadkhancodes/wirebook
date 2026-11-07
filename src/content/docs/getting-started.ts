@@ -23,7 +23,7 @@ export const gettingStarted: DocPage = {
     {
       heading: "Create an API key",
       body: [
-        "Open Settings, then API keys, and create a key. Test keys start with sk_test_ and run against sample files. The full key is shown once, so copy it into your secrets manager straight away. Keys are stored as SHA-256 hashes and cannot be recovered.",
+        "Open Settings, then API keys, and create a key. Test keys start with sk_test_ and are meant for QuickBooks sample company files, which are free. A real company file counts as an active file whichever key you use. The full key is shown once, so copy it into your secrets manager straight away. Keys are stored as SHA-256 hashes and cannot be recovered.",
       ],
     },
     {

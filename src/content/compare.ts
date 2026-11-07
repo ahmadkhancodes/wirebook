@@ -35,7 +35,7 @@ export const comparisons: CompareEntry[] = [
       { label: "Published volume price", values: [dated("None published"), `${money(rates.volumeFile)} per file at ${rates.volumeFromFiles}+ files`] },
       { label: "Free tier", values: [dated("Free trial, 1 test connection"), "Developer: unlimited sample files"] },
       { label: "SDKs", values: [dated("Node and Python; no C#, Java or PHP"), "TypeScript and Python; C# is on the v1 roadmap"] },
-      { label: "Webhooks", values: [dated("None, per Apideck"), "On the v1 roadmap, not shipped"] },
+      { label: "Webhooks", values: [dated("None, per Apideck"), "Yes: signed, retried with backoff for about a day"] },
       { label: "Typed endpoints", values: [dated("256"), "Fewer at launch; qbXML passthrough covers the rest"] },
       { label: "MCP server with read only mode", values: [dated("Yes"), "On the v1 roadmap, not shipped"] },
       { label: "SOC 2 Type II", values: [dated("Yes, per Apideck"), "No. Self attested security pack and DPA"] },

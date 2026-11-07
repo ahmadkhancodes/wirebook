@@ -186,6 +186,8 @@ export class FakeCompanyFile {
 export interface SessionReport { ticket: string; authResult: string; exchanges: number; ended: 'done' | 'none' | 'badauth' | 'unknown_ticket' }
 
 export class QbwcSimulator {
+  /** strCompanyFileName the Web Connector reports; defaults to a QuickBooks sample company file (free). */
+  companyFile = 'C:\\Users\\Public\\Documents\\Intuit\\QuickBooks\\Sample Company Files\\QuickBooks 2024\\sample_service-based business.qbw';
   constructor(private post: Post, private creds: { user: string; pass: string }, readonly qb = new FakeCompanyFile()) {}
 
   private async call(op: string, args: Record<string, string>) {
@@ -209,7 +211,7 @@ export class QbwcSimulator {
     if (authResult !== 'NONE') {
       for (;;) {
         const [maj = '16', min = '0'] = this.qb.version.split('.');
-        const s = await this.call('sendRequestXML', { ticket, strHCPResponse: '', strCompanyFileName: 'sample.qbw', qbXMLCountry: 'US', qbXMLMajorVers: maj, qbXMLMinorVers: min });
+        const s = await this.call('sendRequestXML', { ticket, strHCPResponse: '', strCompanyFileName: this.companyFile, qbXMLCountry: 'US', qbXMLMajorVers: maj, qbXMLMinorVers: min });
         const req = typeof s.result === 'string' ? s.result : '';
         if (req === '') break;
         exchanges++;
