@@ -27,7 +27,7 @@ export const billing: DocPage = {
     },
     {
       heading: "Migrating from another API",
-      body: ["The first 2 months are $0 for files moved from another QuickBooks Desktop API or a home grown Web Connector server."],
+      body: ["Moving from another QuickBooks Desktop API or a home grown Web Connector server? Write to us and we will agree a free migration period."],
     },
   ],
 };

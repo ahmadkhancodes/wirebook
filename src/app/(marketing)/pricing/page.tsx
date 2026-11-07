@@ -20,7 +20,7 @@ const billingFaq = [
   { q: "Do I need a card for the Developer tier?", a: "No. The Developer tier has unlimited QuickBooks sample company files and up to 3 real company files a month." },
   { q: "When does the Starter Pack make sense?", a: `It covers up to ${rates.packFiles} active files for ${money(rates.packMonthly)} a month (${money(rates.packAnnualMonthly)} billed yearly). Files beyond that are ${money(rates.perFile)} each.` },
   { q: "What is the Volume rate?", a: `${money(rates.volumeFile)} per file from file ${rates.volumeFromFiles} upward, invoiced monthly.` },
-  { q: "What does migration cost?", a: "The first 2 months are $0 for files moved from another QuickBooks Desktop API or a home grown Web Connector server." },
+  { q: "What does migration cost?", a: "Moving from another QuickBooks Desktop API or a home grown Web Connector server? Write to us and we will agree a free migration period." },
 ];
 
 export default function PricingPage() {

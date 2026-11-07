@@ -60,3 +60,5 @@ https://tmsearch.uspto.gov/
 - **Deploy the Cloudflare cron worker:** `health-tick` now also unblocks requests stuck in `sent`. Without the worker this happens only when the file polls again.
 - **Uptime check:** point it at `/api/health`, which now returns 503 when Mongo is down.
 - **Decide the SDK package names** (`@wirebook/sdk` and `wirebook` in code, against `@buffersol/wirebook` in item 5) before publishing.
+
+- **P1 follow-up:** production now throws on mail send unless `RESEND_API_KEY` (or `MAIL_PROVIDER=smtp`) is set; set it before launch. Migration free period is now by request: decide the terms you will honour.
