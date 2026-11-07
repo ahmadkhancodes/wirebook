@@ -75,7 +75,7 @@ export const product = {
       tagline: "Build and test against sample company files",
       prices: [],
       limits: { files: 3 },
-      highlights: ["Unlimited sample company files", "Up to 3 non-production files on request", "Unlimited test API calls", "Full SDKs and dashboard, no card"],
+      highlights: ["Unlimited sample company files", "Up to 3 non-production files on request", "Up to 5,000 API calls a day", "Full SDKs and dashboard, no card"],
       cta: "Start free",
       trialDays: 0,
     },
@@ -85,7 +85,7 @@ export const product = {
       tagline: "Per active company file",
       prices: [price("production", "month", 2499), price("production", "year", 23988)],
       limits: { files: 1 },
-      highlights: ["$24.99 per active file a month, $19.99 billed yearly", "A file is billed only if a data request succeeded that month", "Unlimited API usage within rate limits", "Email support"],
+      highlights: ["$24.99 per active file a month, $19.99 billed yearly", "A file is billed only if a data request succeeded that month", "Up to 250,000 API calls a day, within rate limits", "Email support"],
       cta: "Choose Production",
       trialDays: 0,
     },
@@ -117,6 +117,18 @@ export const product = {
   health: { asleepAfterMs: 2 * 60 * 60 * 1000, brokenAfterMs: 72 * 60 * 60 * 1000 },
   /** Plan billing rules for the files meter. */
   billing: { starterPackFiles: 4, volumeMinFiles: 50, developerFiles: 3 },
+  /**
+   * Abuse controls. `dailyRequests` is the fair-use cap on API requests per organization and UTC day (test and production
+   * together), by plan. Per-minute limits apply on top: per API key and per source address.
+   */
+  abuse: {
+    dailyRequests: { free: 5_000, production: 250_000, starter_pack: 250_000, volume: 1_000_000 } as Record<PlanId, number>,
+    keyPerMinute: 600,
+    ipPerMinute: 1_200,
+    badKeysPerMinute: 10,
+    /** Default wait for QuickBooks before a request answers 202 (fits Vercel Hobby; SYNC_WAIT_MS overrides). */
+    syncWaitMs: 55_000,
+  },
   /** Grace period after a failed payment (past_due keeps the plan, C-20) before limits fall to Free. */
   graceDays: 7,
   /** Remote flag defaults (overridden by APP_FLAGS env JSON and the Mongo `config` collection). */

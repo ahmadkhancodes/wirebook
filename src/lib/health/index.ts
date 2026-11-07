@@ -1,4 +1,5 @@
 import type { Bridge } from "@/lib/bridge";
+import type { BridgeEvent } from "@/lib/qbwc";
 import { evaluate } from "./evaluate";
 import { splitProjectId } from "@/lib/billing/metering";
 import { brokenConnectionEmail } from "@/lib/mail/templates";
@@ -11,6 +12,8 @@ export interface HealthDeps {
   now?: () => Date;
   baseUrl: string;
   limit?: number;
+  /** webhook sink: Broken transitions */
+  onEvent?: (e: BridgeEvent) => Promise<void>;
 }
 
 export interface HealthResult { checked: number; asleep: number; broken: number; emailed: number }
@@ -28,6 +31,7 @@ export async function healthTick(d: HealthDeps): Promise<HealthResult> {
       await d.bridge.health.append({ endUserId: u.id, projectId: u.projectId, at: now, status: t.status, reason: t.reason });
       cur = { ...u, status: t.status };
       if (t.status === "asleep") r.asleep++;
+      if (t.status === "broken" && d.onEvent) await d.onEvent({ type: "company_file.broken", user: cur, at: now, reason: t.reason }).catch(() => undefined);
     }
     // One email per incident: brokenNotifiedAt stays set until the file recovers (the bridge clears it).
     if (cur.status === "broken" && !cur.brokenNotifiedAt && splitProjectId(cur.projectId).environment === "production") {

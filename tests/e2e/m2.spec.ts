@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { altchaHeader } from "./altcha";
 import { mkdirSync } from "node:fs";
 import { FakeCompanyFile, QbwcSimulator } from "../../tools/simulate-qbwc/simulator";
 
@@ -11,7 +12,7 @@ const OUT = process.env.QA_DIR ?? "docs/qa";
 test("connect flow turns green only as the server observes each step; request log renders", async ({ page, request, baseURL }) => {
   const email = `m2+${Date.now()}@studio.test`;
   const origin = { origin: baseURL! };
-  await page.request.post("/api/auth/sign-in/magic-link", { data: { email, callbackURL: "/app" }, headers: origin });
+  await page.request.post("/api/auth/sign-in/magic-link", { data: { email, callbackURL: "/app" }, headers: { ...origin, "x-altcha": await altchaHeader(request) } });
   const box = await (await request.get(`/api/dev/outbox?to=${encodeURIComponent(email)}`)).json();
   await page.goto(/https?:\/\/\S+magic-link\/verify\S+/.exec(box.messages.at(-1).text)![0]);
   const org = await page.request.post("/api/auth/organization/create", { data: { name: "Harbor Studio", slug: `harbor-${Date.now()}` }, headers: origin });

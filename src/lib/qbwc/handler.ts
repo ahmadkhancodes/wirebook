@@ -4,7 +4,7 @@ import { errorFor, type QbError } from '../errors/catalogue';
 import { newTicket } from './memory';
 import { verifyPassword } from './password';
 import { arrayResponse, faultResponse, parseSoap, simpleResponse } from './soap';
-import type { EndUser, EndUserRepo, HealthLog, JobQueue, SessionStore } from './types';
+import type { EndUser, EndUserRepo, HealthLog, Job, JobQueue, SessionStore } from './types';
 
 export interface BridgeDeps {
   queue: JobQueue;
@@ -18,9 +18,15 @@ export interface BridgeDeps {
   health?: HealthLog;
   /** Called after a request succeeded for this end user (billing meter: active files). Must not throw into the SOAP reply. */
   onSuccess?: (user: EndUser, at: Date) => Promise<void>;
+  /** Outbound events (webhooks): request completed, company file connected or broken. Must not throw into the SOAP reply. */
+  onEvent?: (e: BridgeEvent) => Promise<void>;
   /** session lifetime */
   sessionTtlMs?: number;
 }
+
+export type BridgeEvent =
+  | { type: 'request.completed'; job: Job; user: EndUser; at: Date }
+  | { type: 'company_file.connected' | 'company_file.broken'; user: EndUser; at: Date; reason?: string };
 
 export const SERVER_VERSION = 'wirebook-qbwc/0.1';
 const LOCKOUT_LIMIT = 20;
@@ -35,6 +41,16 @@ const invalidRequest = (e: QbxmlValidationError): QbError => errorFor('invalid_r
 /** Stateless Web Connector bridge: everything lives in the injected stores. Returns a SOAP 1.1 response. */
 export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapResult> {
   const now = deps.now ?? (() => new Date());
+  const emit = async (e: BridgeEvent) => { if (deps.onEvent) await deps.onEvent(e).catch(() => undefined); };
+  /** complete a job and tell webhook listeners; the end user is looked up only when someone listens */
+  const finish = async (job: Job, patch: Parameters<JobQueue['complete']>[1], at: Date) => {
+    const done = await deps.queue.complete(job.id, patch, at);
+    if (deps.onEvent) {
+      const user = await deps.users.get(job.endUserId);
+      if (user) await emit({ type: 'request.completed', job: done, user, at });
+    }
+    return done;
+  };
   const call = parseSoap(xml);
   if (!call) return { status: 400, headers: SOAP_HEADERS, body: faultResponse('Malformed SOAP envelope') };
   const { op, args } = call;
@@ -61,7 +77,10 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
         failedAuth: { count: 0, windowStart: t }, lastPollAt: t,
         ...(recovered ? { status: 'connected' as const, lastError: undefined, brokenNotifiedAt: undefined } : {}),
       });
-      if (recovered) await deps.health?.append({ endUserId: user.id, projectId: user.projectId, at: t, status: 'connected', reason: `Polled again after being ${user.status}` });
+      if (recovered) {
+        await deps.health?.append({ endUserId: user.id, projectId: user.projectId, at: t, status: 'connected', reason: `Polled again after being ${user.status}` });
+        await emit({ type: 'company_file.connected', user: { ...user, status: 'connected' }, at: t, reason: `Polled again after being ${user.status}` });
+      }
       const ticket = newTicket();
       await deps.sessions.create({ ticket, endUserId: user.id, qbxmlVersion: '16.0', expiresAt: new Date(t.getTime() + (deps.sessionTtlMs ?? 30 * 60_000)) });
       const work = (await deps.queue.queuedCount(user.id)) > 0;
@@ -87,7 +106,7 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
             return ok(simpleResponse(op, buildRequest(job.op, job.body, { requestId: job.id, version, ...(job.iterator ? { iterator: job.iterator } : {}) })));
           } catch (e) {
             if (!(e instanceof QbxmlValidationError)) throw e;
-            await deps.queue.complete(job.id, { state: 'failed', error: invalidRequest(e) }, now());
+            await finish(job, { state: 'failed', error: invalidRequest(e) }, now());
             continue; // a bad request never blocks the file
           }
         }
@@ -104,7 +123,7 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       const t = now();
       if ((args.hresult ?? '') !== '') {
         const err = fromHresult(args.hresult ?? '');
-        if (job) await deps.queue.complete(job.id, { state: 'failed', error: err }, t);
+        if (job) await finish(job, { state: 'failed', error: err }, t);
         await deps.sessions.update(s.ticket, { lastError: args.message || err.message });
         return ok(simpleResponse(op, '-1')); // QBWC then calls getLastError
       }
@@ -116,18 +135,19 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
             ...(job.op === 'raw' ? { rawResponse: args.response ?? '' } : {}),
             ...(r.iteratorRemaining !== undefined ? { iteratorResult: { ...(r.iteratorId ? { id: r.iteratorId } : {}), remaining: r.iteratorRemaining } } : {}),
           };
-          await deps.queue.complete(job.id, err
+          const who = err ? null : await deps.users.get(s.endUserId);
+          await finish(job, err
             ? { state: 'failed', qbStatusCode: r.statusCode, error: err, ...extra }
             : { state: 'succeeded', qbStatusCode: r.statusCode, result: r.rows, ...extra }, t);
           if (!err) {
-            const who = await deps.users.get(s.endUserId);
             await deps.users.update(s.endUserId, { status: 'connected', lastSuccessAt: t, ...(who && !who.firstSyncAt ? { firstSyncAt: t } : {}) });
             if (who && !who.firstSyncAt) await deps.health?.append({ endUserId: who.id, projectId: who.projectId, at: t, status: 'connected', reason: 'First sync completed' });
+            if (who && who.status !== 'connected') await emit({ type: 'company_file.connected', user: { ...who, status: 'connected' }, at: t, reason: who.firstSyncAt ? `Recovered after being ${who.status}` : 'First sync completed' });
             if (who && deps.onSuccess) await deps.onSuccess(who, t).catch(() => undefined);
           }
         } catch (e) {
           if (!(e instanceof QbxmlParseError)) throw e;
-          await deps.queue.complete(job.id, { state: 'failed', error: errorFor('invalid_response', { message: e.message }) }, t);
+          await finish(job, { state: 'failed', error: errorFor('invalid_response', { message: e.message }) }, t);
         }
       }
       const remaining = await deps.queue.queuedCount(s.endUserId);
@@ -139,11 +159,14 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       if (!s) return ok(simpleResponse(op, 'done'));
       const err = fromHresult(args.hresult ?? '');
       const job = await deps.queue.inFlight(s.endUserId);
-      if (job) await deps.queue.complete(job.id, { state: 'failed', error: err }, now());
+      if (job) await finish(job, { state: 'failed', error: err }, now());
       const lastError = `${args.hresult ?? ''} ${args.message ?? ''}`.trim();
       const who = await deps.users.get(s.endUserId);
       await deps.users.update(s.endUserId, { status: 'broken', lastError });
-      if (who && who.status !== 'broken') await deps.health?.append({ endUserId: who.id, projectId: who.projectId, at: now(), status: 'broken', reason: lastError || 'Connection error reported by the Web Connector' });
+      if (who && who.status !== 'broken') {
+        await deps.health?.append({ endUserId: who.id, projectId: who.projectId, at: now(), status: 'broken', reason: lastError || 'Connection error reported by the Web Connector' });
+        await emit({ type: 'company_file.broken', user: { ...who, status: 'broken', lastError }, at: now(), reason: lastError || 'Connection error reported by the Web Connector' });
+      }
       await deps.sessions.update(s.ticket, { lastError: args.message ?? err.message });
       return ok(simpleResponse(op, 'done')); // end the session cleanly
     }

@@ -16,7 +16,7 @@ export const billing: DocPage = {
     {
       heading: "Plans",
       body: [
-        `Developer is free, with unlimited sample company files and no card. Production is ${money(rates.perFile)} per active file per month, or ${money(rates.perFileAnnualMonthly)} per file per month billed yearly. The Starter Pack covers up to ${rates.packFiles} files for ${money(rates.packMonthly)} a month (${money(rates.packAnnualMonthly)} billed yearly). Volume is ${money(rates.volumeFile)} per file from file ${rates.volumeFromFiles} upward. Enterprise is custom. See the pricing page for the full list.`,
+        `Developer is free, with unlimited sample company files and no card. Production is ${money(rates.perFile)} per active file per month, or ${money(rates.perFileAnnualMonthly)} per file per month billed yearly. The Starter Pack covers up to ${rates.packFiles} files for ${money(rates.packMonthly)} a month (${money(rates.packAnnualMonthly)} billed yearly). Volume is ${money(rates.volumeFile)} per file from file ${rates.volumeFromFiles} upward. Enterprise is custom. See the pricing page for the full list. Every plan has a fair-use cap on API requests per day: ${p.abuse.dailyRequests.free.toLocaleString("en-US")} on Developer, ${p.abuse.dailyRequests.production.toLocaleString("en-US")} on Production and the Starter Pack, ${p.abuse.dailyRequests.volume.toLocaleString("en-US")} on Volume. See the limits guide.`,
       ],
     },
     {

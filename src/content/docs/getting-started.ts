@@ -17,7 +17,7 @@ export const gettingStarted: DocPage = {
       heading: "Create your account",
       body: [
         `Go to ${p.url} and sign in with your email. We send a magic link, so there is no password to set. Your first sign in creates an organization that holds your end users, keys and billing.`,
-        `New accounts start on the ${p.plans[0]?.name ?? "Developer"} plan: unlimited sample company files, no card. Production is ${money(rates.perFile)} per active file per month.`,
+        `New accounts start on the ${p.plans[0]?.name ?? "Developer"} plan: unlimited sample company files, no card, and a fair-use cap of ${p.abuse.dailyRequests.free.toLocaleString("en-US")} API requests a day. Production is ${money(rates.perFile)} per active file per month.`,
       ],
     },
     {

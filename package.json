@@ -12,6 +12,7 @@
     "test": "vitest run",
     "stripe:setup": "tsx scripts/stripe-setup.ts",
     "db:indexes": "tsx scripts/ensure-indexes.ts",
+    "gen:sdk": "tsx tools/gen-sdk-models/index.ts",
     "screenshots": "tsx scripts/screenshots.ts",
     "deploy": "scripts/deploy.sh"
   },

@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { altchaHeader } from "./altcha";
 
 // End to end on the memory driver: magic link -> session -> org -> entitlement -> API key -> cron guard.
 test("magic link sign-in, org, billing state, api key, cron guard", async ({ page, request, baseURL }) => {
   const email = `e2e+${Date.now()}@studio.test`;
   const origin = { origin: baseURL! };
 
-  const start = await page.request.post("/api/auth/sign-in/magic-link", { data: { email, callbackURL: "/app" }, headers: origin });
+  const start = await page.request.post("/api/auth/sign-in/magic-link", { data: { email, callbackURL: "/app" }, headers: { ...origin, "x-altcha": await altchaHeader(request) } });
   expect(start.ok()).toBeTruthy();
 
   const box = await (await request.get(`/api/dev/outbox?to=${encodeURIComponent(email)}`)).json();

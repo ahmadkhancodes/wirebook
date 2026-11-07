@@ -92,9 +92,8 @@ describe('M3 objects through the simulator', () => {
     });
   }
 
-  it('terms and transactions refuse updates (405)', async () => {
-    expect((await h.call('POST', '/v1/qbd/terms/80000100-1', { body: {} })).status).toBe(405);
-    expect((await h.call('POST', '/v1/qbd/estimates/9500-1', { body: {} })).status).toBe(405);
+  it('payments still refuse updates (405)', async () => {
+    expect((await h.call('POST', '/v1/qbd/payments/9500-1', { body: {} })).status).toBe(405);
   });
 
   it('paginates with limit=2 across 3 rows', async () => {

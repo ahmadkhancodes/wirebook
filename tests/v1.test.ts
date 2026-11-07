@@ -59,7 +59,7 @@ describe('REST /v1/qbd core objects (validated against the simulator)', () => {
     const stale = await h.call('POST', `/v1/qbd/customers/${c.listId}`, { body: { email: 'z@b.test', revisionNumber: c.revisionNumber } });
     expect(stale.status).toBe(409);
     expect(stale.json.error.code).toBe('revision_conflict');
-    expect((await h.call('POST', '/v1/qbd/invoices/9000-1', { body: {} })).status).toBe(405);
+    expect((await h.call('POST', '/v1/qbd/payments/9500-1', { body: {} })).status).toBe(405);
   });
 
   it('vendor update works through VendorMod', async () => {

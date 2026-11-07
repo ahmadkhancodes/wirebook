@@ -55,6 +55,8 @@ export interface WebhookEndpoint {
   secret: string;
   events: string[];
   enabled: boolean;
+  /** Which environment's events it receives. Absent on older endpoints = both. */
+  environment?: "test" | "production";
   createdAt: Date;
 }
 
@@ -88,6 +90,11 @@ export interface Suppression {
 export interface OrgSettings {
   /** Shortens payload retention below product.retention.payloadDays. */
   retentionDays?: number;
+  /** Admin suspension: every API request answers 403 org_suspended. */
+  suspended?: boolean;
+  suspendedReason?: string;
+  /** API key ids an admin suspended (403 key_suspended). */
+  suspendedKeys?: string[];
 }
 
 export interface Db {
@@ -118,6 +125,9 @@ export interface Db {
   /** Orgs that have a custom retention (the purge job handles them separately). */
   listOrgsWithRetention(): Promise<{ orgId: string; retentionDays: number }[]>;
 
+  /** Orgs an admin suspended, or that have suspended keys. */
+  listSuspended(): Promise<{ orgId: string; suspended: boolean; reason: string; suspendedKeys: string[] }[]>;
+
   // rate limiting (sliding window). Returns hits inside the window INCLUDING this one.
   hitRateLimit(key: string, windowMs: number, now?: number): Promise<number>;
 
@@ -129,7 +139,7 @@ export interface Db {
   createWebhookEndpoint(e: Omit<WebhookEndpoint, "app" | "createdAt">): Promise<WebhookEndpoint>;
   listWebhookEndpoints(orgId: string): Promise<WebhookEndpoint[]>;
   getWebhookEndpoint(orgId: string, id: string): Promise<WebhookEndpoint | null>;
-  updateWebhookEndpoint(orgId: string, id: string, patch: Partial<Pick<WebhookEndpoint, "url" | "events" | "enabled">>): Promise<void>;
+  updateWebhookEndpoint(orgId: string, id: string, patch: Partial<Pick<WebhookEndpoint, "url" | "events" | "enabled" | "environment">>): Promise<void>;
   deleteWebhookEndpoint(orgId: string, id: string): Promise<void>;
   createDelivery(d: Omit<WebhookDelivery, "app">): Promise<void>;
   updateDelivery(id: string, patch: Partial<Omit<WebhookDelivery, "id" | "app" | "orgId">>): Promise<void>;

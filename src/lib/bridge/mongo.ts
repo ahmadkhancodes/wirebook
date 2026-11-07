@@ -67,6 +67,10 @@ class MongoQueue implements JobQueue {
     const r = await (await this.c()).updateMany(q, { $set: { body: {}, purgedAt: now }, $unset: { result: '', rawResponse: '' } });
     return r.modifiedCount;
   }
+  async deleteMetadata(o: { before: Date }) {
+    const r = await (await this.c()).deleteMany({ createdAt: { $lt: o.before }, state: { $nin: ['queued', 'sent'] } });
+    return r.deletedCount;
+  }
   async listForUser(endUserId: string, limit: number) {
     const docs = await (await this.c()).find({ endUserId }).sort({ createdAt: -1, _id: -1 }).limit(limit).toArray();
     return docs.map((d) => fromDoc<Job>(d as Doc<Job>)!);

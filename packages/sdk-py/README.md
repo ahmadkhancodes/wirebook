@@ -76,3 +76,7 @@ except ConflictError as e:
 ## Tests
 
 `python3 -m unittest discover -s tests` (fake transport, no network). MIT licence.
+
+## Typed models
+
+`wirebook.models` has a TypedDict per request body and row: `CustomerCreate`, `EstimateUpdate`, `Invoice`, and so on, generated from the same field specs the API validates with. Key names are camelCase, as the API takes them. An update must carry `revisionNumber`; lines in a transaction update carry `txnLineId` (`"-1"` adds a line). Payments cannot be updated yet (`NoUpdate`). Rows stay open: a field the TypedDict does not name is still in the dict at runtime.

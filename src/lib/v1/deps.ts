@@ -1,10 +1,11 @@
+import { product } from '@/config/product';
 import { getBridge } from '@/lib/bridge';
 import { getDb } from '@/lib/db';
 import { appUrl, env } from '@/lib/env';
 import { authApiKey } from '@/lib/auth/session';
 import { HttpError } from '@/lib/http';
 import { canActivateFile } from '@/lib/billing/metering';
-import { rateLimit, RULES } from '@/lib/security/ratelimit';
+import { enforceBadKeyLimit, enforceIpLimit, guardKey } from '@/lib/security/abuse';
 import { apiError } from './errors';
 import type { Environment, V1Deps } from './engine';
 
@@ -12,7 +13,7 @@ import type { Environment, V1Deps } from './engine';
 export const connectSecret = () => env().BETTER_AUTH_SECRET ?? 'wirebook-dev-secret';
 
 /** Hobby caps functions at 60 s, so the sync wait is 55 s; set SYNC_WAIT_MS=90000 on Pro. */
-export const syncWaitMs = () => Number(process.env.SYNC_WAIT_MS) || 55_000;
+export const syncWaitMs = () => Number(process.env.SYNC_WAIT_MS) || product.abuse.syncWaitMs;
 
 /** Production wiring: Better Auth org keys (key metadata.environment picks test or production), kit rate limiter, the Mongo or memory bridge. */
 export async function defaultDeps(req: Request): Promise<V1Deps & { secret: string }> {
@@ -27,6 +28,7 @@ export async function defaultDeps(req: Request): Promise<V1Deps & { secret: stri
     },
     async authenticate(r) {
       const db = await getDb();
+      await enforceIpLimit(db, ip);
       const raw = r.headers.get('x-api-key') ?? r.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
       if (!raw) throw apiError('missing_api_key');
       let key;
@@ -34,13 +36,10 @@ export async function defaultDeps(req: Request): Promise<V1Deps & { secret: stri
         key = await authApiKey(r);
       } catch (e) {
         if (!(e instanceof HttpError)) throw e;
-        // 10 bad keys from one address -> 429 for the rest of the minute
-        const bad = await rateLimit(`badkey:${ip}`, { limit: 10, windowMs: 60_000 }, db);
-        if (!bad.ok) throw apiError('rate_limited', { headers: { 'retry-after': '60' } });
+        await enforceBadKeyLimit(db, ip);
         throw apiError('invalid_api_key');
       }
-      const rl = await rateLimit(`api:${key.keyId}`, RULES.api, db);
-      if (!rl.ok) throw apiError('rate_limited', { headers: { 'retry-after': '60' } });
+      await guardKey(db, { orgId: key.orgId, keyId: key.keyId });
       return { orgId: key.orgId, keyId: key.keyId, environment: key.environment };
     },
   };

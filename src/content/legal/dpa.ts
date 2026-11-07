@@ -19,7 +19,7 @@ export const dpa: LegalDoc = {
       body: [
         {
           list: [
-            "Subject matter: relaying QuickBooks requests and responses between your application and connected QuickBooks Desktop company files through the Intuit Web Connector. Payload logging is off by default in production.",
+            "Subject matter: relaying QuickBooks requests and responses between your application and connected QuickBooks Desktop company files through the Intuit Web Connector. Payloads are stored with each request for 14 days at most (shorter if you set it) and are then deleted.",
             "Duration: while your account is open, plus the deletion period in the privacy policy.",
             "Data subjects: your customers who connect a company file, and the people and businesses whose records appear in those company files.",
             "Data types: whatever records the QuickBooks operations you call contain, plus request metadata (request id, operation, state, timestamps and error codes) and IP address for security.",

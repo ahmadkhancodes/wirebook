@@ -75,6 +75,11 @@ export function createMemoryDb(app: string, config: Record<string, string> = {})
       settings.set(orgId, next);
       return clone(next);
     },
+    async listSuspended() {
+      return [...settings]
+        .filter(([, v]) => v.suspended || (v.suspendedKeys?.length ?? 0) > 0)
+        .map(([orgId, v]) => ({ orgId, suspended: !!v.suspended, reason: v.suspendedReason ?? "", suspendedKeys: [...(v.suspendedKeys ?? [])] }));
+    },
     async listOrgsWithRetention() {
       return [...settings].filter(([, s]) => s.retentionDays !== undefined).map(([orgId, s]) => ({ orgId, retentionDays: s.retentionDays! }));
     },

@@ -1,4 +1,4 @@
-import type { EndUser, HealthEvent, HealthStatus } from "@/lib/qbwc/types";
+import type { EndUser, HealthEvent, HealthStatus, Job, RequestState } from "@/lib/qbwc/types";
 import { evaluate } from "./evaluate";
 
 export const STATUS_LABEL: Record<HealthStatus, string> = { connected: "Connected", asleep: "Asleep", broken: "Broken", pending: "Pending" };
@@ -38,3 +38,13 @@ export const eventView = (e: HealthEvent): HealthEventView => ({ id: e.id, at: n
 
 export const projectOf = (orgId: string, env: string | null | undefined) => `${orgId}__${env === "production" ? "production" : "test"}`;
 export const ownsUser = (orgId: string, u: EndUser) => u.projectId === `${orgId}__test` || u.projectId === `${orgId}__production`;
+
+/** One row of a company file's sync history: a request that went through its queue. */
+export interface SyncView { id: string; at: string; call: string; state: RequestState; durationMs: number | null; error: string | null; href: string }
+export function syncView(j: Job, u: EndUser): SyncView {
+  const env = u.projectId.endsWith("__production") ? "production" : "test";
+  return {
+    id: j.id, at: new Date(j.createdAt).toISOString(), call: `${j.meta?.method ?? "-"} ${j.meta?.path ?? j.op}`, state: j.state,
+    durationMs: j.durationMs ?? null, error: j.error?.code ?? null, href: `/app?${env === "production" ? "env=production&" : ""}req=${encodeURIComponent(j.id)}`,
+  };
+}

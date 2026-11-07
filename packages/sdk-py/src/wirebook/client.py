@@ -7,16 +7,29 @@ import re
 import time
 import uuid
 from email.utils import parsedate_to_datetime
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional, Tuple, Union
+from typing import Any, AsyncIterator, Callable, Dict, Generic, Iterator, List, Mapping, Optional, Tuple, TypeVar, Union
 from urllib.parse import quote, urlencode
 
 from ._transport import HttpRequest, HttpResponse, Transport, TransportError, urllib_transport
 from .errors import ConnectionError, WirebookError, error_from
+from .models import (
+    Account, AccountCreate, AccountUpdate, Bill, BillCreate, BillUpdate, CreditMemo, CreditMemoCreate, CreditMemoUpdate,
+    Customer, CustomerCreate, CustomerUpdate, Employee, EmployeeCreate, EmployeeUpdate, Estimate, EstimateCreate, EstimateUpdate,
+    Invoice, InvoiceCreate, InvoiceUpdate, Item, ItemCreate, ItemUpdate, NoUpdate, Payment, PaymentCreate, PurchaseOrder,
+    PurchaseOrderCreate, PurchaseOrderUpdate, QbClass, QbClassCreate, QbClassUpdate, SalesOrder, SalesOrderCreate,
+    SalesOrderUpdate, SalesReceipt, SalesReceiptCreate, SalesReceiptUpdate, Term, TermCreate, TermUpdate, Vendor,
+    VendorCreate, VendorUpdate,
+)
 
 DEFAULT_BASE_URL = "https://wirebook.buffersoltech.com"
 VERSION = "0.1.0"
 
 Json = Dict[str, Any]
+
+# row, create body and update body types of a Resource (see models.py)
+R = TypeVar("R")
+C = TypeVar("C", bound=Mapping[str, Any])
+U = TypeVar("U", bound=Mapping[str, Any])
 
 # python attribute -> URL segment
 RESOURCES: Dict[str, str] = {
@@ -191,7 +204,7 @@ class _Core:
             raise err
 
 
-class Resource:
+class Resource(Generic[C, U, R]):
     def __init__(self, core: _Core, segment: str) -> None:
         self._c = core
         self.segment = segment
@@ -214,11 +227,11 @@ class Resource:
     def list_all(self, *, end_user: Optional[str] = None, **params: Any) -> List[Json]:
         return list(self.iterate(end_user=end_user, **params))
 
-    def create(self, body: Mapping[str, Any], *, end_user: Optional[str] = None, idempotency_key: Optional[str] = None, async_: bool = False) -> Union[Json, Queued]:
+    def create(self, body: C, *, end_user: Optional[str] = None, idempotency_key: Optional[str] = None, async_: bool = False) -> Union[R, Queued]:
         status, out, _ = self._c.send("POST", self._base, body=dict(body), write=True, end_user=end_user, idempotency_key=idempotency_key, async_=async_)
         return Queued(out["id"]) if status == 202 else out
 
-    def get(self, id: str, *, end_user: Optional[str] = None) -> Json:
+    def get(self, id: str, *, end_user: Optional[str] = None) -> R:
         status, out, _ = self._c.send("GET", f"{self._base}/{quote(id, safe='')}", end_user=end_user)
         if status != 202:
             return out  # type: ignore[no-any-return]
@@ -228,7 +241,7 @@ class Resource:
             raise error_from(404, {"error": {"code": "not_found", "type": "not_found", "message": "No such object."}})
         return rows[0]  # type: ignore[no-any-return]
 
-    def update(self, id: str, body: Mapping[str, Any], *, end_user: Optional[str] = None, idempotency_key: Optional[str] = None, async_: bool = False) -> Union[Json, Queued]:
+    def update(self, id: str, body: U, *, end_user: Optional[str] = None, idempotency_key: Optional[str] = None, async_: bool = False) -> Union[R, Queued]:
         """The body must carry the revisionNumber you read."""
         status, out, _ = self._c.send("POST", f"{self._base}/{quote(id, safe='')}", body=dict(body), write=True, end_user=end_user, idempotency_key=idempotency_key, async_=async_)
         return Queued(out["id"]) if status == 202 else out
@@ -277,21 +290,21 @@ class Qbd:
             setattr(self, attr, Resource(core, seg))
 
     # typed attributes for editors; assigned dynamically from RESOURCES
-    customers: Resource
-    vendors: Resource
-    items: Resource
-    accounts: Resource
-    invoices: Resource
-    bills: Resource
-    payments: Resource
-    estimates: Resource
-    sales_orders: Resource
-    sales_receipts: Resource
-    credit_memos: Resource
-    purchase_orders: Resource
-    classes: Resource
-    terms: Resource
-    employees: Resource
+    customers: Resource[CustomerCreate, CustomerUpdate, Customer]
+    vendors: Resource[VendorCreate, VendorUpdate, Vendor]
+    items: Resource[ItemCreate, ItemUpdate, Item]
+    accounts: Resource[AccountCreate, AccountUpdate, Account]
+    invoices: Resource[InvoiceCreate, InvoiceUpdate, Invoice]
+    bills: Resource[BillCreate, BillUpdate, Bill]
+    payments: Resource[PaymentCreate, NoUpdate, Payment]
+    estimates: Resource[EstimateCreate, EstimateUpdate, Estimate]
+    sales_orders: Resource[SalesOrderCreate, SalesOrderUpdate, SalesOrder]
+    sales_receipts: Resource[SalesReceiptCreate, SalesReceiptUpdate, SalesReceipt]
+    credit_memos: Resource[CreditMemoCreate, CreditMemoUpdate, CreditMemo]
+    purchase_orders: Resource[PurchaseOrderCreate, PurchaseOrderUpdate, PurchaseOrder]
+    classes: Resource[QbClassCreate, QbClassUpdate, QbClass]
+    terms: Resource[TermCreate, TermUpdate, Term]
+    employees: Resource[EmployeeCreate, EmployeeUpdate, Employee]
 
     def raw(self, qbxml: str, *, end_user: Optional[str] = None, idempotency_key: Optional[str] = None, async_: bool = False) -> Union[Json, Queued]:
         status, out, _ = self._c.send("POST", "/v1/qbd/raw", body={"qbxml": qbxml}, write=True, end_user=end_user, idempotency_key=idempotency_key, async_=async_)
@@ -322,8 +335,8 @@ class Wirebook:
         return Wirebook(end_user=end_user_id, **self._kw)
 
 
-class _AsyncResource:
-    def __init__(self, inner: Resource) -> None:
+class _AsyncResource(Generic[C, U, R]):
+    def __init__(self, inner: Resource[C, U, R]) -> None:
         self._r = inner
         self.segment = inner.segment
 
@@ -341,13 +354,13 @@ class _AsyncResource:
     async def list_all(self, **params: Any) -> List[Json]:
         return [row async for row in self.iterate(**params)]
 
-    async def create(self, body: Mapping[str, Any], **kw: Any) -> Union[Json, Queued]:
+    async def create(self, body: C, **kw: Any) -> Union[R, Queued]:
         return await asyncio.to_thread(lambda: self._r.create(body, **kw))
 
-    async def get(self, id: str, **kw: Any) -> Json:
+    async def get(self, id: str, **kw: Any) -> R:
         return await asyncio.to_thread(lambda: self._r.get(id, **kw))
 
-    async def update(self, id: str, body: Mapping[str, Any], **kw: Any) -> Union[Json, Queued]:
+    async def update(self, id: str, body: U, **kw: Any) -> Union[R, Queued]:
         return await asyncio.to_thread(lambda: self._r.update(id, body, **kw))
 
 
@@ -357,21 +370,21 @@ class _AsyncQbd:
         for attr in RESOURCES:
             setattr(self, attr, _AsyncResource(getattr(inner, attr)))
 
-    customers: _AsyncResource
-    vendors: _AsyncResource
-    items: _AsyncResource
-    accounts: _AsyncResource
-    invoices: _AsyncResource
-    bills: _AsyncResource
-    payments: _AsyncResource
-    estimates: _AsyncResource
-    sales_orders: _AsyncResource
-    sales_receipts: _AsyncResource
-    credit_memos: _AsyncResource
-    purchase_orders: _AsyncResource
-    classes: _AsyncResource
-    terms: _AsyncResource
-    employees: _AsyncResource
+    customers: _AsyncResource[CustomerCreate, CustomerUpdate, Customer]
+    vendors: _AsyncResource[VendorCreate, VendorUpdate, Vendor]
+    items: _AsyncResource[ItemCreate, ItemUpdate, Item]
+    accounts: _AsyncResource[AccountCreate, AccountUpdate, Account]
+    invoices: _AsyncResource[InvoiceCreate, InvoiceUpdate, Invoice]
+    bills: _AsyncResource[BillCreate, BillUpdate, Bill]
+    payments: _AsyncResource[PaymentCreate, NoUpdate, Payment]
+    estimates: _AsyncResource[EstimateCreate, EstimateUpdate, Estimate]
+    sales_orders: _AsyncResource[SalesOrderCreate, SalesOrderUpdate, SalesOrder]
+    sales_receipts: _AsyncResource[SalesReceiptCreate, SalesReceiptUpdate, SalesReceipt]
+    credit_memos: _AsyncResource[CreditMemoCreate, CreditMemoUpdate, CreditMemo]
+    purchase_orders: _AsyncResource[PurchaseOrderCreate, PurchaseOrderUpdate, PurchaseOrder]
+    classes: _AsyncResource[QbClassCreate, QbClassUpdate, QbClass]
+    terms: _AsyncResource[TermCreate, TermUpdate, Term]
+    employees: _AsyncResource[EmployeeCreate, EmployeeUpdate, Employee]
 
     async def raw(self, qbxml: str, **kw: Any) -> Union[Json, Queued]:
         return await asyncio.to_thread(lambda: self._q.raw(qbxml, **kw))

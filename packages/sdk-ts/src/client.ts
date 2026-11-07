@@ -1,7 +1,10 @@
 import { ConnectionError, errorFrom, WirebookError, type ErrorBody } from './errors.js';
 import type {
-  Account, Bill, ConnectLink, CreditMemo, Customer, Employee, Estimate, Input, Invoice, Item, Page, Payment, PurchaseOrder, QbClass,
-  QbRecord, Queued, RawResult, RequestStatus, SalesOrder, SalesReceipt, Term, Vendor,
+  Account, AccountCreate, AccountUpdate, Bill, BillCreate, BillUpdate, ConnectLink, CreditMemo, CreditMemoCreate, CreditMemoUpdate,
+  Customer, CustomerCreate, CustomerUpdate, Employee, EmployeeCreate, EmployeeUpdate, Estimate, EstimateCreate, EstimateUpdate, Input,
+  Invoice, InvoiceCreate, InvoiceUpdate, Item, ItemCreate, ItemUpdate, Page, Payment, PaymentCreate, PurchaseOrder, PurchaseOrderCreate,
+  PurchaseOrderUpdate, QbClass, QbClassCreate, QbClassUpdate, QbRecord, Queued, RawResult, RequestStatus, SalesOrder, SalesOrderCreate,
+  SalesOrderUpdate, SalesReceipt, SalesReceiptCreate, SalesReceiptUpdate, Term, TermCreate, TermUpdate, Vendor, VendorCreate, VendorUpdate,
 } from './types.js';
 
 export const DEFAULT_BASE_URL = 'https://wirebook.buffersoltech.com';
@@ -144,7 +147,8 @@ export class Transport {
 
 const queuedOf = (b: unknown): Queued => ({ state: 'queued', id: (b as { id: string }).id });
 
-export class Resource<T extends QbRecord = QbRecord, I = Input> {
+/** T is the row, C the create body and U the update body (`never` where the API has no update). */
+export class Resource<T extends QbRecord = QbRecord, C = Input, U = Input & { revisionNumber: string }> {
   constructor(private readonly t: Transport, readonly segment: string) {}
   private get base() { return `/v1/qbd/${this.segment}`; }
 
@@ -178,7 +182,7 @@ export class Resource<T extends QbRecord = QbRecord, I = Input> {
   }
 
   /** Creates a record. An Idempotency-Key is added for you and reused across retries. Returns Queued on a 202. */
-  async create(body: I, opts: RequestOptions = {}): Promise<T | Queued> {
+  async create(body: C, opts: RequestOptions = {}): Promise<T | Queued> {
     const r = await this.t.send('POST', this.base, { ...opts, body, write: true });
     return r.status === 202 ? queuedOf(r.body) : (r.body as T);
   }
@@ -194,7 +198,7 @@ export class Resource<T extends QbRecord = QbRecord, I = Input> {
   }
 
   /** Updates a record; the body must carry the revisionNumber you read. Returns Queued on a 202. */
-  async update(id: string, body: Partial<I> & { revisionNumber: string }, opts: RequestOptions = {}): Promise<T | Queued> {
+  async update(id: string, body: U, opts: RequestOptions = {}): Promise<T | Queued> {
     const r = await this.t.send('POST', `${this.base}/${encodeURIComponent(id)}`, { ...opts, body, write: true });
     return r.status === 202 ? queuedOf(r.body) : (r.body as T);
   }
@@ -237,21 +241,21 @@ export class ConnectLinks {
 }
 
 export class Qbd {
-  readonly customers: Resource<Customer>;
-  readonly vendors: Resource<Vendor>;
-  readonly items: Resource<Item>;
-  readonly accounts: Resource<Account>;
-  readonly invoices: Resource<Invoice>;
-  readonly bills: Resource<Bill>;
-  readonly payments: Resource<Payment>;
-  readonly estimates: Resource<Estimate>;
-  readonly salesOrders: Resource<SalesOrder>;
-  readonly salesReceipts: Resource<SalesReceipt>;
-  readonly creditMemos: Resource<CreditMemo>;
-  readonly purchaseOrders: Resource<PurchaseOrder>;
-  readonly classes: Resource<QbClass>;
-  readonly terms: Resource<Term>;
-  readonly employees: Resource<Employee>;
+  readonly customers: Resource<Customer, CustomerCreate, CustomerUpdate>;
+  readonly vendors: Resource<Vendor, VendorCreate, VendorUpdate>;
+  readonly items: Resource<Item, ItemCreate, ItemUpdate>;
+  readonly accounts: Resource<Account, AccountCreate, AccountUpdate>;
+  readonly invoices: Resource<Invoice, InvoiceCreate, InvoiceUpdate>;
+  readonly bills: Resource<Bill, BillCreate, BillUpdate>;
+  readonly payments: Resource<Payment, PaymentCreate, never>;
+  readonly estimates: Resource<Estimate, EstimateCreate, EstimateUpdate>;
+  readonly salesOrders: Resource<SalesOrder, SalesOrderCreate, SalesOrderUpdate>;
+  readonly salesReceipts: Resource<SalesReceipt, SalesReceiptCreate, SalesReceiptUpdate>;
+  readonly creditMemos: Resource<CreditMemo, CreditMemoCreate, CreditMemoUpdate>;
+  readonly purchaseOrders: Resource<PurchaseOrder, PurchaseOrderCreate, PurchaseOrderUpdate>;
+  readonly classes: Resource<QbClass, QbClassCreate, QbClassUpdate>;
+  readonly terms: Resource<Term, TermCreate, TermUpdate>;
+  readonly employees: Resource<Employee, EmployeeCreate, EmployeeUpdate>;
 
   constructor(private readonly t: Transport) {
     this.customers = new Resource(t, 'customers');

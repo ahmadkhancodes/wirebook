@@ -5,7 +5,7 @@ import { XMLParser } from 'fast-xml-parser';
  * It speaks the real SOAP 1.1 operations and answers qbXML from a tiny fake company file.
  * It proves our contract with the QBWC protocol; it is NOT real QuickBooks.
  */
-const xp = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', parseTagValue: false, isArray: (n) => ['InvoiceLineAdd', 'ExpenseLineAdd', 'ItemLineAdd', 'AppliedToTxnAdd', 'EstimateLineAdd', 'SalesOrderLineAdd', 'SalesReceiptLineAdd', 'CreditMemoLineAdd', 'PurchaseOrderLineAdd'].includes(n) });
+const xp = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', parseTagValue: false, isArray: (n) => ['InvoiceLineAdd', 'ExpenseLineAdd', 'ItemLineAdd', 'AppliedToTxnAdd', 'InvoiceLineMod', 'ExpenseLineMod', 'ItemLineMod', 'EstimateLineMod', 'SalesOrderLineMod', 'SalesReceiptLineMod', 'CreditMemoLineMod', 'PurchaseOrderLineMod', 'EstimateLineAdd', 'SalesOrderLineAdd', 'SalesReceiptLineAdd', 'CreditMemoLineAdd', 'PurchaseOrderLineAdd'].includes(n) });
 const xmlp = new XMLParser({ removeNSPrefix: true, parseTagValue: false, trimValues: false });
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const NS = 'xmlns="http://developer.intuit.com/"';
@@ -13,7 +13,7 @@ const NS = 'xmlns="http://developer.intuit.com/"';
 export type Post = (soapXml: string) => Promise<{ status: number; body: string }>;
 
 interface Cust { ListID: string; Name: string; EditSequence: string; IsActive: boolean; Email?: string }
-interface Inv { TxnID: string; RefNumber?: string; Customer: string; total: number }
+interface Inv { TxnID: string; EditSequence?: string; RefNumber?: string; Customer: string; total: number }
 
 export class FakeCompanyFile {
   customers: Cust[] = [];
@@ -106,7 +106,7 @@ export class FakeCompanyFile {
         const ids = wanted('TxnID');
         const rows = this.invoices
           .filter((i) => !ids.length || ids.includes(i.TxnID))
-          .map((i) => `<InvoiceRet><TxnID>${i.TxnID}</TxnID><CustomerRef><FullName>${esc(i.Customer)}</FullName></CustomerRef><RefNumber>${esc(i.RefNumber ?? '')}</RefNumber><Subtotal>${i.total.toFixed(2)}</Subtotal></InvoiceRet>`);
+          .map((i) => `<InvoiceRet><TxnID>${i.TxnID}</TxnID><EditSequence>${i.EditSequence ?? '1700000000'}</EditSequence><CustomerRef><FullName>${esc(i.Customer)}</FullName></CustomerRef><RefNumber>${esc(i.RefNumber ?? '')}</RefNumber><Subtotal>${i.total.toFixed(2)}</Subtotal></InvoiceRet>`);
         return this.page(rows, node, rs, id, head);
       }
       case 'InvoiceAddRq': {
@@ -117,7 +117,16 @@ export class FakeCompanyFile {
         const total = lines.reduce((s, l) => s + (l.Amount ? Number(l.Amount) : Number(l.Quantity ?? 1) * Number(l.Rate ?? 0)), 0);
         const inv: Inv = { TxnID: `9000-${this.invoices.length + 1}`, RefNumber: a.RefNumber, Customer: who, total };
         this.invoices.push(inv);
-        return this.wrap(`${head(0, 'Info', 'Status OK')}><InvoiceRet><TxnID>${inv.TxnID}</TxnID><CustomerRef><FullName>${esc(who)}</FullName></CustomerRef><RefNumber>${esc(inv.RefNumber ?? '')}</RefNumber><Subtotal>${total.toFixed(2)}</Subtotal></InvoiceRet></${rs}>`);
+        return this.wrap(`${head(0, 'Info', 'Status OK')}><InvoiceRet><TxnID>${inv.TxnID}</TxnID><EditSequence>1700000000</EditSequence><CustomerRef><FullName>${esc(who)}</FullName></CustomerRef><RefNumber>${esc(inv.RefNumber ?? '')}</RefNumber><Subtotal>${total.toFixed(2)}</Subtotal></InvoiceRet></${rs}>`);
+      }
+      case 'InvoiceModRq': {
+        const m = node.InvoiceMod ?? {};
+        const inv = this.invoices.find((x) => x.TxnID === m.TxnID);
+        if (!inv) return this.wrap(`${head(3140, 'Error', 'Invalid reference: Invoice not found.')} />`);
+        if ((inv.EditSequence ?? '1700000000') !== m.EditSequence) return this.wrap(`${head(3200, 'Error', 'The provided edit sequence is out-of-date.')} />`);
+        if (m.RefNumber !== undefined) inv.RefNumber = m.RefNumber;
+        inv.EditSequence = String(Number(m.EditSequence) + 1);
+        return this.wrap(`${head(0, 'Info', 'Status OK')}><InvoiceRet><TxnID>${inv.TxnID}</TxnID><EditSequence>${inv.EditSequence}</EditSequence><CustomerRef><FullName>${esc(inv.Customer)}</FullName></CustomerRef><RefNumber>${esc(inv.RefNumber ?? '')}</RefNumber><Subtotal>${inv.total.toFixed(2)}</Subtotal></InvoiceRet></${rs}>`);
       }
       default: {
         const m = /^(Vendor|Item|Account|Bill|ReceivePayment|Estimate|SalesOrder|SalesReceipt|CreditMemo|PurchaseOrder|Class|Employee|StandardTerms|Terms)(Service)?(Query|Add|Mod)Rq$/.exec(rq);
@@ -138,13 +147,17 @@ export class FakeCompanyFile {
           return this.page(rows, node, rs, id, head);
         }
         if (kind === 'Mod') {
-          const mod = node[`${type}Mod`] ?? {};
-          const r = list.find((x) => x.ListID === mod.ListID);
+          const mod = node[`${type}${svc ?? ''}Mod`] ?? {};
+          const r = list.find((x) => x[idTag] === mod[idTag]);
           if (!r) return this.wrap(`${head(3140, 'Error', `Invalid reference: ${type} not found.`)} />`);
           if (r.EditSequence !== mod.EditSequence) return this.wrap(`${head(3200, 'Error', 'The provided edit sequence is out-of-date.')} />`);
-          for (const [k, v] of Object.entries(mod)) if (k !== 'ListID' && k !== 'EditSequence') r[k] = v;
+          for (const [k, v] of Object.entries(mod)) {
+            if (k === idTag || k === 'EditSequence') continue;
+            // XxxLineMod / SalesOrPurchaseMod are stored as the Ret shape (XxxLineRet / SalesOrPurchase)
+            r[k.replace(/LineMod$/, 'LineRet').replace(/Mod$/, '')] = v;
+          }
           if (mod.Name) r.FullName = mod.Name;
-          r.EditSequence = String(Number(r.EditSequence) + 1);
+          r.EditSequence = String(Number(r.EditSequence ?? '1700000000') + 1);
           return this.wrap(`${head(0, 'Info', 'Status OK')}><${ret}>${this.toXml(r)}</${ret}></${rs}>`);
         }
         const a = node[`${type}${svc ?? ''}Add`] ?? {};
@@ -155,7 +168,7 @@ export class FakeCompanyFile {
         if (type === 'Employee') a.Name = [a.FirstName, a.LastName].filter(Boolean).join(' ');
         if (!isTxn && list.some((r) => r.Name === a.Name)) return this.wrap(`${head(3100, 'Error', `The name "${a.Name}" of the list element is already in use.`)} />`);
         const row: Record<string, any> = isTxn
-          ? { TxnID: `9500-${++this.seq}`, ...a }
+          ? { TxnID: `9500-${++this.seq}`, EditSequence: '1700000000', ...a }
           : { ListID: `80000100-${++this.seq}`, EditSequence: '1700000000', ...a, FullName: a.Name };
         if (type === 'Bill') row.AmountDue = ([] as any[]).concat(a.ExpenseLineAdd ?? [], a.ItemLineAdd ?? []).reduce((s, l) => s + Number(l.Amount ?? Number(l.Quantity ?? 1) * Number(l.Cost ?? 0)), 0).toFixed(2);
         const out = this.toXml(row, true);
