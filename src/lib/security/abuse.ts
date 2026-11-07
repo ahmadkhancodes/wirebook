@@ -3,6 +3,7 @@ import { effectivePlan } from "@/lib/billing/entitlement";
 import type { Db } from "@/lib/db/types";
 import { apiError } from "@/lib/v1/errors";
 import { checkThreshold } from "@/lib/webhooks/events";
+import { errorFor, type QbError } from "@/lib/errors/catalogue";
 import { rateLimit } from "./ratelimit";
 
 /**
@@ -67,4 +68,10 @@ export async function setKeySuspended(db: Db, orgId: string, keyId: string, susp
   const cur = (await db.getOrgSettings(orgId)).suspendedKeys ?? [];
   const next = suspended ? [...new Set([...cur, keyId])] : cur.filter((k) => k !== keyId);
   return db.setOrgSettings(orgId, { suspendedKeys: next });
+}
+
+/** Web Connector gate: an admin-suspended organization gets no more work through /qbwc. projectId is `${orgId}__${env}`. */
+export async function suspendedRefusal(db: Db, projectId: string): Promise<QbError | null> {
+  const orgId = projectId.split("__")[0];
+  return (await db.getOrgSettings(orgId)).suspended ? errorFor("org_suspended") : null;
 }

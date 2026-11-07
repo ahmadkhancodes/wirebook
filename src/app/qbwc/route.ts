@@ -5,6 +5,7 @@ import { canActivateFile, isBillableFile, onFileSynced } from "@/lib/billing/met
 import { errorFor } from "@/lib/errors/catalogue";
 import { getDb } from "@/lib/db";
 import { handleSoap, wsdl } from "@/lib/qbwc";
+import { suspendedRefusal } from "@/lib/security/abuse";
 import { checkFilesThreshold, webhookSink } from "@/lib/webhooks/events";
 
 export const runtime = "nodejs";
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     ...bridge,
     onEvent: webhookSink(db),
     // plan gate when the Web Connector asks for work: the Developer cap holds even for files whose requests were queued before the cap was reached
-    admit: async (u) => ((await canActivateFile(db, u.projectId, u.id, new Date(), isBillableFile(u))) ? null : errorFor("file_limit_reached")),
+    admit: async (u) => (await suspendedRefusal(db, u.projectId)) ?? ((await canActivateFile(db, u.projectId, u.id, new Date(), isBillableFile(u))) ? null : errorFor("file_limit_reached")),
     onSuccess: async (u, at) => { await onFileSynced(db, getStripe(), u.projectId, u.id, at, isBillableFile(u)); await checkFilesThreshold(db, u.projectId, { now: at }); },
     holdMs: Number(process.env.QBWC_HOLD_MS) || 0,
   });

@@ -1,5 +1,5 @@
 import { product } from "@/config/product";
-import { appUrl, env, secretOr } from "@/lib/env";
+import { appUrl, env, isProd, secretOr } from "@/lib/env";
 import { getDb } from "@/lib/db";
 import { hmacSha256Hex } from "@/lib/ids";
 import { consoleTransport, resendTransport, smtpTransport } from "./transports";
@@ -12,6 +12,7 @@ export function transportFromEnv(): MailTransport {
   const p = e.MAIL_PROVIDER ?? (e.RESEND_API_KEY ? "resend" : "console");
   if (p === "resend" && e.RESEND_API_KEY) return resendTransport(e.RESEND_API_KEY);
   if (p === "smtp") return smtpTransport();
+  if (isProd() && e.MAIL_PROVIDER !== "console") throw new Error("No mail provider configured: set RESEND_API_KEY (or MAIL_PROVIDER=smtp)");
   return consoleTransport();
 }
 

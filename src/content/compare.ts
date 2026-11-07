@@ -45,7 +45,7 @@ export const comparisons: CompareEntry[] = [
     faq: [
       { q: `Is ${product.name} really half the price of ${b.name}?`, a: `${b.name} lists ${money(rates.benchmark)} per company file per month (${b.host}, checked ${b.checked}). ${product.name} lists ${money(rates.perFile)}, or ${money(rates.perFileAnnualMonthly)} billed yearly.` },
       { q: "What do I give up?", a: `${b.name} has more typed endpoints, a SOC 2 Type II report per Apideck, and an MCP server. ${product.name} has none of those at launch.` },
-      { q: "Can I move from Conductor?", a: "Yes. Files moved from another QuickBooks Desktop API get their first 2 months at $0." },
+      { q: "Can I move from Conductor?", a: "Yes. If you move files from another QuickBooks Desktop API, write to us and we will agree a free migration period." },
     ],
   },
 ];

@@ -150,7 +150,7 @@ const faq: FaqItem[] = [
   { q: "Which QuickBooks versions work?", a: "QuickBooks Desktop 2024 is our target version, so far validated against a Web Connector simulator; the run on a real install is pending. Version 2023 and older is best effort. Pro, Premier and Enterprise on Windows are supported." },
   { q: "Does it work with QuickBooks for Mac or UK QuickBooks Desktop?", a: "No. The Web Connector runs on Windows, and we do not support the UK edition." },
   { q: "Can I try it without buying QuickBooks?", a: "Yes. Sample company files are unlimited on the free Developer tier. No card." },
-  { q: "What does migration cost?", a: "The first 2 months are $0 for files moved from another QuickBooks Desktop API or a home grown Web Connector server." },
+  { q: "What does migration cost?", a: "Moving from another QuickBooks Desktop API or a home grown Web Connector server? Write to us and we will agree a free migration period." },
   { q: "Is Intuit involved?", a: product.intuitNotice },
 ];
 

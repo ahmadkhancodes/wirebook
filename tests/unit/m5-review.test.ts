@@ -179,3 +179,28 @@ describe('Webhook SSRF and API key roles', () => {
     expect(roles.viewer.authorize({ apiKey: ['create'] } as never).success).toBe(false);
   });
 });
+
+describe('P1 follow-ups', () => {
+  it('a suspended org gets no work through the Web Connector', async () => {
+    const { suspendedRefusal } = await import('../../src/lib/security/abuse');
+    const db = createMemoryDb('wirebook');
+    expect(await suspendedRefusal(db, 'org1__test')).toBeNull();
+    await db.setOrgSettings('org1', { suspended: true });
+    expect((await suspendedRefusal(db, 'org1__test'))?.code).toBe('org_suspended');
+    expect(await suspendedRefusal(db, 'org2__test')).toBeNull();
+  });
+
+  it('mail in production without a provider fails loudly', async () => {
+    const { transportFromEnv } = await import('../../src/lib/mail');
+    const keep = { n: process.env.NODE_ENV, k: process.env.RESEND_API_KEY, p: process.env.MAIL_PROVIDER };
+    delete process.env.RESEND_API_KEY; delete process.env.MAIL_PROVIDER;
+    (process.env as Record<string, string>).NODE_ENV = 'production';
+    try { expect(() => transportFromEnv()).toThrow(/mail provider/i); }
+    finally {
+      (process.env as Record<string, string>).NODE_ENV = keep.n!;
+      if (keep.k) process.env.RESEND_API_KEY = keep.k;
+      if (keep.p) process.env.MAIL_PROVIDER = keep.p;
+    }
+    expect(transportFromEnv().name).toBe('console');
+  });
+});
