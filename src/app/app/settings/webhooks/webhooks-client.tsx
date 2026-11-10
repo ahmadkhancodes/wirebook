@@ -71,7 +71,7 @@ export function WebhooksClient({ canManage, events }: { canManage: boolean; even
     const r = await api(`/api/webhooks/${ep.id}/test`, { body: {} });
     setBusy(null);
     if (!r.ok) return setNotice({ ok: false, text: r.message });
-    setNotice({ ok: true, text: `Test event queued for ${ep.url}. Check the log below in a few seconds.` });
+    setNotice({ ok: true, text: `Test event sent to ${ep.url}. The result is in the log below.` });
     deliveries.reload();
   }
 
