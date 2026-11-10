@@ -115,6 +115,11 @@ export const product = {
   retention: { payloadDays: 14, minPayloadDays: 1, metadataDays: 90 },
   /** Connection health thresholds, measured from the last Web Connector poll. */
   health: { asleepAfterMs: 2 * 60 * 60 * 1000, brokenAfterMs: 72 * 60 * 60 * 1000 },
+  /**
+   * Scheduled-job cadence in production (Vercel Hobby: daily crons only, no always-on worker). Every public claim about
+   * how soon a background job acts reads from here. When a faster scheduler exists, change `hours` and `word`.
+   */
+  cadence: { hours: 24, word: "daily", within: "within a day", per: "a day" },
   /** Plan billing rules for the files meter. */
   billing: { starterPackFiles: 4, volumeMinFiles: 50, developerFiles: 3 },
   /**

@@ -41,7 +41,7 @@ export const troubleshooting: DocPage = {
     {
       heading: "File shows Broken",
       body: [
-        `A file is Broken after ${hours(p.health.brokenAfterMs)} hours without a poll, or on a connection error reported by the Web Connector. We email once per incident and send a company_file.broken webhook. Fix the cause on the PC, then use Send reconnect link in the dashboard or create a new connect link, and the file recovers on the next poll.`,
+        `A file is Broken after ${hours(p.health.brokenAfterMs)} hours without a poll, or on a connection error reported by the Web Connector. The status changes the moment you open the dashboard or call the API; the email and the company_file.broken webhook for the incident go out ${p.cadence.within}, once per incident. Fix the cause on the PC, then use Send reconnect link in the dashboard or create a new connect link, and the file recovers on the next poll.`,
       ],
     },
     {

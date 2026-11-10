@@ -15,7 +15,7 @@ export interface LogRow {
   note?: string;
 }
 
-/** Sample rows. Believable, not round, and always labelled "sample data" where shown. */
+/** Sample rows. Believable, not round, and labelled "example" where shown. */
 export const sampleRows: LogRow[] = [
   { id: "req_01JC9Q4", operation: "POST invoices", party: "Acme Builders", amount: "1,284.48", state: "succeeded", time: "2.1 s" },
   { id: "req_01JC9Q3", operation: "GET customers", party: "Acme Builders", amount: "n/a", state: "succeeded", time: "1.4 s" },
@@ -78,11 +78,11 @@ export function footing(rows: LogRow[]): string[] {
 /** The signature move: the request log as a green bar ledger with a perforated margin and a footed total. */
 export function RequestLog({ rows = sampleRows, code, env = "Test" }: { rows?: LogRow[]; code?: ReactNode; env?: "Test" | "Production" }) {
   return (
-    <div role="group" aria-label="Sample request log" className="min-w-0 overflow-hidden rounded-md border border-border bg-surface-raised">
+    <div role="group" aria-label="Example request log" className="min-w-0 overflow-hidden rounded-md border border-border bg-surface-raised">
       <div className="flex items-center gap-3 border-b border-border bg-surface px-4 py-2 caption-4 text-text-subtle">
         <span className="rounded-full border border-success bg-success-surface px-2 caption-3 tracking-wide text-success uppercase">{env}</span>
         <span>Request log</span>
-        <span className="ml-auto caption-5">sample data</span>
+        <span className="ml-auto caption-5">example</span>
       </div>
       {code ? <div className="figures overflow-x-auto border-b border-border bg-surface-raised py-3 pr-4 pl-10 text-text"><pre className="code-block" tabIndex={0}>{code}</pre></div> : null}
       <div className="perf overflow-x-auto">

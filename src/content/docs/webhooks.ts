@@ -1,10 +1,9 @@
 import { product as p } from "@/config/product";
-import { MAX_ATTEMPTS, BACKOFF_S } from "@/lib/webhooks/outbound";
+import { MAX_ATTEMPTS } from "@/lib/webhooks/outbound";
 import { WEBHOOK_EVENTS } from "@/lib/webhooks/events";
 import { DELIVERY_TTL_DAYS } from "@/lib/db/types";
 import type { DocPage } from "./types";
 
-const fmt = (s: number) => (s < 120 ? `${s} seconds` : s < 7200 ? `${s / 60} minutes` : `${s / 3600} hours`);
 
 const DATA: Record<string, string> = {
   "request.completed": `{ "requestId": "req_01JC9P8", "state": "succeeded", "objectType": "invoices", "method": "POST", "path": "/v1/qbd/invoices", "durationMs": 4200, "environment": "production", "companyFile": { "id": "end_01JC...", "externalId": "acme-42", "companyName": "Acme Builders" }, "error": null, "links": { "self": "${p.url}/v1/requests/req_01JC9P8" } }`,
@@ -90,7 +89,7 @@ export const webhooks: DocPage = {
     {
       heading: "Retries",
       body: [
-        `A delivery that does not get a 2xx answer is tried again, up to ${MAX_ATTEMPTS} attempts in total. The wait after each failed attempt is ${BACKOFF_S.map(fmt).join(", ")}, with about 10% jitter. After the last attempt the delivery is marked failed.`,
+        `A delivery that does not get a 2xx answer is tried again, up to ${MAX_ATTEMPTS} attempts in total. Retries run in our ${p.cadence.word} job, which tries every delivery that is due, so a failed delivery is tried again ${p.cadence.within}. After the last attempt the delivery is marked failed.`,
       ],
     },
     {

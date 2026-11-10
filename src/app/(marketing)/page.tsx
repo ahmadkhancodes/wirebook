@@ -45,7 +45,7 @@ function Replayed() {
     <div className={`${frag} figures caption-4`}>
       <p className="flex items-center justify-between gap-2 text-text"><span>POST invoices · acme-inv-1042</span><StateLabel state="succeeded" /></p>
       <p className="flex items-center justify-between gap-2 border-t border-border pt-2 text-text"><span>POST invoices · acme-inv-1042</span><span className="rounded-full border border-border-strong px-2 caption-3 text-text">replayed</span></p>
-      <p className="border-t border-border pt-2 font-sans caption-5 text-text-subtle">Sample data. Same key, same body: one invoice.</p>
+      <p className="border-t border-border pt-2 font-sans caption-5 text-text-subtle">Example. Same key, same body: one invoice.</p>
     </div>
   );
 }
@@ -122,7 +122,7 @@ const steps: Step[] = [
   {
     title: "Create a key and an end user",
     body: "Sign up, create an sk_test_ key, add your customer and get a connect link valid for 24 hours.",
-    visual: <div className="rounded-md border border-border bg-surface-raised p-4 figures caption-4 text-text">POST /v1/connect-links<br />{"{ \"externalId\": \"acme-42\" }"}<br /><span className="text-text-subtle">connect link: valid 24 hours (sample)</span></div>,
+    visual: <div className="rounded-md border border-border bg-surface-raised p-4 figures caption-4 text-text">POST /v1/connect-links<br />{"{ \"externalId\": \"acme-42\" }"}<br /><span className="text-text-subtle">connect link: valid 24 hours</span></div>,
   },
   {
     title: "Your customer connects",
@@ -137,7 +137,7 @@ const steps: Step[] = [
         <span className="mt-3 block border-t border-border pt-3 caption-2">Requests run when QuickBooks next checks in, so this is polling, not real time. If the connector is not running you get a 202 queued, and a guide after 30 seconds.</span>
       </>
     ),
-    visual: <pre tabIndex={0} className="code-block overflow-x-auto rounded-md border border-border bg-surface-raised p-4 text-text">{`curl -X POST /v1/qbd/invoices \\\n  -H "Idempotency-Key: acme-inv-1042" \\\n  -d @invoice.json\n\n202 queued  (sample)\n201 succeeded in 2.1 s`}</pre>,
+    visual: <pre tabIndex={0} className="code-block overflow-x-auto rounded-md border border-border bg-surface-raised p-4 text-text">{`curl -X POST /v1/qbd/invoices \\\n  -H "Idempotency-Key: acme-inv-1042" \\\n  -d @invoice.json\n\n202 queued\n201 succeeded in 2.1 s`}</pre>,
   },
 ];
 
