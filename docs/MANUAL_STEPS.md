@@ -24,8 +24,8 @@ https://vercel.com/account/billing
 
 ## 5. npm and PyPI tokens (M4/M5)
 https://www.npmjs.com/settings/~/tokens and https://pypi.org/manage/account/token/
-- npm: granular token with publish for the `@buffersol` scope; store as `NPM_TOKEN`. PyPI: token for project `buffersol-wirebook`; store as `PYPI_TOKEN`.
-- Done when: `npm view @buffersol/wirebook` and `pip index versions buffersol-wirebook` resolve.
+- npm: granular token with publish for the `@wirebook` scope (create the npm org `wirebook`); store as `NPM_TOKEN`. PyPI: token for project `wirebook`; store as `PYPI_TOKEN`.
+- Done when: `npm view @wirebook/sdk` and `pip index versions wirebook` resolve.
 
 ## 6. Windows machine with QuickBooks Desktop 2024 Enterprise (acceptance run, M5)
 https://developer.intuit.com/app/developer/qbdesktop/docs/get-started
@@ -62,3 +62,8 @@ https://tmsearch.uspto.gov/
 - **Decide the SDK package names** (`@wirebook/sdk` and `wirebook` in code, against `@buffersol/wirebook` in item 5) before publishing.
 
 - **P1 follow-up:** production now throws on mail send unless `RESEND_API_KEY` (or `MAIL_PROVIDER=smtp`) is set; set it before launch. Migration free period is now by request: decide the terms you will honour.
+
+## Launch hardening (10 Nov 2026)
+- **Owner, still open:** Stripe quantity at month rollover needs a sandbox run across a renewal (item 1) before the fix can be chosen. Legal placeholders remain the launch blocker.
+- **Watch the logs** for `mail_send_failed` (mail is now best effort on request paths) and `stripe_event_ignored`.
+- Revoke is available at `DELETE /v1/end-users/{id}` and in the dashboard; nothing to configure.

@@ -101,6 +101,8 @@ export interface EndUser {
   companyFile?: string;
   /** True when that file is a QuickBooks sample company file (free, never billed). Unknown until the first sendRequestXML. */
   sampleFile?: boolean;
+  /** Set when the owner revoked this company file: the Web Connector login stops working and queued work was failed. */
+  revokedAt?: Date;
 }
 
 export type HealthStatus = EndUser['status'];

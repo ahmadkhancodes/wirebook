@@ -40,8 +40,9 @@ export async function healthTick(d: HealthDeps): Promise<HealthResult> {
       const to = await d.ownerEmail(orgId);
       if (to) {
         const mail = brokenConnectionEmail({ company: cur.companyName ?? cur.externalId ?? cur.id, reason: cur.lastError ?? "unknown", url: `${d.baseUrl}/app/end-users/${cur.id}` });
-        await d.send({ to, ...mail, category: "notification" });
-        r.emailed++;
+        let sent: { accepted?: boolean } | null | undefined;
+        try { sent = (await d.send({ to, ...mail, category: "notification" })) as { accepted?: boolean } | undefined; } catch { sent = null; }
+        if (sent !== null && sent?.accepted !== false) r.emailed++;
       }
       await d.bridge.users.update(cur.id, { brokenNotifiedAt: now });
     }

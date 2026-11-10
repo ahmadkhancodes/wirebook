@@ -58,7 +58,10 @@ export async function handleStripeWebhook(rawBody: string, signature: string | n
   if (event.type === "payment_intent.succeeded") {
     const plan = obj.metadata?.plan;
     const match = obj.metadata?.lookup_key ? planForLookupKey(obj.metadata.lookup_key) : null;
-    if (obj.metadata?.app === app && obj.metadata?.mode === "lifetime" && obj.id && match) {
+    // out of order: the full refund of this payment may already have been processed (charge.refunded before payment_intent.succeeded)
+    const alreadyRefunded = !!obj.id && (await db.hasStripeEvent(`refund:${obj.id}`));
+    if (alreadyRefunded) log.info("pi_refunded_before_success", { code: "skip_grant" });
+    else if (obj.metadata?.app === app && obj.metadata?.mode === "lifetime" && obj.id && match) {
       await db.setEntitlement(orgId, lifetimeEntitlement(match.plan.id, obj.id, now));
       await deps.onChange?.(orgId, event.type);
     } else if (plan) log.debug("pi_ignored", { code: "not_lifetime" });
@@ -68,6 +71,7 @@ export async function handleStripeWebhook(rawBody: string, signature: string | n
 
   if (event.type === "charge.refunded" && obj.refunded) {
     // C-27: a FULL refund ends the paid plan. Lifetime: drop it; subscription: cancel now. Partial refunds ignored.
+    if (obj.payment_intent) await db.markStripeEvent(`refund:${obj.payment_intent}`, "refund_marker"); // so a late payment_intent.succeeded cannot grant it
     if (prev?.status === "lifetime" && prev.lifetimePaymentIntentId === obj.payment_intent) {
       await db.setEntitlement(orgId, { ...NONE(now), trialUsed: true });
       await db.markStripeEvent(event.id, event.type);
@@ -82,6 +86,7 @@ export async function handleStripeWebhook(rawBody: string, signature: string | n
     event.type.startsWith("invoice.") ||
     event.type === "checkout.session.completed" ||
     event.type === "charge.refunded";
+  if (!relevant) log.info("stripe_event_ignored", { type: event.type });
   if (relevant) {
     await db.setEntitlement(orgId, await computeEntitlement(stripe, app, customerId, prev?.status === "lifetime" ? prev : null, now));
     await deps.onChange?.(orgId, event.type);

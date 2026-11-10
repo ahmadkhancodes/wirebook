@@ -63,3 +63,16 @@ Open:
 - **Outbound webhooks.** HMAC `t.body` signing, 8 attempts, `redirect: manual`, 10 s timeout, payloads carry ids and statuses only (no QuickBooks data), the secret is shown once.
 - **Logs.** Error logs carry messages and paths only, no request bodies.
 - **CSRF.** Origin check on cookie-authenticated state changes (`withApi`); API-key requests are exempt by design.
+
+## Launch hardening (10 Nov 2026)
+
+Status of the P1s that were open above, plus the money and mail checks. Tests: `tests/unit/hardening.test.ts` and the "launch hardening" block in `tests/unit/billing.test.ts`; both failed on the old code.
+
+- **Company file revoke: fixed.** `DELETE /v1/end-users/{id}` and the dashboard button "Revoke company file" call `revokeEndUser` (`src/lib/connect/index.ts`): sets `revokedAt`, `authenticate` answers `nvu`, open sessions end, queued requests fail with the new `end_user_revoked` error, connect links are refused. Idempotent; an already sent request is left to finish.
+- **SDK names: fixed (decision).** `@wirebook/sdk` and `wirebook`, as in code and docs. MANUAL_STEPS item 5 now matches.
+- **Accessibility sweep: fixed.** Per-row delete-key labels, request-log time link label contains its visible text, `aria-current` instead of `aria-selected` on rows, `Button size="sm"` and the environment switcher are 44 px high below the `sm` breakpoint.
+- **Compare source line: fixed.** The page names the brief tab and says webhooks and SOC 2 rest on Apideck alone.
+- **Plan downgrade mid-month: closed by decision** (DECISIONS). The meter is per calendar month; files already active stay usable until the month ends and the cap applies again from the 1st.
+- **Stripe quantity at month rollover: still open, needs the owner.** The fix changes how invoices are computed (anniversary billing period against the calendar-month meter) and can only be validated with a real Stripe sandbox subscription across a renewal (MANUAL_STEPS 1). Current behaviour is correct in total but noisy in proration lines.
+- **Money paths, checked.** Entitlement is recomputed from Stripe on every `customer.subscription.*`, `invoice.*`, `checkout.session.completed` and `charge.refunded`, so order and duplicates cannot grant or revoke wrongly; the event id is recorded only after success (a failed run returns 500 and Stripe retries). Unknown events answer 200, are recorded and logged (`stripe_event_ignored`); events for unknown customers answer 200. A plan never depends on the checkout redirect, only on the webhook. New: a full refund leaves a `refund:<payment_intent>` marker so a late `payment_intent.succeeded` cannot re-grant a refunded payment (no lifetime plan exists today, so this is defensive).
+- **Mail when Resend rejects: fixed.** The magic link, invitation and broken-connection emails go through `sendMailSafe`: a bad address, 4xx/5xx, rate limit or network failure is logged with a scrubbed code, the request answers normally (the magic-link response stays identical for every address, which also prevents enumeration) and no provider text reaches the client. `healthTick` no longer aborts on a failed send and does not retry the same incident every minute. Consequence: with no mail provider in production a sign-in silently sends nothing; watch the `mail_send_failed` log line.
