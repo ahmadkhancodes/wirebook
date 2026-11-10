@@ -5,6 +5,7 @@ import {
 } from "@/components/marketing";
 import { RequestLog, StateLabel, Tick } from "@/components/marketing/ledger/request-log";
 import { product } from "@/config/product";
+import { socialImages } from "@/lib/seo";
 import { money, rates } from "@/lib/pricing";
 
 const title = `${product.fullName}: QuickBooks Desktop API, ${money(rates.perFile)} per file`;
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
   title: { absolute: title },
   description,
   alternates: { canonical: "/" },
-  openGraph: { title, description, url: "/" },
+  openGraph: { title, description, url: "/", images: socialImages().og },
+  twitter: { card: "summary_large_image", title, description, images: socialImages().twitter },
 };
 
 const K = ({ children }: { children: string }) => <span className="text-focus">{children}</span>;

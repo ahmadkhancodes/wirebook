@@ -30,8 +30,8 @@ export default async function DocPageRoute({ params }: Props) {
 
   return (
     <Container className="py-12 md:py-20">
-      <div className="grid gap-8 lg:grid-cols-4 lg:gap-12">
-        <aside className="lg:col-span-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4 lg:gap-12">
+        <aside className="min-w-0 lg:col-span-1">
           <div className="lg:sticky lg:top-24">
             <DocsNav groups={groups} current={doc.slug} />
           </div>
