@@ -15,5 +15,12 @@ export async function getDb(): Promise<Db> {
   if (dbDriver(e) === "memory") return (globalThis.__kitMemoryDb ??= createMemoryDb(app));
   if (!e.MONGODB_URI) throw new Error("MONGODB_URI not set");
   const { createMongoDb } = await import("./mongo");
-  return createMongoDb(e.MONGODB_URI, e.MONGODB_DB ?? app, app);
+  const uri = e.MONGODB_URI;
+  const dbName = e.MONGODB_DB ?? app;
+  const { scheduleIndexes } = await import("./auto-indexes");
+  scheduleIndexes(uri, [
+    async () => (await import("./mongo")).ensureIndexes(uri, dbName),
+    async () => (await import("@/lib/bridge/mongo")).ensureBridgeIndexes(uri, dbName),
+  ]);
+  return createMongoDb(uri, dbName, app);
 }

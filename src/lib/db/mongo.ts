@@ -235,9 +235,23 @@ export function createMongoDb(uri: string, dbName: string, app: string): Db {
   };
 }
 
-/** Indexes, created once by scripts/ensure-indexes.ts (never per cold start). TTLs are on Date fields. */
+/** Indexes: run lazily once per instance by getDb() (see auto-indexes.ts) and by scripts/ensure-indexes.ts. TTLs are on Date fields.
+ *  An existing index with different options/keys (codes 85/86) is logged and skipped, never thrown. */
 export async function ensureIndexes(uri: string, dbName: string) {
-  const d = (await mongoClient(uri)).db(dbName);
+  const raw = (await mongoClient(uri)).db(dbName);
+  const d = {
+    collection: (name: string) => ({
+      createIndex: async (key: Record<string, 1 | -1>, opts: Record<string, unknown> = {}) => {
+        try {
+          await raw.collection(name).createIndex(key as never, opts);
+        } catch (e) {
+          const code = (e as { code?: number }).code;
+          if (code !== 85 && code !== 86) throw e;
+          console.warn(`[db] index conflict on ${name} ${JSON.stringify(key)} (code ${code}), skipped`);
+        }
+      },
+    }),
+  };
   await d.collection("billing_accounts").createIndex({ app: 1, stripeCustomerId: 1 }, { unique: true, partialFilterExpression: { stripeCustomerId: { $type: "string" } } });
   await d.collection("stripe_events").createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });
   await d.collection("rate_limits").createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });

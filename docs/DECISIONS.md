@@ -87,3 +87,4 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **API key roles:** owner and admin get `apiKey: create/update/delete` (what Better Auth's api-key plugin checks), next to the `manage` our UI uses.
 - **Stripe quantity** is also synced on every relevant Stripe event (upgrade, change), not only when a new file activates.
 - **Copy:** "we reconcile by RefNumber" is removed (no such feature). Webhooks are shipped, the connect link lasts 24 h, Developer is "up to 3 real company files a month", and QuickBooks 2024 is "target version, validated against the simulator".
+- **Indexes auto-create on first Mongo getDb():** fire-and-forget, memoized per instance, never blocks or fails a request (warn + retry next cold start); index conflicts (codes 85/86) are logged and skipped. The health route doesn't use getDb(), so it is unaffected.
