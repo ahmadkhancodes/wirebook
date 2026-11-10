@@ -36,7 +36,7 @@ export default async function DocPageRoute({ params }: Props) {
             <DocsNav groups={groups} current={doc.slug} />
           </div>
         </aside>
-        <article className="flex min-w-0 flex-col gap-8 lg:col-span-2">
+        <article className="flex min-w-0 flex-col gap-8 [overflow-wrap:anywhere] lg:col-span-2">
           <header className="flex flex-col gap-3">
             <p className="caption-2 text-text-muted">
               <Link href="/docs" className="underline underline-offset-4 hover:text-text focus-visible:focus-ring">Docs</Link>
