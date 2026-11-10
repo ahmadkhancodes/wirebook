@@ -2,6 +2,7 @@ import { product } from "@/config/product";
 import { appUrl, env, isProd, secretOr } from "@/lib/env";
 import { getDb } from "@/lib/db";
 import { hmacSha256Hex } from "@/lib/ids";
+import { log } from "@/lib/logger";
 import { consoleTransport, resendTransport, smtpTransport } from "./transports";
 import type { MailMessage, MailTransport, SendResult } from "./types";
 
@@ -46,4 +47,18 @@ export async function sendMail(msg: MailMessage, transport: MailTransport = tran
     headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
   }
   return transport.send({ ...msg, headers, from: msg.from ?? env().MAIL_FROM ?? product.mailFrom });
+}
+
+/**
+ * sendMail for request paths and cron: a provider rejection (bad address, rate limit, outage) is logged with a
+ * scrubbed code and never thrown, so the caller answers normally and nothing from the provider reaches the client.
+ */
+export async function sendMailSafe(msg: MailMessage, transport?: MailTransport): Promise<SendResult> {
+  try {
+    return await sendMail(msg, transport);
+  } catch (e) {
+    const m = (e as Error).message ?? "";
+    log.error("mail_send_failed", { code: /^[a-z_0-9]{1,60}$/.test(m) ? m : "unknown" });
+    return { id: "", provider: "none", accepted: false };
+  }
 }

@@ -13,6 +13,7 @@ export const STATUS_HELP: Record<HealthStatus, string> = {
 export const liveStatus = (u: EndUser, now = new Date()): HealthStatus => evaluate(u, now)?.status ?? u.status;
 
 export interface EndUserView {
+  revoked: boolean;
   id: string;
   externalId: string | null;
   companyName: string | null;
@@ -29,7 +30,7 @@ const iso = (d?: Date) => (d ? new Date(d).toISOString() : null);
 export function endUserView(u: EndUser, now = new Date()): EndUserView {
   return {
     id: u.id, externalId: u.externalId ?? null, companyName: u.companyName ?? null, status: liveStatus(u, now),
-    lastPollAt: iso(u.lastPollAt), lastSuccessAt: iso(u.lastSuccessAt), lastError: u.lastError ?? null, createdAt: iso(u.createdAt), qbVersion: u.qbVersion ?? null,
+    lastPollAt: iso(u.lastPollAt), lastSuccessAt: iso(u.lastSuccessAt), lastError: u.lastError ?? null, createdAt: iso(u.createdAt), qbVersion: u.qbVersion ?? null, revoked: !!u.revokedAt,
   };
 }
 

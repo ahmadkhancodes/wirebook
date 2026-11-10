@@ -58,7 +58,7 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
           <nav aria-label="Environment" className="flex gap-1 rounded-md border border-border p-0.5">
             {(["test", "production"] as const).map((e) => (
               <Link key={e} href={logHref({ ...query, env: e })} aria-current={env === e ? "page" : undefined}
-                className={`rounded-sm px-3 py-1.5 caption-4 font-semibold uppercase tracking-wider focus-visible:focus-ring ${env === e ? "bg-action text-action-text" : "text-text-subtle hover:text-text"}`}>{e}</Link>
+                className={`inline-flex min-h-11 items-center rounded-sm px-3 py-1.5 sm:min-h-0 caption-4 font-semibold uppercase tracking-wider focus-visible:focus-ring ${env === e ? "bg-action text-action-text" : "text-text-subtle hover:text-text"}`}>{e}</Link>
             ))}
           </nav>
         }

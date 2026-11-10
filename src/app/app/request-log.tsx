@@ -54,9 +54,9 @@ export function LedgerTable({ rows, selected, query }: { rows: Job[]; selected?:
             const failed = j.state === "failed";
             const sel = j.id === selected;
             return (
-              <tr key={j.id} aria-selected={sel || undefined} className={`${failed ? "bg-danger-surface" : i % 2 ? "bg-surface-sunken" : ""} ${sel ? "outline outline-2 -outline-offset-2 outline-text" : ""}`}>
+              <tr key={j.id} aria-current={sel ? "true" : undefined} className={`${failed ? "bg-danger-surface" : i % 2 ? "bg-surface-sunken" : ""} ${sel ? "outline outline-2 -outline-offset-2 outline-text" : ""}`}>
                 <td className="whitespace-nowrap px-3 py-1.5 align-top">
-                  <Link href={logHref(query, { req: j.id })} className="text-text underline-offset-4 hover:underline focus-visible:focus-ring" aria-label={`Open request ${j.id}`}>{clock(j.createdAt)}</Link>
+                  <Link href={logHref(query, { req: j.id })} className="text-text underline-offset-4 hover:underline focus-visible:focus-ring" aria-label={`${clock(j.createdAt)}, open request ${j.id}`}>{clock(j.createdAt)}</Link>
                 </td>
                 <td className="hidden whitespace-nowrap px-3 py-1.5 align-top text-text-subtle 2xl:table-cell">{j.id.slice(0, 16)}</td>
                 <td className="px-3 py-1.5 align-top text-text">

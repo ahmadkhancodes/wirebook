@@ -80,7 +80,7 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
 
     case 'authenticate': {
       const user = await deps.users.findByUsername(args.strUserName ?? '');
-      if (!user) return ok(arrayResponse(op, ['', 'nvu']));
+      if (!user || user.revokedAt) return ok(arrayResponse(op, ['', 'nvu']));
       const t = now();
       // Connect flow step 2: a poll with this username proves the .qwc was added to the Web Connector
       if (!user.firstAuthAt) await deps.users.update(user.id, { firstAuthAt: t });
@@ -114,6 +114,7 @@ export async function handleSoap(xml: string, deps: BridgeDeps): Promise<SoapRes
       await deps.sessions.update(s.ticket, { qbxmlVersion: version });
       // Connect flow step 3: the Web Connector reached QuickBooks and the app is authorised
       let who = await deps.users.get(s.endUserId);
+      if (who?.revokedAt) return ok(simpleResponse(op, '')); // revoked while a session was open: end it
       const file = (args.strCompanyFileName ?? '').trim();
       if (who) {
         const patch: Partial<EndUser> = {

@@ -88,3 +88,9 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Stripe quantity** is also synced on every relevant Stripe event (upgrade, change), not only when a new file activates.
 - **Copy:** "we reconcile by RefNumber" is removed (no such feature). Webhooks are shipped, the connect link lasts 24 h, Developer is "up to 3 real company files a month", and QuickBooks 2024 is "target version, validated against the simulator".
 - **Indexes auto-create on first Mongo getDb():** fire-and-forget, memoized per instance, never blocks or fails a request (warn + retry next cold start); index conflicts (codes 85/86) are logged and skipped. The health route doesn't use getDb(), so it is unaffected.
+
+## Launch hardening (10 Nov 2026)
+- **Downgrade mid-month:** no change. The file meter is per calendar month, so files already active keep working until the month ends; the cap applies again from the 1st. Simpler to explain than a mid-month cut-off, and the cost to us is bounded by one month of a few files.
+- **SDK names:** `@wirebook/sdk` (npm) and `wirebook` (PyPI). MANUAL_STEPS item 5 updated.
+- **Revoke is final:** a revoked company file cannot be reconnected; create a new end user with a new `externalId`. Avoids a password-version scheme.
+- **Mail failures never fail the request** (`sendMailSafe`); the cost is a silent no-send, covered by the `mail_send_failed` log.

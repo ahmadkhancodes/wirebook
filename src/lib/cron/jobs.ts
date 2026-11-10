@@ -2,7 +2,7 @@ import { getBridge } from "@/lib/bridge";
 import { getDb } from "@/lib/db";
 import { appUrl } from "@/lib/env";
 import { healthTick, ownerEmailFor } from "@/lib/health";
-import { sendMail } from "@/lib/mail";
+import { sendMailSafe } from "@/lib/mail";
 import { SENT_TIMEOUT_MS } from "@/lib/qbwc";
 import { purgePayloads } from "@/lib/retention";
 import { webhookSink } from "@/lib/webhooks/events";
@@ -16,7 +16,7 @@ export const cronJobs: Record<string, () => Promise<unknown>> = {
     const bridge = await getBridge();
     // requests whose Web Connector session died after the send and never came back: give them up as outcome_unknown
     const expired = (await bridge.queue.expireSent(SENT_TIMEOUT_MS, new Date())).length;
-    return { expired, ...(await healthTick({ bridge, ownerEmail: ownerEmailFor, send: (m) => sendMail(m), baseUrl: appUrl(), onEvent: webhookSink(await getDb()) })) };
+    return { expired, ...(await healthTick({ bridge, ownerEmail: ownerEmailFor, send: (m) => sendMailSafe(m), baseUrl: appUrl(), onEvent: webhookSink(await getDb()) })) };
   },
   /** daily 03:00 UTC: retention purge of payloads, with an audit entry */
   purge: async () => purgePayloads(await getDb(), await getBridge()),

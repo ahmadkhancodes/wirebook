@@ -185,3 +185,29 @@ describe("gating", () => {
     expect(requirePlan({ ...e, expiresAt: NOW + 864e5 }, "free", NOW).id).toBe("production");
   });
 });
+
+describe("launch hardening: webhook edge cases", () => {
+  const setup2 = async () => {
+    await createCheckoutSession(f.stripe, db, subject, "production", "month", urls);
+    return (await db.getBillingAccount("org_1"))!.stripeCustomerId!;
+  };
+  it("an unknown event type for a known customer answers 200, changes nothing and is recorded", async () => {
+    const cus = await setup2();
+    const r = await hook(event("customer.tax_id.created", { customer: cus }, "evt_unknown"));
+    expect(r.status).toBe(200);
+    expect(await db.getEntitlement("org_1")).toBeNull();
+    expect(await db.hasStripeEvent("evt_unknown")).toBe(true);
+  });
+  it("a full refund recorded before payment_intent.succeeded leaves a marker, and the late success changes nothing", async () => {
+    const cus = await setup2();
+    await hook(event("charge.refunded", { customer: cus, refunded: true, payment_intent: "pi_late" }));
+    expect(await db.hasStripeEvent("refund:pi_late")).toBe(true);
+    await hook(event("payment_intent.succeeded", { customer: cus, id: "pi_late", metadata: { app: "wirebook", mode: "lifetime", lookup_key: "wirebook_production_lifetime" } }));
+    expect((await db.getEntitlement("org_1"))?.isPaid ?? false).toBe(false);
+  });
+  it("a subscription event arriving before the billing account exists is acknowledged without a plan", async () => {
+    const r = await hook(event("invoice.paid", { customer: "cus_unknown" }, "evt_orphan"));
+    expect(r.status).toBe(200);
+    expect(await db.getEntitlement("org_1")).toBeNull();
+  });
+});

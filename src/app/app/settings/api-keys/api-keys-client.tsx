@@ -104,7 +104,7 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
                 <Td muted>{formatDate(k.createdAt)}</Td>
                 <Td muted>{formatDate(k.lastRequest)}</Td>
                 <Td align="right">
-                  {canManage ? <Button variant="tertiary" size="sm" onClick={() => setRemoving(k)}>Delete</Button> : null}
+                  {canManage ? <Button variant="tertiary" size="sm" onClick={() => setRemoving(k)} aria-label={`Delete key ${k.name || k.start || k.id}`}>Delete</Button> : null}
                 </Td>
               </tr>
             ))}

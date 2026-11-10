@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, formatDate } from "@/components/app/api";
 import { CopyButton } from "@/components/app/copy-button";
 import { Panel } from "@/components/app/page-header";
+import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Notice } from "@/components/ui/states";
 import Link from "next/link";
@@ -22,6 +23,18 @@ export function DetailClient({ initial, canReconnect }: { initial: Data; canReco
   const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const u = data.endUser;
+  const [revoking, setRevoking] = useState(false);
+  const [revokeBusy, setRevokeBusy] = useState(false);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
+  async function revoke() {
+    setRevokeBusy(true);
+    setRevokeError(null);
+    const r = await api(`/api/end-users/${u.id}`, { method: "DELETE" });
+    setRevokeBusy(false);
+    if (!r.ok) return setRevokeError(r.message);
+    setRevoking(false);
+    void load();
+  }
 
   const load = useCallback(async () => {
     const r = await api<Data>(`/api/end-users/${u.id}`);
@@ -54,9 +67,10 @@ export function DetailClient({ initial, canReconnect }: { initial: Data; canReco
           <div><dt className="caption-4 text-text-subtle">Company file id</dt><dd className="body-6 text-text figures break-all">{u.id}</dd></div>
         </dl>
         {u.lastError ? <p className="mt-4 body-6 text-text-subtle">Last error: <code>{u.lastError}</code></p> : null}
-        {canReconnect ? (
+        {u.revoked ? <p className="mt-4 body-6 text-text-subtle">This company file was revoked. Its login no longer works.</p> : null}
+        {canReconnect && !u.revoked ? (
           <div className="mt-6 flex flex-col gap-3">
-            <div><Button onClick={reconnect} loading={busy} variant={u.status === "broken" || u.status === "asleep" ? "primary" : "secondary"}>Send reconnect link</Button></div>
+            <div><Button onClick={reconnect} loading={busy} variant={u.status === "broken" || u.status === "asleep" ? "primary" : "secondary"}>Send reconnect link</Button> <Button variant="secondary" onClick={() => setRevoking(true)}>Revoke company file</Button></div>
             {error ? <p role="alert" className="caption-2 text-danger">{error}</p> : null}
             {link ? (
               <Notice tone="success" title="Reconnect link created" action={<CopyButton value={link.url} label="Copy link" />}>
@@ -97,6 +111,17 @@ export function DetailClient({ initial, canReconnect }: { initial: Data; canReco
           </ol>
         )}
       </Panel>
+    <ConfirmDialog
+        open={revoking}
+        title={`Revoke ${u.companyName || u.externalId || "this company file"}`}
+        confirmLabel="Revoke company file"
+        busy={revokeBusy}
+        error={revokeError}
+        onConfirm={revoke}
+        onClose={() => { setRevoking(false); setRevokeError(null); }}
+      >
+        Its Web Connector login stops working right away and queued requests fail. This cannot be undone.
+      </ConfirmDialog>
     </div>
   );
 }

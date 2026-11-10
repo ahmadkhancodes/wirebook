@@ -48,7 +48,7 @@ export default async function ComparePage({ params }: Props) {
           />
         </div>
         <p className="body-6 mt-6 max-w-2xl text-text-subtle">{entry.fitNote}</p>
-        <p className="caption-2 mt-4 max-w-2xl text-text-subtle">Competitor facts last checked {entry.checked}, from the competitor&apos;s own pages and Apideck where noted.</p>
+        <p className="caption-2 mt-4 max-w-2xl text-text-subtle">Competitor facts last checked {entry.checked}, from the competitor&apos;s own pages and Apideck where noted. Source: our research brief, competitor tab (04). Webhooks and SOC 2 rest on Apideck&apos;s comparison alone, so check with the vendor before you decide.</p>
       </Section>
       <Faq title="Common questions" items={entry.faq} />
       <FinalCta
