@@ -14,3 +14,4 @@
 - Design approved by orchestrator with one change (primary now ink, PR #2).
 - Next: wait for orchestrator design approval and "kit-v1 ready", then copy the kit and build M1 (see docs/ROADMAP.md).
 - Biggest risk: no real QuickBooks/Web Connector available in the build; covered by a simulator, real acceptance run needs the owner's Windows machine (ARCHITECTURE R1).
+- 2026-11-10: getDb() now creates indexes lazily once per instance (src/lib/db/auto-indexes.ts), skipped for memory driver and next build, errors logged scrubbed; tests in tests/unit/auto-indexes.test.ts. Not deployed. `npm run db:indexes` still works.
