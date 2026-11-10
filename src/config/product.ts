@@ -46,17 +46,17 @@ export const product = {
   companyUrl: "https://buffersoltech.com",
   host: "wirebook.buffersoltech.com",
   url: process.env.NEXT_PUBLIC_APP_URL ?? "https://wirebook.buffersoltech.com",
-  supportEmail: "support@buffersoltech.com",
-  legalEmail: "legal@buffersoltech.com",
+  supportEmail: "contact@buffersoltech.com",
+  legalEmail: "contact@buffersoltech.com",
   mailFrom: "Wirebook <hello@wirebook.buffersoltech.com>",
   description:
     "QuickBooks Desktop, as a normal API. REST, typed TypeScript and Python SDKs, and a connect flow your customers can finish alone. $24.99 per company file.",
   tagline: "QuickBooks Desktop, as a normal API",
   /** Legal entity details used by the legal templates. */
   legal: {
-    entity: "BufferSol Technologies",
-    jurisdiction: "{{jurisdiction}}",
-    address: "{{registered address}}",
+    entity: "BufferSol Technologies LLC",
+    jurisdiction: "the State of New York, United States",
+    address: "447 W Broadway, 2nd Floor Suite #1964, New York, NY 10013, United States",
     effectiveDate: "2026-11-05",
   },
   subProcessors: [
