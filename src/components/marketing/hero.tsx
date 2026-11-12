@@ -34,15 +34,21 @@ export function Hero({ title, subtitle, primaryCta, secondaryCta, risk, proof, h
         ) : null}
         <div className="grid items-stretch gap-8 pt-8 md:pt-12 lg:grid-cols-12 lg:gap-0">
           <div className="flex min-w-0 flex-col items-start gap-6 lg:col-span-7 lg:pr-12">
-            <h1 id="hero-title" className="heading-3 md:heading-1 xl:display-1 text-text">{title}</h1>
-            <p className="body-3 max-w-xl text-text-subtle md:title-2">{subtitle}</p>
+            <h1 id="hero-title" className="heading-3 md:heading-1 hero-measure text-text">{title}</h1>
+            <p className="body-3 hero-measure text-text-subtle md:title-2">{subtitle}</p>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <SessionCta cta={primaryCta} size="lg" />
               {secondaryCta ? <Link href={secondaryCta.href} className={textLinkClass}>{secondaryCta.label}</Link> : null}
             </div>
             {risk ? <p className="caption-5 text-text-subtle">{risk}</p> : null}
           </div>
-          {proof ? <div className="min-w-0 border-t border-border pt-6 lg:col-span-5 lg:border-t-0 lg:border-l-4 lg:border-double lg:border-border-strong lg:pt-0 lg:pl-8">{proof}</div> : null}
+          {proof ? (
+            <div className="flex min-w-0 flex-col gap-6 lg:col-span-5 lg:flex-row lg:gap-8">
+              {/* The column ruling is its own element (a rule between columns), never a border on one side of a box. */}
+              <span aria-hidden className="block h-px w-full shrink-0 bg-border lg:h-auto lg:w-1 lg:border-x lg:border-border-strong lg:bg-transparent" />
+              <div className="min-w-0 flex-1">{proof}</div>
+            </div>
+          ) : null}
         </div>
         <div className="mt-10 min-w-0 md:mt-16">{visual}</div>
       </Container>

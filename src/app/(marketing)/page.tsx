@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import {
-  CompareStrip, Faq, Features, FinalCta, FitSection, Hero, HowItWorks, PricingTeaser, ProblemSection, TaglineReveal,
-  type FaqItem, type Feature, type Step,
+  CompareStrip, Faq, Features, FinalCta, FitSection, Hero, HowItWorks, PricingTeaser, ProblemSection, ProofSection, TaglineReveal,
+  type FaqItem, type Feature, type ProofLine, type Step,
 } from "@/components/marketing";
 import { EnvTag, RequestLog, StateLabel, Tick } from "@/components/marketing/ledger/request-log";
 import { Wire } from "@/components/marketing/product/wire";
@@ -118,9 +118,18 @@ const features: Feature[] = [
   { title: "One call, one invoice, never two", body: "Send an Idempotency-Key on every write. We replay it for 7 days. A different body with the same key returns 409.", span: 4, visual: <Replayed /> },
   { title: "Errors that say what to do", body: "One error object: type, code, userFacingMessage, guideUrl, retryable, requestId. Thirty guides at launch. Same input, same message, no AI model.", span: 2, visual: <ErrorFragment /> },
   { title: "A request log with lifecycle states", body: "queued, sent, succeeded, failed, outcome_unknown. If a request was sent but no answer came back, it is marked outcome_unknown and never retried for you.", span: 2, visual: <Timeline /> },
-  { title: "A connect flow your customer finishes alone", body: "Four steps, and each one turns green only when our server saw it. The link is valid for 24 hours.", span: 4, visual: <Rail /> },
-  { title: "Typed SDKs and a raw escape hatch", body: "TypeScript with async iterators and retries, and Python with sync and async clients, both generated from OpenAPI 3.1. Any valid qbXML works through passthrough.", span: 3, visual: <SdkTabs /> },
-  { title: "Test and Production keys, kept apart", body: "Keys are shown once, stored as SHA-256 hashes and revocable within 5 seconds.", span: 3, visual: <KeyPanel /> },
+  { title: "Typed SDKs and a raw escape hatch", body: "TypeScript with async iterators and retries, and Python with sync and async clients, both generated from OpenAPI 3.1. Any valid qbXML works through passthrough.", span: 2, visual: <SdkTabs /> },
+  { title: "Test and Production keys, kept apart", body: "Keys are shown once, stored as SHA-256 hashes and revocable within 5 seconds.", span: 2, visual: <KeyPanel /> },
+];
+
+// The connect flow (four steps, each green only when our server saw it, link valid 24 hours) is told once, in
+// How it works, so the benefits stay at five.
+
+const proof: ProofLine[] = [
+  { fact: "Every price is published and dated", detail: `Our rates come from the same file as this page. Competitor prices carry a source and the date we checked them (${product.benchmark.checked}).`, href: "/compare/conductor", linkLabel: "Read the comparison" },
+  { fact: "The error catalogue is public", detail: "Every error code we map has a guide that says what failed and what to do next. Read them before you write a line of code.", href: "/errors", linkLabel: "Browse error guides" },
+  { fact: "The API contract is public", detail: "The OpenAPI 3.1 document the SDKs are generated from is served at /v1/openapi.json, no account needed.", href: "/v1/openapi.json", linkLabel: "Open the document" },
+  { fact: "The docs examples are executed", detail: "Each curl, TypeScript, Python and webhook example in the docs runs in our test suite against the product.", href: "/docs", linkLabel: "Read the docs" },
 ];
 
 const steps: Step[] = [
@@ -219,7 +228,7 @@ export default function HomePage() {
   return (
     <>
       <Hero
-        title={<>QuickBooks Desktop,<br />as a normal API</>}
+        title={<>QuickBooks Desktop,{" "}<br />as a normal API</>}
         subtitle={<>REST, typed TypeScript and Python SDKs, and a connect flow your customers can finish alone. <span className="numerals text-text">{money(rates.perFile)}</span> per company file.</>}
         primaryCta={product.cta}
         secondaryCta={{ href: "/docs", label: "Read the docs →" }}
@@ -240,6 +249,12 @@ export default function HomePage() {
         items={features}
       />
       <HowItWorks title="From sign up to first request" steps={steps} />
+      <ProofSection
+        title="Proof you can check before you sign up"
+        intro="We are new, so we show our working instead of logos."
+        lines={proof}
+        quoteNote="No customer quotes yet. When teams use Wirebook in production, their words go here with their names, and not before."
+      />
       <PricingTeaser />
       <CompareStrip />
       <FitSection

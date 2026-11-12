@@ -51,7 +51,7 @@ export function PricingTeaser() {
   return (
     <Section pad="lg" labelledBy="pricing-title">
       <SectionHead
-        index="04"
+        index="05"
         label="Pricing"
         id="pricing-title"
         title="Same job. Half the price. Every price on this page."
@@ -99,7 +99,7 @@ export function CompareStrip() {
   return (
     <Section tone="sunken" pad="md" labelledBy="compare-title">
       <SectionHead
-        index="05"
+        index="06"
         label="Alternatives"
         id="compare-title"
         title="What the alternatives charge, and what you take on"
@@ -142,16 +142,58 @@ export function CompareStrip() {
 export function FitSection({ yes, no }: { yes: ReactNode; no: ReactNode }) {
   return (
     <Section pad="md" labelledBy="fit-title">
-      <SectionHead index="06" label="Fit" id="fit-title" title="Who it is for, and who it is not" />
+      <SectionHead index="07" label="Fit" id="fit-title" title="Who it is for, and who it is not" />
       <div className="mt-8 grid gap-8 md:mt-12 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
-        <div className="flex flex-col gap-3 border-t-4 border-double border-text pt-4 lg:col-span-5 lg:col-start-4">
+        <div className="flex flex-col gap-3 lg:col-span-5 lg:col-start-4">
+          <span aria-hidden className="mb-1 block h-1 border-y border-text" />
           <h3 className="title-3 text-text">A good fit</h3>
           <div className="body-6 text-text-subtle">{yes}</div>
         </div>
-        <div className="flex flex-col gap-3 border-t-4 border-double border-border pt-4 lg:col-span-4">
+        <div className="flex flex-col gap-3 lg:col-span-4">
+          <span aria-hidden className="mb-1 block h-1 border-y border-border" />
           <h3 className="title-3 text-text">Not a fit</h3>
           <div className="body-6 text-text-subtle">{no}</div>
         </div>
+      </div>
+    </Section>
+  );
+}
+
+/** One fact a visitor can check before signing up: what it is, and where to look. */
+export interface ProofLine {
+  fact: string;
+  detail: string;
+  href: string;
+  linkLabel: string;
+}
+
+/**
+ * Social proof, honestly: no customer quotes exist yet, so the section lists facts anyone can verify on this site,
+ * entered like ledger lines (folio, entry, where to check). The empty quote line says so instead of inventing one.
+ */
+export function ProofSection({ title, intro, lines, quoteNote }: { title: ReactNode; intro?: ReactNode; lines: ProofLine[]; quoteNote: ReactNode }) {
+  return (
+    <Section pad="md" labelledBy="proof-title">
+      <SectionHead index="04" label="Proof" id="proof-title" title={title} intro={intro} />
+      <div className="mt-8 grid md:mt-12 lg:grid-cols-12 lg:gap-8">
+        <ol className="lg:col-span-9 lg:col-start-4">
+          {lines.map((l, i) => (
+            <li key={l.fact} className="grid gap-2 border-b border-border py-4 sm:grid-cols-12 sm:gap-4">
+              <span aria-hidden className="numerals title-4 text-text-subtle sm:col-span-1">{String(i + 1).padStart(2, "0")}</span>
+              <div className="flex flex-col gap-1 sm:col-span-8">
+                <p className="title-3 text-text">{l.fact}</p>
+                <p className="body-6 text-text-subtle">{l.detail}</p>
+              </div>
+              <p className="sm:col-span-3 sm:text-right">
+                <Link href={l.href} prefetch={false} className={textLinkClass}>{l.linkLabel}</Link>
+              </p>
+            </li>
+          ))}
+          <li className="grid gap-2 py-4 sm:grid-cols-12 sm:gap-4">
+            <span aria-hidden className="numerals title-4 text-text-subtle sm:col-span-1">{String(lines.length + 1).padStart(2, "0")}</span>
+            <p className="body-6 text-text-subtle sm:col-span-11">{quoteNote}</p>
+          </li>
+        </ol>
       </div>
     </Section>
   );
