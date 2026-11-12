@@ -1,4 +1,5 @@
 import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink, organization, twoFactor } from "better-auth/plugins";
 import { memoryAdapter } from "better-auth/adapters/memory";
@@ -13,6 +14,14 @@ import { ac, roles } from "./roles";
 
 // Better Auth: magic link, passkeys, TOTP, orgs + roles, API keys (hashed, prefix shown).
 // Sessions live in httpOnly `__Host-` cookies in production (see cookieConfig), SameSite=Lax, Path=/.
+
+/**
+ * API keys say their environment: sk_test_ or sk_live_, as the docs, the OpenAPI document and secret scanners expect.
+ * Set on the server from metadata.environment (the only thing that decides the environment); a prefix sent by the
+ * client is ignored.
+ */
+export const keyPrefixFor = (metadata: unknown) =>
+  (metadata as { environment?: unknown } | null | undefined)?.environment === "production" ? "sk_live_" : "sk_test_";
 
 const COOKIE_NAMES = ["session_token", "session_data", "account_data", "dont_remember", "two_factor"] as const;
 
@@ -77,6 +86,12 @@ export function createAuth(db: BetterAuthOptions["database"]) {
       additionalFields: { analyticsConsent: { type: "boolean", required: false, defaultValue: false, input: true } },
     },
     account: { accountLinking: { enabled: true, trustedProviders: ["google"] } },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/api-key/create" || !ctx.body || typeof ctx.body !== "object") return;
+        return { context: { ...ctx, body: { ...ctx.body, prefix: keyPrefixFor((ctx.body as { metadata?: unknown }).metadata) } } };
+      }),
+    },
     databaseHooks: {
       user: {
         create: {
@@ -113,7 +128,7 @@ export function createAuth(db: BetterAuthOptions["database"]) {
       }),
       apiKey({
         references: "organization",
-        defaultPrefix: `${product.slug.slice(0, 4)}_`,
+        defaultPrefix: "sk_test_",
         enableMetadata: true,
         requireName: true,
         rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 600 },

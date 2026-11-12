@@ -7,7 +7,7 @@ import { SearchShortcut } from "@/components/app/search-shortcut";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { inputClass } from "@/components/ui/field";
 import { RequestLog } from "@/components/marketing/ledger/request-log";
-import { requireOrg } from "@/lib/auth/session";
+import { orgHasApiKey, requireOrg } from "@/lib/auth/session";
 import { getBridge } from "@/lib/bridge";
 import { OBJECTS } from "@/lib/v1/objects";
 import type { Job, RequestState } from "@/lib/qbwc";
@@ -49,11 +49,11 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
   let steps: Step[] | null = null;
   if (!failed && rows.length === 0 && !before && !state && !object && !q) {
     try {
-      const users = await (await getBridge()).users.list({ projectId, limit: 20 });
+      const [users, hasKey] = await Promise.all([(await getBridge()).users.list({ projectId, limit: 20 }), orgHasApiKey(ctx.org.id, env)]);
       steps = [
-        { title: "Create a test API key", body: "Keys are shown once. Test keys only reach QuickBooks sample files.", href: "/app/settings/api-keys", cta: "Create key", done: false },
-        { title: "Connect a company file", body: "Make a connect link; whoever runs QuickBooks follows four steps on its page.", href: "/app/end-users", cta: "Add company file", done: users.length > 0 },
-        { title: "Make your first request", body: "List customers with the quickstart snippet. It shows up here within seconds.", href: "/docs/getting-started", cta: "Open quickstart", done: false },
+        { title: `Create a ${env} API key`, body: "Keys are shown once, with a command to try them straight away. Test keys are meant for QuickBooks sample files.", href: "/app/settings/api-keys", cta: "Create key", done: hasKey },
+        { title: "Connect a company file", body: "Make a connect link in the dashboard; whoever runs QuickBooks follows four steps on its page.", href: `/app/end-users?env=${env}#add`, cta: "Add company file", done: users.length > 0 },
+        { title: "Make your first request", body: "List customers with the quickstart command. It shows up here within seconds.", href: "/docs/getting-started#list-its-customers", cta: "Open quickstart", done: false },
       ];
     } catch {
       steps = null;

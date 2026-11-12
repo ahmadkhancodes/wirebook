@@ -14,7 +14,7 @@ export const sdks: DocPage = {
     },
     {
       heading: "Install",
-      body: ["Once published, the install commands are these. Node 18 or newer, and Python 3.9 or newer."],
+      body: ["Once published, the install commands are these. Node 18 or newer, and Python 3.9 or newer. Until then, build them from the repository: npm run build --workspace @wirebook/sdk, and add packages/sdk-py/src to PYTHONPATH."],
       code: { lang: "bash", code: "npm install @wirebook/sdk\npip install wirebook" },
     },
     {
@@ -22,7 +22,7 @@ export const sdks: DocPage = {
       body: [
         "Create one client per API key. forUser returns a client whose calls all carry X-End-User-Id for that end user. Resources are on qbd, for example qbd.customers, qbd.salesOrders and qbd.creditMemos. Each has list, iterate, listAll, get, create and update.",
       ],
-      code: { lang: "ts", code: `import { Wirebook, isQueued } from "@wirebook/sdk";\n\nconst wb = new Wirebook({ apiKey: process.env.WIREBOOK_API_KEY! });\nconst acme = wb.forUser("acme-42");\n\nconst customer = await acme.qbd.customers.create({ name: "Acme Builders" });\nconst invoice = await acme.qbd.invoices.get("<txnId>");` },
+      code: { lang: "ts", code: `import { Wirebook, isQueued } from "@wirebook/sdk";\n\nconst wb = new Wirebook({ apiKey: process.env.WIREBOOK_API_KEY! });\nconst acme = wb.forUser("acme-42");\n\nconst customer = await acme.qbd.customers.create({ name: "Acme Builders" });\nconst invoice = await acme.qbd.invoices.create({\n  customerRef: { fullName: "Acme Builders" },\n  lines: [{ itemRef: { fullName: "Consulting" }, quantity: 2, rate: 150 }],\n});\nif (!isQueued(invoice)) console.log(await acme.qbd.invoices.get(invoice.txnId));` },
     },
     {
       heading: "Python client",
@@ -42,7 +42,7 @@ export const sdks: DocPage = {
       body: [
         `If QuickBooks has not answered within ${p.abuse.syncWaitMs / 1000} seconds, create and update return a Queued marker (the id of a 202 response) instead of the record. Pass the marker to requests.wait, which polls GET /v1/requests/{id} until the request succeeds, and throws the typed error if it failed or its outcome is unknown. Pass async: true (async_=True in Python) to get a Queued marker straight away.`,
       ],
-      code: { lang: "ts", code: `const r = await acme.qbd.invoices.create(body, { async: true });\nif (isQueued(r)) {\n  const done = await acme.requests.wait(r, { timeoutMs: 120_000 });\n  console.log(done.state);\n}` },
+      code: { lang: "ts", code: `const body = { customerRef: { fullName: "Acme Builders" }, lines: [{ itemRef: { fullName: "Consulting" }, quantity: 1, rate: 90 }] };\nconst r = await acme.qbd.invoices.create(body, { async: true });\nif (isQueued(r)) {\n  const done = await acme.requests.wait(r, { timeoutMs: 120_000 });\n  console.log(done.state);\n}` },
     },
     {
       heading: "Pagination",

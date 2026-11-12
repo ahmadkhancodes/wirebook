@@ -1,4 +1,5 @@
 import { product as p } from "@/config/product";
+import { createInvoiceCurl, listCustomersCurl } from "@/lib/snippets";
 import type { DocPage } from "./types";
 
 export const api: DocPage = {
@@ -19,9 +20,7 @@ export const api: DocPage = {
         "customers, vendors, items, accounts, invoices, bills, payments, estimates, sales-orders, sales-receipts, credit-memos, purchase-orders, classes, terms and employees. GET /v1/qbd/{object} lists, GET /v1/qbd/{object}/{id} retrieves, POST /v1/qbd/{object} creates and returns 201 with the created object. POST /v1/qbd/{object}/{id} updates every object except payments, which returns 405 not_supported; send the revisionNumber you read, and a stale one returns 409. Terms are standard terms. Items are created as service items for now. Payments are customer payments (ReceivePayment).",
         "If QuickBooks has not answered within the wait (55 seconds), you get 202 with a request id and a Location header. Poll GET /v1/requests/{id}. Send Prefer: respond-async to get the 202 straight away.",
       ],
-      code: { lang: "bash", code: `curl ${p.url}/v1/qbd/customers?limit=25 \
-  -H "Authorization: Bearer sk_test_..." \
-  -H "X-End-User-Id: acme-42"` },
+      code: { lang: "bash", code: listCustomersCurl(p.url, "acme-42", 25) },
     },
     {
       heading: "Pagination",
@@ -54,7 +53,7 @@ export const api: DocPage = {
       body: [
         "Send an Idempotency-Key header on every write. We replay the first result for 7 days and mark the response with Idempotent-Replayed: true. The same key with a different method, path or body returns 409 idempotency_conflict.",
       ],
-      code: { lang: "bash", code: `curl -X POST ${p.url}/v1/qbd/invoices \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -H "X-End-User-Id: acme-42" \\\n  -H "Idempotency-Key: acme-inv-1042" \\\n  -d @invoice.json` },
+      code: { lang: "bash", code: createInvoiceCurl(p.url) },
     },
     {
       heading: "Errors",

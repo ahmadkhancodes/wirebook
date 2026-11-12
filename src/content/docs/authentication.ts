@@ -1,4 +1,5 @@
 import { product as p } from "@/config/product";
+import { exportKey, meCurl } from "@/lib/snippets";
 import type { DocPage } from "./types";
 
 export const authentication: DocPage = {
@@ -27,11 +28,11 @@ export const authentication: DocPage = {
     {
       heading: "API keys",
       body: [
-        "Server to server requests use API keys. Test keys (sk_test_) and Production keys are separate. Create and revoke them in Settings, then API keys. Send the key in the x-api-key header on every request. Never put a key in browser code or a public repository. If a key leaks, revoke it and create a new one.",
+        "Server to server requests use API keys. Test keys start with sk_test_ and production keys with sk_live_; they are separate, and the environment is chosen when you create the key. Create and revoke them in Settings, then API keys. Send the key on every request as Authorization: Bearer, or in the x-api-key header; both work. Never put a key in browser code or a public repository. If a key leaks, revoke it and create a new one.",
       ],
       code: {
         lang: "bash",
-        code: `curl ${p.url}/api/v1/me \\\n  -H "x-api-key: YOUR_API_KEY"`,
+        code: `${exportKey()}\n${meCurl(p.url)}`,
       },
     },
   ],

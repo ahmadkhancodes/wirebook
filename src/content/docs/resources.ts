@@ -1,6 +1,7 @@
 import { product as p } from "@/config/product";
 import { OBJECTS, type ObjectDef } from "@/lib/v1/objects";
 import { OPS, keyOf, type Field, type Spec } from "@/lib/qbxml/spec";
+import { createCurl } from "@/lib/snippets";
 import type { DocPage, DocSection } from "./types";
 
 /** Per object copy that the specs cannot give: what it is, and the SDK accessor names. */
@@ -62,13 +63,19 @@ const sample = (f: Field): unknown => {
   }
 };
 
+/** Names the examples refer to: a customer, a vendor, an item and an account a sample company file can hold. */
+export const REF_NAMES: Record<string, string> = { customerRef: "Acme Builders", vendorRef: "Harbor Supply", itemRef: "Consulting", accountRef: "Checking", payeeEntityRef: "Harbor Supply" };
+
 /** A minimal body: every required field, with a sample value. */
 export function exampleBody(spec: Spec, skip: string[] = []): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const f of spec) {
     if (!f.required || skip.includes(keyOf(f))) continue;
-    if (f.kind === "obj" || f.kind === "list") {
-      const kids = f.children ?? [];
+    const kids = f.children ?? [];
+    if (f.kind === "obj" && kids.some((c) => keyOf(c) === "fullName")) {
+      // a reference: by name, as a reader would write it, so the example runs against a sample company file
+      out[keyOf(f)] = { fullName: REF_NAMES[keyOf(f)] ?? "Acme Builders" };
+    } else if (f.kind === "obj" || f.kind === "list") {
       const req = kids.filter((c) => c.required);
       const use = req.length ? req : kids.slice(0, 1);
       const inner = exampleBody(use.map((c) => ({ ...c, required: true })));
@@ -153,7 +160,7 @@ function resourcePage(segment: string, def: ObjectDef): DocPage {
     sections.push({ heading: "Update fields", body: [`There are none yet. ${m.title} cannot be updated through the API, and POST ${base}/{id} returns 405 not_supported.`] });
   }
   sections.push(
-    { heading: "Example with curl", body: ["Create a record with the required fields. Replace the key and the end user id with your own."], code: { lang: "bash", code: `curl -X POST ${base} \\\n  -H "Authorization: Bearer sk_test_..." \\\n  -H "X-End-User-Id: acme-42" \\\n  -H "Idempotency-Key: ${segment}-create-1" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(createBody)}'` } },
+    { heading: "Example with curl", body: ["Create a record with the required fields. Set WIREBOOK_API_KEY and replace acme-42 with your own end user id."], code: { lang: "bash", code: createCurl(p.url, segment, createBody) } },
     {
       heading: "Example with TypeScript",
       body: ["Typed with the models generated from the same field specs. create returns the record, or a Queued marker if QuickBooks has not answered yet."],

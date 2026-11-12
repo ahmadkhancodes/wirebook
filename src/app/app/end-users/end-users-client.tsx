@@ -7,10 +7,11 @@ import { buttonClass, segmentClass, segmentGroupClass } from "@/components/ui/bu
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { STATUS_HELP, type EndUserView } from "@/lib/health/view";
 import { StatusBadge } from "./status-badge";
+import { AddCompanyFile } from "./add-company-file";
 
 const POLL_MS = 5000;
 
-export function EndUsersClient({ env, initial }: { env: "test" | "production"; initial: EndUserView[] | null }) {
+export function EndUsersClient({ env, initial, baseUrl, canWrite }: { env: "test" | "production"; initial: EndUserView[] | null; baseUrl: string; canWrite: boolean }) {
   const [rows, setRows] = useState<EndUserView[] | null>(initial);
   const [failed, setFailed] = useState(initial === null);
 
@@ -29,14 +30,15 @@ export function EndUsersClient({ env, initial }: { env: "test" | "production"; i
     <div className="flex flex-col gap-4">
       <nav aria-label="Environment" className={segmentGroupClass}>
         {(["test", "production"] as const).map((e) => (
-          <Link key={e} href={e === "test" ? "/app/end-users" : "/app/end-users?env=production"} aria-current={env === e ? "page" : undefined}
+          <Link key={e} href={`/app/end-users?env=${e}`} aria-current={env === e ? "page" : undefined}
             className={segmentClass(env === e, { mono: true })}><span aria-hidden className={`size-2 ${e === "test" ? "bg-success" : "bg-danger"}`} />{e}</Link>
         ))}
       </nav>
+      {canWrite ? <AddCompanyFile env={env} baseUrl={baseUrl} onCreated={() => void load()} /> : null}
       {failed && !rows ? (
         <ErrorState title="We could not load your end users" body="The store did not answer. Your connections are not affected. Try again in a moment." action={<button type="button" onClick={() => void load()} className={buttonClass("secondary")}>Try again</button>} />
       ) : rows && rows.length === 0 ? (
-        <EmptyState title={`No ${env} company files yet`} body={<>Create one with <code>POST /v1/connect-links</code> and send the link to your customer. It shows here as Pending until their first sync.</>} action={<Link href="/docs/connect-flow" className={buttonClass("primary")}>How the connect flow works</Link>} />
+        <EmptyState title={`No ${env} company files yet`} body={<>{canWrite ? "Create a connect link above" : "Ask an owner or admin to create a connect link"}, or call <code>POST /v1/connect-links</code> from your app. The file shows here as Pending until its first sync.</>} action={<Link href="/docs/connect-flow" className={buttonClass("primary")}>How the connect flow works</Link>} />
       ) : (
         <div aria-live="polite">
           <DataTable caption="Connected company files" columns={[{ key: "file", label: "Company file" }, { key: "status", label: "Status" }, { key: "poll", label: "Last poll" }, { key: "ok", label: "Last success" }]}>

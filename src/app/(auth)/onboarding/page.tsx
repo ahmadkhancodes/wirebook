@@ -14,6 +14,8 @@ export default async function OnboardingPage({ searchParams }: { searchParams: S
   const session = await getSession();
   if (!session) redirect(`/sign-in?next=${encodeURIComponent("/onboarding")}`);
   const adding = one(sp.new) === "1";
+  // Someone who signed up to accept an invitation joins that organization; making them name an empty one first left a stray org.
+  if (!adding && next.startsWith("/accept-invite/")) redirect(next);
   if (!adding && (await getOrgContext())) redirect(next);
   return (
     <>

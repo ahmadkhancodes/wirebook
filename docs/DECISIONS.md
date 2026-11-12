@@ -105,3 +105,11 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Outbound webhooks use node:http(s) with a guarded `lookup`, not `fetch`.** It is the only way, without a new library, to check the address the connection really dials (DNS rebinding). Tests still inject `fetchFn`.
 - **`/api/dev/*` never runs on `VERCEL_ENV=production`,** even with `E2E_OUTBOX=1`: the outbox holds sign-in links.
 - **Organisations per user stay unlimited for now** (free-file multiplication is open item O1 in docs/SECURITY-REVIEW.md); capping them is a pricing decision.
+
+## 12 Nov 2026: usefulness pass decisions
+- **API keys carry their environment in the prefix (`sk_test_` / `sk_live_`).** The docs, OpenAPI document, landing page and error catalogue already promised it, but keys were issued as `wire_...`. The product was changed, not the docs: engineers expect it, secret scanners key on it, and it makes a test key in production visible at a glance. Set server side in a Better Auth `before` hook from `metadata.environment` (a prefix sent by the client is ignored). Keys made before this keep working with their old prefix.
+- **The dashboard can make connect links** (`POST /api/end-users`, session auth, same `createConnectLink` code, validation, plan gate and error object as `POST /v1/connect-links`). The first company file no longer needs a key and a terminal. Audited as `connect_link.created`.
+- **Copy-paste commands live in one module (`src/lib/snippets.ts`)** used by the docs and the dashboard. They read the key from `$WIREBOOK_API_KEY`, single quote every URL and value (zsh globs an unquoted `?`), and are executed by `tests/e2e/docs-run.spec.ts`.
+- **Docs examples refer to records by name** (`customerRef.fullName: "Acme Builders"`, `vendorRef: "Harbor Supply"`, `itemRef: "Consulting"`), not a made-up ListID that no sample file has.
+- **An invited person who signs up skips "Name your organization"** when the next step is `/accept-invite/...` (QA-REPORT open item closed). Declining still leads to onboarding through `/app`.
+- **End users opens on Production when no environment is asked for and only production files exist.** The tab links now always carry `?env=`.

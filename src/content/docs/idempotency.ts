@@ -1,5 +1,6 @@
 import { product as p } from "@/config/product";
 import { IDEMPOTENCY_TTL_MS } from "@/lib/bridge/store";
+import { createInvoiceCurl } from "@/lib/snippets";
 import type { DocPage } from "./types";
 
 const days = IDEMPOTENCY_TTL_MS / (24 * 60 * 60 * 1000);
@@ -21,7 +22,7 @@ export const idempotency: DocPage = {
         `Send an Idempotency-Key header on every POST write. A key is 1 to 255 printable characters. We store the first result for ${days} days. Sending the same key with the same method, path and body again returns that first result, and the response carries Idempotent-Replayed: true. No second request reaches QuickBooks.`,
         "Sending the same key with a different method, path or body returns 409 with the error code idempotency_conflict. Use a new key for a new request, and the same key only to retry the identical request.",
       ],
-      code: { lang: "bash", code: `curl -X POST ${p.url}/v1/qbd/invoices \\\n  -H "Authorization: Bearer sk_test_..." \\\n  -H "X-End-User-Id: acme-42" \\\n  -H "Idempotency-Key: acme-inv-1042" \\\n  -d @invoice.json` },
+      code: { lang: "bash", code: createInvoiceCurl(p.url) },
     },
     {
       heading: "Choosing a key",

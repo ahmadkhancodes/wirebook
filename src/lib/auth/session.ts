@@ -88,3 +88,15 @@ export async function authApiKey(req: Request): Promise<{ orgId: string; keyId: 
   const environment = r.key.metadata?.environment === "production" ? "production" : "test";
   return { orgId: r.key.referenceId ?? r.key.userId ?? "", keyId: r.key.id, environment };
 }
+
+/** Does this organization have an API key (optionally of one environment)? For the first-run checklist; false on any error. */
+export async function orgHasApiKey(orgId: string, environment?: "test" | "production"): Promise<boolean> {
+  try {
+    const auth = await getAuth();
+    const r = (await auth.api.listApiKeys({ headers: await headers(), query: { organizationId: orgId } })) as unknown;
+    const rows = (Array.isArray(r) ? r : ((r as { apiKeys?: unknown[] })?.apiKeys ?? [])) as { metadata?: { environment?: string } | null }[];
+    return rows.some((k) => !environment || (k.metadata?.environment === "production" ? "production" : "test") === environment);
+  } catch {
+    return false;
+  }
+}
