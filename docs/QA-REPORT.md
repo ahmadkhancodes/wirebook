@@ -36,3 +36,6 @@ Also fixed: three existing specs had gone stale against shipped copy and failed 
 - **Info:** `/status` and `/sdk` are listed in the brief but not built (nothing links to them).
 - **Info:** a 3 real file Developer plan limit journey through the UI was not added; the gate is covered by unit tests and the Web Connector simulator.
 - Not testable locally: Stripe checkout return, real QuickBooks, e-mail deliverability.
+
+## Handy and hardened pass (12 Nov 2026)
+Added: `tests/unit/handy-hardening.test.ts` (CSV escaping, CSP pins, bundle secret scan) and a Playwright journey in `dashboard.spec.ts` (checklist, `/` shortcut, CSV export needs a session and answers `text/csv`). lint, typecheck, 301 unit tests and build green. **The Playwright suite could not be run in this environment: no Chromium is installed and there is no network to download it** (every browser test fails at launch, with or without these changes). Run `npx playwright install chromium && npx playwright test` before merging; the new journey is untested in a browser.

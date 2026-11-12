@@ -11,6 +11,7 @@ export const RULES = {
   billing: { limit: 10, windowMs: 60_000 },
   account: { limit: 5, windowMs: 60 * 60_000 },
   publicForm: { limit: 30, windowMs: 60_000 },
+  export: { limit: 10, windowMs: 60_000 },
   api: { limit: 600, windowMs: 60_000 },
 } satisfies Record<string, Rule>;
 

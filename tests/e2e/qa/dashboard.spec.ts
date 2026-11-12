@@ -135,3 +135,22 @@ test("passkeys: with an authenticator present a user can add a passkey and then 
   await page.getByRole("button", { name: "Sign in with a passkey" }).click();
   await expect(page).toHaveURL(/\/app/, { timeout: 20_000 });
 });
+
+test("first-run checklist, slash shortcut and CSV export of the request log", async ({ page, request }) => {
+  const email = `handy-${uniq()}@example.com`;
+  await signInViaUI(page, request, email);
+  await page.goto("/app");
+  const list = page.getByRole("region", { name: "Getting started" });
+  await expect(list).toBeVisible();
+  await expect(list.getByRole("link", { name: "Create key" })).toBeVisible();
+  await page.locator("body").click();
+  await page.keyboard.press("/");
+  await expect(page.locator("#request-search")).toBeFocused();
+  // export is tenant scoped, needs a session and answers CSV
+  const anon = await request.get("/api/requests/export");
+  expect(anon.status()).toBe(401);
+  const res = await page.request.get("/api/requests/export?env=test");
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toContain("text/csv");
+  expect((await res.text()).split("\r\n")[0]).toContain("id,created_at");
+});

@@ -272,5 +272,11 @@ export async function ensureIndexes(uri: string, dbName: string) {
   await d.collection("member").createIndex({ organizationId: 1, userId: 1 }, { unique: true });
   await d.collection("organization").createIndex({ slug: 1 }, { unique: true });
   await d.collection("apikey").createIndex({ key: 1 });
+  await d.collection("apikey").createIndex({ referenceId: 1 });
+  await d.collection("member").createIndex({ userId: 1 });
+  await d.collection("session").createIndex({ userId: 1 });
+  await d.collection("account").createIndex({ userId: 1 });
+  await d.collection("org_settings").createIndex({ app: 1 });
+  await d.collection("config").createIndex({ app: 1 });
   return DELIVERY_TTL_DAYS;
 }

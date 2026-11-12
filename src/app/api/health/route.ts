@@ -20,5 +20,9 @@ export async function GET() {
     }
   }
   const ok = db !== "down";
-  return json({ ok, db, driver, version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev", at: new Date().toISOString() }, ok ? 200 : 503);
+  // Only whether a dependency is configured, never keys, hosts or error text.
+  const e = env();
+  const mail = e.MAIL_PROVIDER === "console" || e.MAIL_PROVIDER === "none" || (!e.MAIL_PROVIDER && !e.RESEND_API_KEY) ? "not_configured" : "configured";
+  const billing = e.STRIPE_SECRET_KEY ? "configured" : "not_configured";
+  return json({ ok, db, driver, mail, billing, version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev", at: new Date().toISOString() }, ok ? 200 : 503);
 }
