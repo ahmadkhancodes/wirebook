@@ -6,6 +6,8 @@ import { product, plans, type Interval, type Plan } from "@/config/product";
 import { buttonClass } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { money } from "@/lib/pricing";
+import { planCtaFor } from "@/lib/marketing-session";
+import { useSignedIn } from "./use-signed-in";
 
 /** What a plan shows for the chosen interval. A plan sold one way shows that way. All numbers come from product.ts. */
 function display(plan: Plan, interval: Interval) {
@@ -36,6 +38,7 @@ function annualSavings(): string | null {
 
 export function PricingTable({ id = "pricing", title, headingLevel = 2 }: { id?: string; title?: string; headingLevel?: 1 | 2 }) {
   const [interval, setBilling] = useState<Interval>(product.defaultInterval);
+  const signedIn = useSignedIn();
   const saving = annualSavings();
   const options: { id: Interval; label: string }[] = [
     { id: "month", label: "Monthly" },
@@ -77,7 +80,7 @@ export function PricingTable({ id = "pricing", title, headingLevel = 2 }: { id?:
       <ul className="mt-8 grid border-t-4 border-b-4 border-double border-text bg-surface-raised md:mt-12 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan, i) => {
           const d = display(plan, interval);
-          const href = `/sign-in?plan=${plan.id}&interval=${d?.interval ?? interval}`;
+          const { href, label } = planCtaFor(signedIn, plan, d?.interval ?? interval);
           return (
             <li
               key={plan.id}
@@ -100,7 +103,7 @@ export function PricingTable({ id = "pricing", title, headingLevel = 2 }: { id?:
               </p>
               <p className="mt-2 body-6 text-text">{d ? d.unit : "free, no card"}</p>
               <p className="mt-1 caption-2 text-text-subtle">{d ? d.billed : "Unlimited sample company files"}</p>
-              <Link href={href} className={cn(buttonClass(plan.featured ? "primary" : "secondary", "md"), "mt-6 w-full")}>{plan.cta}</Link>
+              <Link href={href} className={cn(buttonClass(plan.featured ? "primary" : "secondary", "md"), "mt-6 w-full")}>{label}</Link>
               <ul className="mt-6 flex flex-col gap-2 border-t border-border pt-6">
                 {plan.highlights.map((h) => (
                   <li key={h} className="flex items-start gap-2 body-6 text-text">

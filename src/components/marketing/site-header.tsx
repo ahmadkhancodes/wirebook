@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { product } from "@/config/product";
 import { buttonClass } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
+import { ctaFor } from "@/lib/marketing-session";
+import { useSignedIn } from "./use-signed-in";
 import { Wordmark } from "./wordmark";
 
 const STAGGER_MS = 60;
@@ -12,6 +14,8 @@ const STAGGER_MS = 60;
 /** Floating bar, off the top edge. Mobile: full-height panel, staggered links (60ms, 24px rise, <= 400ms total). */
 export function SiteHeader() {
   const pathname = usePathname();
+  const signedIn = useSignedIn();
+  const cta = ctaFor(signedIn, product.cta);
   // The menu counts as open only on the page it was opened on, so navigating closes it without an effect.
   const [openFor, setOpenFor] = useState<string | null>(null);
   const open = openFor === pathname;
@@ -69,8 +73,8 @@ export function SiteHeader() {
 
   const panelItems = [
     ...product.nav.map((n) => ({ ...n, kind: "link" as const })),
-    { href: "/sign-in", label: "Sign in", kind: "link" as const },
-    { href: product.cta.href, label: product.cta.label, kind: "cta" as const },
+    ...(signedIn ? [] : [{ href: "/sign-in", label: "Sign in", kind: "link" as const }]),
+    { href: cta.href, label: cta.label, kind: "cta" as const },
   ];
 
   return (
@@ -87,8 +91,8 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-1">
-          <Link href="/sign-in" className={cn(buttonClass("tertiary", "md"), "max-md:hidden")}>Sign in</Link>
-          <Link href={product.cta.href} className={cn(buttonClass("primary", "md"), "max-md:hidden")}>{product.cta.label}</Link>
+          {signedIn ? null : <Link href="/sign-in" className={cn(buttonClass("tertiary", "md"), "max-md:hidden")}>Sign in</Link>}
+          <Link href={cta.href} className={cn(buttonClass("primary", "md"), "max-md:hidden")}>{cta.label}</Link>
           <button
             ref={toggleRef}
             type="button"
