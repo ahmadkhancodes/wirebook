@@ -2,6 +2,14 @@ import { expect, type Page, type APIRequestContext } from "@playwright/test";
 
 export const uniq = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
+/**
+ * A walk loads dozens of pages a minute from one machine, and each page asks Better Auth for the session, which allows
+ * 60 a minute per IP. Each page is a new simulated visitor, so the walk tests the pages, not that rate limit.
+ */
+export async function newVisitorIp(page: Page) {
+  await page.context().setExtraHTTPHeaders({ "x-forwarded-for": `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` });
+}
+
 /** Collects console errors/warnings and failed requests so every page walk can assert none happened. */
 export function watch(page: Page, opts: { ignoreHydration?: boolean } = {}) {
   const problems: string[] = [];

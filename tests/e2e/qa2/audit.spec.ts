@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { signInViaUI, uniq, watch } from "../qa/helpers";
+import { newVisitorIp, signInViaUI, uniq, watch } from "../qa/helpers";
 
 // Post-redesign regression audit: every sitemap page plus 404 and every app page, at 375 and 1440.
 const PALETTE = new Set([
@@ -71,6 +71,7 @@ test("every sitemap page, the 404 and error index: clean at 375 and 1440", async
   for (const width of [375, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const p of paths) {
+      await newVisitorIp(page);
       const res = await page.goto(p);
       const st = res?.status() ?? 0;
       if (st >= 500) issues.push(`${p}: status ${st}`);

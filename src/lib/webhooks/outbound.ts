@@ -2,6 +2,10 @@ import { getDb } from "@/lib/db";
 import { DELIVERY_TTL_DAYS, type Db, type WebhookDelivery, type WebhookEndpoint } from "@/lib/db/types";
 import { hmacSha256Hex, randomToken, uuidv7 } from "@/lib/ids";
 import { product } from "@/config/product";
+import { lookup as dnsLookup, type LookupAddress } from "node:dns";
+import { isIP, type LookupFunction } from "node:net";
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 
 // Outbound webhooks: HMAC-SHA256 signed (Stripe-style header), retries with exponential backoff, delivery log.
 // Header: `X-Webhook-Signature: t=<unix>,v1=<hex hmac of "t.body">`, plus X-Webhook-Id / X-Webhook-Event.
@@ -56,29 +60,26 @@ export async function attemptDelivery(
   opts: { db: Db; fetchFn?: typeof fetch; now?: Date },
 ): Promise<WebhookDelivery> {
   const now = opts.now ?? new Date();
-  const fetchFn = opts.fetchFn ?? fetch;
   const attempts = d.attempts + 1;
   let code: number | null = null;
   let error: string | null = null;
   try {
-    // the URL was checked when saved, but a public name can resolve to a private address: check what it resolves to now
-    if (!opts.fetchFn && !(await resolvesPublic(ep.url))) throw Object.assign(new Error("blocked"), { name: "BlockedAddress" });
-    const ctrl = AbortSignal.timeout(10_000);
-    const res = await fetchFn(ep.url, {
-      method: "POST",
-      signal: ctrl,
-      redirect: "manual",
-      headers: {
-        "content-type": "application/json",
-        "user-agent": `${product.name}-Webhooks/1.0`,
-        "x-webhook-id": d.id,
-        "x-webhook-event": d.event,
-        "x-webhook-signature": await signPayload(ep.secret, d.payload, Math.floor(now.getTime() / 1000)),
-      },
-      body: d.payload,
-    });
-    code = res.status;
-    if (!res.ok) error = `http_${res.status}`;
+    const headers = {
+      "content-type": "application/json",
+      "user-agent": `${product.name}-Webhooks/1.0`,
+      "x-webhook-id": d.id,
+      "x-webhook-event": d.event,
+      "x-webhook-signature": await signPayload(ep.secret, d.payload, Math.floor(now.getTime() / 1000)),
+    };
+    if (opts.fetchFn) {
+      const res = await opts.fetchFn(ep.url, { method: "POST", signal: AbortSignal.timeout(10_000), redirect: "manual", headers, body: d.payload });
+      code = res.status;
+    } else {
+      // the URL was checked when saved, but a public name can resolve to a private address later (or between a
+      // check and the connect, DNS rebinding): the address is checked inside the connection that is actually made
+      code = await postPinned(ep.url, headers, d.payload);
+    }
+    if (code < 200 || code > 299) error = `http_${code}`;
   } catch (e) {
     const name = (e as Error).name;
     error = name === "TimeoutError" ? "timeout" : name === "BlockedAddress" ? "blocked_address" : "network_error";
@@ -145,9 +146,9 @@ export function isPrivateAddress(ip: string): boolean {
   const m4 = v.match(/^(?:::ffff:)?(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
   if (m4) {
     const [a, b] = [Number(m4[1]), Number(m4[2])];
-    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || (a === 198 && (b === 18 || b === 19)) || (a === 192 && b === 0 && Number(m4[3]) === 0) || a >= 224;
   }
-  return v === "::" || v === "::1" || /^f[cd]/.test(v) || /^fe[89ab]/.test(v) || v.startsWith("::ffff:");
+  return v === "::" || v === "::1" || /^f[cd]/.test(v) || /^fe[89ab]/.test(v) || v.startsWith("::ffff:") || v.startsWith("64:ff9b:") || v.startsWith("2002:");
 }
 
 /** Resolve the webhook host and refuse it if any address is private (SSRF through DNS). */
@@ -161,4 +162,44 @@ export async function resolvesPublic(raw: string, lookup?: (host: string) => Pro
   } catch {
     return false;
   }
+}
+
+const blocked = () => Object.assign(new Error("blocked"), { name: "BlockedAddress", code: "EBLOCKED" });
+type RawLookup = (host: string, opts: { all: true }, cb: (err: NodeJS.ErrnoException | null, addrs: LookupAddress[]) => void) => void;
+
+/** A `lookup` for node:http(s) that refuses private addresses: the check and the connect use the same answer. */
+export function guardedLookup(base: RawLookup = dnsLookup as unknown as RawLookup): LookupFunction {
+  return ((host: string, options: { all?: boolean } | number, cb: (err: Error | null, address: string | LookupAddress[], family?: number) => void) => {
+    base(host, { all: true }, (err, addrs) => {
+      if (err) return cb(err, "", 4);
+      if (!addrs?.length || addrs.some((a) => isPrivateAddress(a.address))) return cb(blocked(), "", 4);
+      if (typeof options === "object" && options?.all) return cb(null, addrs);
+      return cb(null, addrs[0]!.address, addrs[0]!.family);
+    });
+  }) as unknown as LookupFunction;
+}
+
+/**
+ * POST without following redirects, a 10 s budget and the response body never read. Node skips `lookup` for IP
+ * literals, so those are checked here. Resolves to the status code; rejects with BlockedAddress or TimeoutError.
+ */
+export function postPinned(raw: string, headers: Record<string, string>, body: string, opts: { lookup?: LookupFunction; timeoutMs?: number } = {}): Promise<number> {
+  return new Promise((resolve, reject) => {
+    let u: URL;
+    try { u = new URL(raw); } catch { return reject(blocked()); }
+    const host = u.hostname.replace(/^\[|\]$/g, "");
+    if (u.protocol !== "https:" && u.protocol !== "http:") return reject(blocked());
+    if (isIP(host) && isPrivateAddress(host)) return reject(blocked());
+    const send = u.protocol === "https:" ? httpsRequest : httpRequest;
+    const req = send(u, { method: "POST", headers: { ...headers, "content-length": String(Buffer.byteLength(body)) }, lookup: opts.lookup ?? guardedLookup(), timeout: opts.timeoutMs ?? 10_000 }, (res) => {
+      resolve(res.statusCode ?? 0);
+      res.destroy();
+    });
+    // a hard deadline for the whole exchange, so a receiver that trickles bytes cannot hold the function open
+    const timer = setTimeout(() => req.destroy(Object.assign(new Error("timeout"), { name: "TimeoutError" })), opts.timeoutMs ?? 10_000);
+    req.on("close", () => clearTimeout(timer));
+    req.on("timeout", () => req.destroy(Object.assign(new Error("timeout"), { name: "TimeoutError" })));
+    req.on("error", (e) => reject((e as NodeJS.ErrnoException).code === "EBLOCKED" ? blocked() : e));
+    req.end(body);
+  });
 }
