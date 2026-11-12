@@ -48,7 +48,9 @@ describe("design system", () => {
   it("caps radius at 4px and has no background gradients", () => {
     for (const m of css.matchAll(/--radius-[a-z0-9]+:\s*(\d+)px/g)) expect(Number(m[1])).toBeLessThanOrEqual(4);
     for (const [p, s] of source) {
-      expect(s, p).not.toMatch(/bg-gradient|linear-gradient|rounded-full|rounded-3xl|backdrop-blur/);
+      expect(s, p).not.toMatch(/bg-gradient|linear-gradient|rounded-full|rounded-3xl/);
+      // Blur is allowed only where the skill asks for it (B7): the floating nav bar and its full height mobile menu.
+      if (!p.endsWith("site-header.tsx")) expect(s, p).not.toMatch(/backdrop-blur/);
     }
   });
 

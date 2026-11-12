@@ -14,7 +14,7 @@
   --paper-50: #f1f7f2; /* ledger paper */
   --paper-100: #e2eee5; /* column band */
   --rule-200: #b9cfc0; /* pale green ruling, decorative */
-  --rule-400: #8aa897; /* unlit words on forest, 5.2:1 */
+  --rule-400: #8aa897; /* spare ruling shade */
   --rule-500: #6a8475; /* control edge, 3.7:1 on paper */
   --ink-600: #46604f; /* subtle text, 6.3:1 on paper */
   --ink-900: #123524; /* forest ink, 12.4:1 on paper */
@@ -179,8 +179,8 @@
 /* Scroll reveal (rise 32px + fade, once). Reduced motion: opacity only. */
 .kit-reveal { opacity: 0; transform: translateY(32px); transition: opacity 700ms var(--ease-out-kit), transform 700ms var(--ease-out-kit); }
 .kit-reveal[data-visible="true"] { opacity: 1; transform: none; }
-/* Tagline reveal: unlit words are pale green (AA on forest), lit words take the paragraph colour. */
-.kit-word { color: var(--rule-400); transition: color 500ms var(--ease-out-kit); }
+/* Tagline reveal (B11): unlit words sit at 30% of the paragraph colour, lit words take the full colour. */
+.kit-word { color: color-mix(in srgb, currentColor 30%, transparent); transition: color 500ms var(--ease-out-kit); }
 .kit-word[data-on="true"] { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .kit-reveal { transform: none; transition: opacity 300ms var(--ease-out-kit); }
@@ -202,23 +202,26 @@
 @utility ruled { background-color: var(--surface-raised); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='24'%3E%3Crect y='23' width='8' height='1' fill='%23dbe8de'/%3E%3C/svg%3E"); }
 /* Section index label: mono, small, spaced. "01 Problem". */
 @utility index-label { font-family: var(--font-mono-family); font-size: 0.75rem; line-height: 1rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+/* Hero and tagline measure (B5): heading and subheading never run wider than 680px. */
+@utility hero-measure { max-width: 680px; }
 /* Kept for old call sites: a plain left gutter, no decoration. */
 @utility perf { position: relative; }
-.kit-tick path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: kit-draw 200ms var(--ease-out-kit) forwards; animation-delay: calc(var(--i, 0) * 60ms + 60ms); }
-@keyframes kit-draw { to { stroke-dashoffset: 0; } }
+/* Ticks settle in one after another: opacity and scale only. */
+.kit-tick { opacity: 0; transform: scale(0.6); animation: kit-tick 300ms var(--ease-out-kit) forwards; animation-delay: calc(var(--i, 0) * 60ms + 60ms); }
+@keyframes kit-tick { to { opacity: 1; transform: none; } }
 /* The wire draws once (transform only: scaleX from the left). */
 .wire-draw { transform-origin: left center; transform: scaleX(0); animation: wire-draw 900ms var(--ease-out-kit) 150ms forwards; }
 @keyframes wire-draw { to { transform: scaleX(1); } }
 .wire-node { opacity: 0; animation: wire-node 300ms var(--ease-out-kit) forwards; animation-delay: calc(var(--i, 0) * 220ms + 250ms); }
 @keyframes wire-node { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .kit-tick path { animation: none; stroke-dashoffset: 0; }
+  .kit-tick { animation: none; opacity: 1; transform: none; }
   .wire-draw { animation: none; transform: none; }
   .wire-node { animation: none; opacity: 1; }
 }
-@utility wordmark { font-family: var(--font-display-family); font-size: 1.375rem; line-height: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
-@utility wordmark-by { font-family: var(--font-mono-family); font-size: 0.625rem; line-height: 0.75rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
-.code-block { font-family: var(--font-mono-family); font-size: 0.8125rem; line-height: 1.375rem; white-space: pre; }
+@utility wordmark { font-family: var(--font-display-family); font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; letter-spacing: -0.01em; }
+@utility wordmark-by { font-family: var(--font-mono-family); font-size: 0.75rem; line-height: 1rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+.code-block { font-family: var(--font-mono-family); font-size: 0.75rem; line-height: 1rem; white-space: pre; }
 
 /* Tailwind v4 no longer sets a pointer cursor on buttons. Anything you can click shows the hand. */
 @layer base {

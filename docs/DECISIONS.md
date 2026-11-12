@@ -113,3 +113,15 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Docs examples refer to records by name** (`customerRef.fullName: "Acme Builders"`, `vendorRef: "Harbor Supply"`, `itemRef: "Consulting"`), not a made-up ListID that no sample file has.
 - **An invited person who signs up skips "Name your organization"** when the next step is `/accept-invite/...` (QA-REPORT open item closed). Declining still leads to onboarding through `/app`.
 - **End users opens on Production when no environment is asked for and only production files exist.** The tab links now always carry `?env=`.
+
+## 12 Nov 2026: landing page compliance with the design library
+- **Marketing pages read the session with one idle GET of `/api/auth/get-session`** (`use-signed-in.ts`), not the better-auth client. The client and its plugins were the cause of a 1.25 s TBT on `/pricing` (Lighthouse 72 to 97). Auth code itself is untouched.
+- **Fonts trimmed to the weights in use:** Bitter 600 only (the wordmark moved from 700 to 600), JetBrains Mono 400 only. `experimental.inlineCss` was tried and dropped: the bigger HTML scored worse (89 to 95).
+- **Off-scale sizes snapped down:** wordmark 22 to 20px, code blocks 13 to 12px (12/16). The "by BufferSol" tag went from 10 to 12px, because there is no step below 12.
+- **Hero heading and subheading capped at 680px** (`hero-measure` utility), the hero no longer uses the 72px display size, so "QuickBooks Desktop," stays on one line within the cap.
+- **Benefits cut from six to five:** the connect flow is told once, in How it works (same claims: four steps, each green only when our server saw it, link valid 24 hours).
+- **Social proof is honest:** a "Proof you can check" section lists verifiable facts (published, dated prices; public error guides; public OpenAPI document; docs examples run in tests) and says plainly that there are no customer quotes yet. No invented logos, quotes or stats.
+- **Column rulings are their own elements** (hero proof column, Fit columns, final CTA), never a border on one side of a box.
+- **Nav floats:** a compact strip off the top edge, translucent sheet over `backdrop-blur`. The design-system guard now allows blur only in `site-header.tsx`.
+- **Tagline reveal uses one IntersectionObserver over every word** (plus the paragraph, so a fast scroll past it still lights every word), lights words one at a time 60ms apart, unlit words at 30% of the text colour, all lit at once under reduced motion.
+- **Main buttons pad 8px by 12px** (`md` and `lg`), heights kept by their 44/48px minimum for touch targets.

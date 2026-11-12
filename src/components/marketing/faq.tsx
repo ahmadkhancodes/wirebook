@@ -7,7 +7,7 @@ export interface FaqItem {
   a: string;
 }
 
-export function Faq({ index = "07", title = "Questions, answered", items }: { index?: string; title?: string; items: FaqItem[] }) {
+export function Faq({ index = "08", title = "Questions, answered", items }: { index?: string; title?: string; items: FaqItem[] }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",

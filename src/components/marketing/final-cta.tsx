@@ -6,7 +6,8 @@ import { Section } from "@/components/ui/layout";
 export function FinalCta({ title, body, cta, note }: { title: ReactNode; body?: ReactNode; cta: { href: string; label: string }; note?: ReactNode }) {
   return (
     <Section pad="md" labelledBy="final-cta-title">
-      <div className="grid gap-6 border-t-4 border-double border-text pt-8 lg:grid-cols-12 lg:items-end lg:gap-8">
+      <span aria-hidden className="block h-1 border-y border-text" />
+      <div className="grid gap-6 pt-8 lg:grid-cols-12 lg:items-end lg:gap-8">
         <div className="flex flex-col gap-4 lg:col-span-8">
           <h2 id="final-cta-title" className="heading-4 md:heading-2 max-w-3xl text-text">{title}</h2>
           {body ? <p className="body-3 max-w-2xl text-text-subtle">{body}</p> : null}
