@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ButtonLink } from "@/components/ui/button";
+import { SessionCta } from "./session-cta";
 import { Container, textLinkClass } from "@/components/ui/layout";
 
 export interface HeroProps {
@@ -37,7 +37,7 @@ export function Hero({ title, subtitle, primaryCta, secondaryCta, risk, proof, h
             <h1 id="hero-title" className="heading-3 md:heading-1 xl:display-1 text-text">{title}</h1>
             <p className="body-3 max-w-xl text-text-subtle md:title-2">{subtitle}</p>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <ButtonLink href={primaryCta.href} size="lg">{primaryCta.label}</ButtonLink>
+              <SessionCta cta={primaryCta} size="lg" />
               {secondaryCta ? <Link href={secondaryCta.href} className={textLinkClass}>{secondaryCta.label}</Link> : null}
             </div>
             {risk ? <p className="caption-5 text-text-subtle">{risk}</p> : null}

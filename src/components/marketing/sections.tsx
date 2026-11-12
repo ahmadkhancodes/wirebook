@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Section, SectionHead, textLinkClass } from "@/components/ui/layout";
-import { ButtonLink } from "@/components/ui/button";
+import { SessionCta } from "@/components/marketing/session-cta";
 import { plans, product } from "@/config/product";
 import { footedExample, money, rates } from "@/lib/pricing";
 
@@ -79,7 +79,7 @@ export function PricingTeaser() {
           </div>
         </div>
         <div className="flex flex-col items-start gap-2 lg:col-span-3">
-          <ButtonLink href={product.cta.href} size="md">{product.cta.label}</ButtonLink>
+          <SessionCta cta={product.cta} size="md" />
           <Link href="/pricing" className={textLinkClass}>See all plans</Link>
         </div>
       </div>

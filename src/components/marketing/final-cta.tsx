@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ButtonLink } from "@/components/ui/button";
+import { SessionCta } from "./session-cta";
 import { Section } from "@/components/ui/layout";
 
 /** The close: a ledger double rule, the claim on the left, the same action as the hero on the right. */
@@ -12,7 +12,7 @@ export function FinalCta({ title, body, cta, note }: { title: ReactNode; body?: 
           {body ? <p className="body-3 max-w-2xl text-text-subtle">{body}</p> : null}
         </div>
         <div className="flex flex-col items-start gap-2 lg:col-span-4 lg:items-end">
-          <ButtonLink href={cta.href} size="lg">{cta.label}</ButtonLink>
+          <SessionCta cta={cta} size="lg" />
           {note ? <p className="caption-2 text-text-subtle">{note}</p> : null}
         </div>
       </div>
