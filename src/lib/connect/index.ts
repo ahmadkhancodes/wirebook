@@ -74,9 +74,12 @@ export async function issueLink(bridge: Bridge, baseUrl: string, user: EndUser, 
 export interface CreateLinkInput { externalId: string; companyName?: string }
 
 function parseInput(body: Record<string, unknown>): CreateLinkInput {
-  const { externalId, companyName } = body;
-  if (typeof externalId !== 'string' || externalId.length < 1 || externalId.length > 100) throw apiError('invalid_request', { path: 'externalId' }, { message: 'externalId: is required, 1 to 100 characters' });
-  if (companyName !== undefined && (typeof companyName !== 'string' || companyName.length > 100)) throw apiError('invalid_request', { path: 'companyName' }, { message: 'companyName: must be a string of at most 100 characters' });
+  const { externalId: rawId, companyName: rawName } = body;
+  // Whitespace is trimmed (a blank or padded id would otherwise create an unreachable duplicate); control characters are refused.
+  const externalId = typeof rawId === 'string' ? rawId.trim() : rawId;
+  const companyName = typeof rawName === 'string' ? rawName.trim() : rawName;
+  if (typeof externalId !== 'string' || externalId.length < 1 || externalId.length > 100 || /\p{Cc}/u.test(externalId)) throw apiError('invalid_request', { path: 'externalId' }, { message: 'externalId: is required, 1 to 100 characters, not blank, no control characters' });
+  if (companyName !== undefined && (typeof companyName !== 'string' || companyName.length > 100 || /\p{Cc}/u.test(companyName))) throw apiError('invalid_request', { path: 'companyName' }, { message: 'companyName: must be a string of at most 100 characters, no control characters' });
   for (const k of Object.keys(body)) if (k !== 'externalId' && k !== 'companyName') throw apiError('invalid_request', { path: k }, { message: `${k}: unknown field` });
   return { externalId, ...(companyName ? { companyName } : {}) };
 }

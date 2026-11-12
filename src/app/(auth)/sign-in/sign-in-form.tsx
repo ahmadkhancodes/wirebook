@@ -57,7 +57,12 @@ export function SignInForm({ callbackURL, expiredLink }: { callbackURL: string; 
   async function passkey() {
     setPasskeyBusy(true);
     setError(null);
-    const res = await authClient.signIn.passkey();
+    let res: Awaited<ReturnType<typeof authClient.signIn.passkey>> | undefined;
+    try {
+      res = await authClient.signIn.passkey();
+    } catch {
+      res = { error: { message: "unsupported" } } as never;
+    }
     if (res?.error) {
       setPasskeyBusy(false);
       setError(authError(res.error, "Passkey sign-in did not complete. Use the email link instead."));

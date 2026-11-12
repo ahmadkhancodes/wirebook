@@ -34,7 +34,7 @@ test("request detail, company file history, usage charts and webhooks", async ({
   // request detail: copy as curl, body and result
   expect((await page.request.post("/api/dev/seed-requests")).ok()).toBeTruthy();
   await page.goto("/app");
-  await page.getByRole("link", { name: /Open request/ }).first().click();
+  await page.getByRole("link", { name: /open request/i }).first().click();
   await expect(page.getByRole("button", { name: "Copy as curl" })).toBeVisible();
   await expect(page.getByText("Copy request id")).toBeVisible();
   await expect(page.getByRole("link", { name: "Open company file" })).toBeVisible();

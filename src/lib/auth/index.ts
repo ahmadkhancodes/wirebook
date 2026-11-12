@@ -96,7 +96,8 @@ export function createAuth(db: BetterAuthOptions["database"]) {
           await sendMailSafe({ to: email, ...m, category: "transactional" });
         },
       }),
-      twoFactor({ issuer: product.name, skipVerificationOnEnable: false }),
+      // Sign-in is by e-mail link or passkey, so accounts have no password: without allowPasswordless every enable/disable call fails with "body.password: expected string".
+      twoFactor({ issuer: product.name, skipVerificationOnEnable: false, allowPasswordless: true }),
       passkey({ rpName: product.fullName, rpID: new URL(base).hostname, origin: base }),
       organization({
         ac,
