@@ -6,7 +6,7 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Design direction:** workbook "Ledger and Terminal" adopted (docs/DESIGN.md). Competitor audit confirms the category look (dark glow, DM Sans/Inter, teal or blue pills); we differ on four axes.
 - **Fonts:** Spectral + Public Sans + JetBrains Mono. Overrides the playbook's font whitelist under its ICP override rule; the ban list (Inter, Roboto, Arial, Helvetica, Open Sans) still holds.
 - **Icons:** Phosphor (regular) instead of the workbook's Tabler, to follow the factory rule (Phosphor/Solar/Iconamoon) across all seven products.
-- **Dark palette** is green tinted, not the playbook's neutral black list (one colour family). No gradients anywhere.
+- **Dark mode removed (12 Nov 2026, founder):** the product is light only everywhere: no toggle, no `data-theme`, no `prefers-color-scheme`, `color-scheme: light`. A source-grep test (`tests/unit/no-dark-mode.test.ts`) guards it. Earlier dark notes below are historical.
 - **Queue:** Mongo collection behind a `JobQueue` interface; BullMQ/Valkey on the VPS later.
 - **Sync wait:** long poll inside the held `sendRequestXML` (about 25 s) to reach "under 5 s warm"; sync API wait 90 s on Pro, 55 s on Hobby.
 - **No real QuickBooks in build:** a spec faithful QBWC simulator + golden qbXML fixtures; real acceptance run is an owner item. Docs must not claim real world parity before it.
@@ -48,7 +48,7 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Raw passthrough** accepts JSON `{qbxml}` or an XML body, requires well-formed XML with exactly one request message, returns `{requestId, state, raw, parsed}`; a QuickBooks error still returns 200 with its `statusCode`. Raw jobs store the response on the request record (needed to return it); purge is M3.
 - **Connect flow:** `POST /v1/connect-links {externalId, companyName?}` creates the end user (unique OwnerID, FileID, username; unique `(projectId, externalId)`), queues one cheap `customer.query` as the first-sync probe, and returns a link valid 24 h, single use (closed when the first sync is observed). Only the token hash is stored. Steps: 1 `.qwc` served, 2 first `authenticate` for that username (any result), 3 first `sendRequestXML` (the Web Connector reached QuickBooks, so the app is authorised), 4 first successful response. The Web Connector password is derived (HMAC of the end user id with `BETTER_AUTH_SECRET`) so the page can show it again; only its scrypt hash is stored, and rotating the secret breaks existing connections. A second link for an already synced file is refused (`already_connected`); reconnect links come with the health monitor in M3.
 - **Request log** is now `/app` (the kit's overview page is gone; plan and usage stay on `/app/billing`). Server rendered, filters via GET, detail pane via `?req=`, keyset paging via `?before=`.
-- **Connect page theme:** follows the site theme (light and dark both checked) instead of light only.
+- **Connect page theme:** light only (see dark mode removal above).
 - **E2E-only helper:** `/api/dev/seed-requests` (404 unless `E2E_OUTBOX=1`) fills the log for the screenshots.
 
 ## 5 Nov 2026 (M3)

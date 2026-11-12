@@ -3,8 +3,8 @@
 Method: the production build (`next start`, `DB_DRIVER=memory`, `E2E_OUTBOX=1`, console mail) driven by Playwright through the real UI, the way a founder or integrations engineer at a 10 to 80 person vertical SaaS would use it. Sign-in goes through the real form (ALTCHA solved in the browser), the e-mailed link and onboarding. Specs are in `tests/e2e/qa/`. Not deployed.
 
 ## Journeys covered
-- `walk.spec.ts`: every public page, signed out, light/dark x 375/1440: status, no horizontal scroll, every internal link resolves, no console error, failed request or 5xx.
-- `walk.spec.ts`: every `/app/**` page redirects to sign-in when signed out; signed in, every app page at light/dark x 375/1440 has no overflow, no unlabelled control, pointer cursor on clickables, and 44px touch targets at 375px.
+- `walk.spec.ts`: every public page, signed out, 375/1440: status, no horizontal scroll, every internal link resolves, no console error, failed request or 5xx.
+- `walk.spec.ts`: every `/app/**` page redirects to sign-in when signed out; signed in, every app page at 375/1440 has no overflow, no unlabelled control, pointer cursor on clickables, and 44px touch targets at 375px.
 - `journeys.spec.ts`: sign-in form validation, inbox state, sign out; magic link single use and garbage token; open-redirect through `?next`; onboarding with short, HTML and unicode organization names.
 - `journeys.spec.ts`: API keys (blank, whitespace, HTML, duplicate names, secret shown once and works against `/v1`, Escape closes the delete dialog); profile (empty, unicode, reload); retention (0, text, valid); members (bad e-mail, duplicate invite, cancel); webhooks (bad, private and metadata URLs, add, pause, delete); billing (interval toggle, checkout without Stripe, pricing hand-off); keyboard skip link and theme toggle; mobile menu.
 - `journeys.spec.ts`: a second organization cannot read or delete another organization's end user, admin routes, or `/v1` without a key.
