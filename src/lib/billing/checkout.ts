@@ -27,6 +27,12 @@ export async function ensureCustomer(stripe: Pick<Stripe, "customers">, db: Db, 
   return c;
 }
 
+/** Where Stripe sends the buyer back: the billing page, which explains a success (with session_id) and a cancel. */
+export function checkoutUrls(base: string): { success: string; cancel: string } {
+  const b = base.replace(/\/+$/, "");
+  return { success: `${b}/app/billing?checkout=success`, cancel: `${b}/app/billing?checkout=canceled` };
+}
+
 export async function createCheckoutSession(
   stripe: Pick<Stripe, "customers" | "subscriptions" | "prices" | "checkout">,
   db: Db,

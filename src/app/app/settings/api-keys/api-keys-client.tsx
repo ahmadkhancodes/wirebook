@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { authError, formatDate, useAsync } from "@/components/app/api";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
-import { SecretReveal } from "@/components/app/copy-button";
+import { CopyButton, SecretReveal } from "@/components/app/copy-button";
+import { connectLinkCurl, exportKey, meCurl } from "@/lib/snippets";
 import { DataTable, Td } from "@/components/app/data-table";
 import { Panel } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,11 @@ import { Field, Input } from "@/components/ui/field";
 import { EmptyState, ErrorState, Notice, Skeleton } from "@/components/ui/states";
 import { authClient } from "@/lib/auth/client";
 
-interface KeyRow { id: string; name: string | null; start: string | null; prefix: string | null; createdAt: string | Date; lastRequest: string | Date | null }
+interface KeyRow { id: string; name: string | null; start: string | null; prefix: string | null; createdAt: string | Date; lastRequest: string | Date | null; metadata?: { environment?: string } | string | null }
 
-export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: boolean }) {
+const envOf = (k: KeyRow) => { const m = typeof k.metadata === "string" ? (() => { try { return JSON.parse(k.metadata as string); } catch { return null; } })() : k.metadata; return m?.environment === "production" ? "production" : "test"; };
+
+export function ApiKeysClient({ orgId, canManage, baseUrl }: { orgId: string; canManage: boolean; baseUrl: string }) {
   const keys = useAsync<KeyRow[]>(async () => {
     const { data, error } = await authClient.apiKey.list({ query: { organizationId: orgId } });
     if (error || !data) throw new Error("Could not load API keys.");
@@ -23,7 +26,7 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
   const [environment, setEnvironment] = useState<"test" | "production">("test");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [created, setCreated] = useState<{ name: string; key: string } | null>(null);
+  const [created, setCreated] = useState<{ name: string; key: string; environment: "test" | "production" } | null>(null);
   const [removing, setRemoving] = useState<KeyRow | null>(null);
   const [removeBusy, setRemoveBusy] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
@@ -37,7 +40,7 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
     const { data, error: err } = await authClient.apiKey.create({ name: clean, organizationId: orgId, metadata: { environment } });
     setBusy(false);
     if (err || !data) return setError(authError(err, "We could not create the key. Try again."));
-    setCreated({ name: clean, key: (data as unknown as { key: string }).key });
+    setCreated({ name: clean, key: (data as unknown as { key: string }).key, environment });
     setName("");
     keys.reload();
   }
@@ -57,6 +60,7 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
     <div className="flex flex-col gap-6">
       {!canManage ? <Notice title="Read only">Only owners and admins can create or delete API keys.</Notice> : null}
       {created ? <SecretReveal title={`Key created: ${created.name}`} value={created.key} onDismiss={() => setCreated(null)} /> : null}
+      {created ? <TryIt keyValue={created.key} environment={created.environment} baseUrl={baseUrl} /> : null}
 
       {canManage ? (
         <Panel title="Create a key" description="Test keys only see test end users and requests. Production keys only see production ones.">
@@ -92,6 +96,7 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
             columns={[
               { key: "name", label: "Name" },
               { key: "key", label: "Key" },
+              { key: "env", label: "Environment" },
               { key: "created", label: "Created" },
               { key: "used", label: "Last used" },
               { key: "a", label: "Actions", align: "right" },
@@ -101,6 +106,7 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
               <tr key={k.id}>
                 <Td>{k.name || "Unnamed key"}</Td>
                 <Td muted><code>{k.start ?? k.prefix ?? ""}...</code></Td>
+                <Td muted>{envOf(k)}</Td>
                 <Td muted>{formatDate(k.createdAt)}</Td>
                 <Td muted>{formatDate(k.lastRequest)}</Td>
                 <Td align="right">
@@ -124,5 +130,26 @@ export function ApiKeysClient({ orgId, canManage }: { orgId: string; canManage: 
         Anything using this key stops working right away. This cannot be undone.
       </ConfirmDialog>
     </div>
+  );
+}
+
+/** The quickstart's first commands, filled in with the key just created, so the first call is one paste away. */
+function TryIt({ keyValue, environment, baseUrl }: { keyValue: string; environment: "test" | "production"; baseUrl: string }) {
+  const first = `${exportKey(keyValue)}\n${meCurl(baseUrl)}`;
+  const link = connectLinkCurl(baseUrl);
+  return (
+    <Panel title="Try it now" description={`Paste these into a terminal. The first answers with your organization id, the second makes a connect link for a ${environment} company file.`}>
+      <div className="flex flex-col gap-3">
+        {[{ label: "Check the key", code: first }, { label: "Create a connect link", code: link }].map((b) => (
+          <div key={b.label} className="flex flex-col gap-2">
+            <p className="title-4 text-text">{b.label}</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+              <pre data-testid={`try-${b.label === "Check the key" ? "me" : "link"}`} className="min-w-0 flex-1 overflow-x-auto rounded-md border border-border bg-surface px-3 py-2 caption-2 text-text"><code>{b.code}</code></pre>
+              <CopyButton value={b.code} label="Copy command" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Panel>
   );
 }

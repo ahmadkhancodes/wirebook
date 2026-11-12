@@ -61,3 +61,47 @@ Checked and found clean: no off-palette colour, old font or dark class on any pu
 - **Low:** save buttons on Profile and Data retention are disabled until the form changes, with no hint text (the label already says what they do).
 - **Info:** the "by BufferSol" mark in the wordmark is 10px; legible but the smallest text on the site.
 - Still open from the earlier pass: sign-in hydration #418 (rare), empty 405 bodies on `/v1`, invitee onboarding detour, `/status` and `/sdk` not built. Lighthouse and Stripe checkout return with a real session were not run here.
+
+## Usefulness pass: first ten minutes, working docs, billing path (12 Nov 2026)
+Production build (`next start`, memory DB, outbox mail, Web Connector simulator as the QuickBooks PC), driven by Playwright. Not deployed.
+
+### Personas and their week (`tests/e2e/personas.spec.ts`)
+- **Priya, founding engineer at a 20 person field-service SaaS** (TypeScript, 25% of customers on QuickBooks Desktop Enterprise, a deal blocked on it). Day 1: sign up, create a test key, connect a sample file, list its customers. Day 7: wants to see her calls in the log.
+- **Marcus, integrations PM at a spend platform.** Day 2: invites the engineer who will own the integration; that engineer has no account yet.
+- **Dana, engineering lead moving off legacy middleware.** Connects three real customer files in production in her first week; on day 7 the fourth is refused and she has to decide whether to pay.
+
+**Friction found on the walk (before this pass)**
+| # | Persona, moment | What happened | Impact |
+|---|---|---|---|
+| 1 | Priya, day 1 | Checklist step "Add company file" opened End users, which had no way to add one ("Create one with POST /v1/connect-links"). First value needed a key, a terminal and the API reference. | Dead end at step 2 of 3 |
+| 2 | Priya, day 1 | The checklist said "List customers with the quickstart snippet"; the quickstart only had `GET /api/v1/me` and never showed a list call or `X-End-User-Id`. | Dead end at step 3 |
+| 3 | Priya, day 1 | Docs, OpenAPI and landing promise `sk_test_`/`sk_live_` keys; the product issued `wire_...` for both, and the key list did not say which environment a key is for. | Confusion, wrong-key incidents |
+| 4 | Priya, day 1 | After creating a key, nothing to paste: no command, no next step. The checklist never ticked "Create a test API key". | Extra steps, no sense of progress |
+| 5 | Priya, docs | `curl https://.../v1/qbd/customers?limit=25` unquoted fails in zsh (macOS default) with "no matches found"; `-d @invoice.json` referred to a file nobody has; resource examples referenced ListID `80000001-1`, which no sample file contains (QuickBooks 3140); the SDK page used an undefined `body` and a `"<txnId>"` placeholder. | Copied commands failed |
+| 6 | Marcus, day 2 | The invited engineer was sent through "Name your organization" and ended up with a stray empty organization before reaching the invitation. | Confusion, extra org |
+| 7 | Dana, day 7 | End users opened on the empty Test tab although all her files are production (earlier open item). | Looks like her files are gone |
+
+**Fixed (top five by impact, plus two small ones)**
+1. **Add company file in the dashboard** (`/app/end-users`, form at `#add`): your id for the customer and an optional company name make a connect link through `POST /api/end-users` (same code, validation and plan gate as the API). The result shows the link with Copy and Open, its expiry, and the list-customers command for that customer. A refused 4th file shows the plain message with **Choose a plan** (to billing) and **What this means** (the fix guide).
+2. **The quickstart is the real path:** create key, check it, create a connect link, connect the file, list its customers, see it in the log. Every command reads `$WIREBOOK_API_KEY` and is shared with the dashboard (`src/lib/snippets.ts`).
+3. **Keys say their environment** (`sk_test_`/`sk_live_`, set server side) and the key list has an Environment column.
+4. **"Try it now" after creating a key:** the export line with the real key plus the check call, and the connect-link call, each with a Copy button. The checklist ticks the key step from server state.
+5. **Docs commands fixed** as above and executed by a test (below).
+6. Invitees skip onboarding and land on the invitation.
+7. End users opens on Production when that is where the files are.
+
+**Click budget:** Priya goes from the empty dashboard to a connect link and a ready list-customers command in **at most 6 clicks** (measured 5: Create key, Create key, Requests, Add company file, Create connect link). The test fails above 6.
+
+### Docs must work (`tests/e2e/docs-run.spec.ts`)
+Every code block on every `/docs` page is read from the rendered page (what a reader copies) and run against the app: bash blocks with real `curl` in bash, TypeScript with `tsx` against the SDK source, Python with `python3` against the SDK source, JSON compared with real answers (pagination keys, the 3140 error object), webhook verify snippets checked against the product's own signer (valid accepted, tampered refused). QuickBooks is the Web Connector simulator holding what a sample file holds. Substitutions are only the ones a reader makes: the production origin, the key, and the id of the record the sample just created. A final test fails if any non-table block on any docs page is not covered. **One block is not run:** the registry install (`npm install @wirebook/sdk`, `pip install wirebook`), because the packages are not published and this runner has no network; the test asserts the page says "not published to npm or PyPI yet".
+
+### Billing path (`tests/unit/billing-journey.test.ts`)
+With the Stripe fake (no card entry possible here): for every paid plan and interval the Checkout Session uses the `wirebook_` lookup key's price, carries `metadata.app=wirebook` (session, subscription and customer) and returns to `/app/billing?checkout=success&session_id=...` or `?checkout=canceled`; a Developer org at 3 of 3 real files is refused a 4th, `checkout.session.completed` lifts the limit, the portal opens for that customer, `customer.subscription.deleted` puts the 3 file limit back (files already active that month keep working). Through the UI, Dana's 4th file leads to billing, "You have reached your limit" and Choose Production (which, without Stripe keys here, shows "Billing is not connected yet").
+
+**Gates:** lint (0 errors; the 2 warnings predate this pass), typecheck, 349 unit tests, build, and the full Playwright suite (75 passed, 8 on-demand screenshot specs skipped) green.
+
+### Left open
+- The registry install commands cannot run until the SDKs are published (owner step).
+- Stripe test-mode Checkout with a real session, the portal and a real webhook were not run (no Stripe key or network here).
+- Keys created before this pass keep their `wire_` prefix; nothing to migrate before launch.
+- Still open from earlier passes: sign-in hydration #418 (rare), empty 405 bodies on `/v1`, `/status` and `/sdk` not built.
