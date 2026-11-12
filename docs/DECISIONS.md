@@ -100,3 +100,8 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **Type:** Bitter (slab, headings and amounts), Libre Franklin (text), JetBrains Mono (IDs, code). Replaces Archivo and IBM Plex. A slab, not a serif, so it stays apart from Postslot.
 - **Radius:** 0 on sheets and tables, 3px controls, 2px tags. `rounded-lg` now maps to 0 so every existing panel became a square sheet without touching each call site.
 - **Guard:** `tests/unit/design-system.test.ts` fails if any v2 token (signal orange, steel, graphite), old OG/icon colour or old face name reappears in `src/`.
+
+## 12 Nov 2026: security review decisions
+- **Outbound webhooks use node:http(s) with a guarded `lookup`, not `fetch`.** It is the only way, without a new library, to check the address the connection really dials (DNS rebinding). Tests still inject `fetchFn`.
+- **`/api/dev/*` never runs on `VERCEL_ENV=production`,** even with `E2E_OUTBOX=1`: the outbox holds sign-in links.
+- **Organisations per user stay unlimited for now** (free-file multiplication is open item O1 in docs/SECURITY-REVIEW.md); capping them is a pricing decision.

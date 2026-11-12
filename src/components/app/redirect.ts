@@ -1,10 +1,21 @@
 import type { Interval } from "@/config/product";
 import { planById } from "@/config/product";
 
-/** Same-origin paths only. Anything else (absolute URLs, //host, backslashes) falls back. */
+/**
+ * Same-origin paths only. Anything else (absolute URLs, //host, backslashes) falls back.
+ * Browsers drop tab and newline from URLs, so "/\t/evil.com" becomes "//evil.com": any control character or
+ * whitespace is refused, and the result is re-parsed so what we return can only ever resolve to our own origin.
+ */
 export function safeNext(next: string | null | undefined, fallback = "/app"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
-  return next;
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\") || /[\p{Cc}\s]/u.test(next)) return fallback;
+  try {
+    const base = "https://wirebook.invalid";
+    const u = new URL(next, base);
+    if (u.origin !== base) return fallback;
+    return u.pathname + u.search + u.hash;
+  } catch {
+    return fallback;
+  }
 }
 
 /** Where to go after sign-in: pricing hand-off (?plan&interval) wins, then ?next, then /app. */

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { getOrgContext } from "@/lib/auth/session";
 import { getBridge } from "@/lib/bridge";
+import { devRoutesEnabled } from "@/lib/env";
 import { json } from "@/lib/http";
 import { hashPassword } from "@/lib/qbwc";
 
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 /** E2E only: four demo company files in the signed-in org's test project, one per status, with a health timeline. 404 unless E2E_OUTBOX=1. */
 export async function POST() {
-  if (process.env.E2E_OUTBOX !== "1") return json({ error: "not_found" }, 404);
+  if (!devRoutesEnabled()) return json({ error: "not_found" }, 404);
   const ctx = await getOrgContext();
   if (!ctx) return json({ error: "unauthorized" }, 401);
   const { users, health } = await getBridge();

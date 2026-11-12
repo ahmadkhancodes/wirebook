@@ -1,6 +1,7 @@
 import { getOrgContext } from "@/lib/auth/session";
 import { getBridge } from "@/lib/bridge";
 import { errorFor } from "@/lib/errors/catalogue";
+import { devRoutesEnabled } from "@/lib/env";
 import { json } from "@/lib/http";
 
 export const runtime = "nodejs";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 /** E2E only: fills the signed-in org's test request log with a realistic mix. 404 unless E2E_OUTBOX=1 (never set on Vercel). */
 export async function POST() {
-  if (process.env.E2E_OUTBOX !== "1") return json({ error: "not_found" }, 404);
+  if (!devRoutesEnabled()) return json({ error: "not_found" }, 404);
   const ctx = await getOrgContext();
   if (!ctx) return json({ error: "unauthorized" }, 401);
   const { queue } = await getBridge();

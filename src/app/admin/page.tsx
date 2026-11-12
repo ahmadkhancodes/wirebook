@@ -4,9 +4,14 @@ import { PageHeader } from "@/components/app/page-header";
 import { fmt } from "@/components/app/labels";
 import { Badge } from "@/components/ui/states";
 import { adminOverview } from "@/lib/admin";
+import { notFound } from "next/navigation";
+import { isFounderAdmin, requireUser } from "@/lib/auth/session";
 import { getFlags } from "@/lib/flags";
 
 export default async function AdminPage() {
+  // the layout checks this too; the page checks again because a page segment can be rendered without its layout
+  const s = await requireUser({ redirectTo: "/admin" });
+  if (!isFounderAdmin(s.user.email)) notFound();
   const [totals, flags] = await Promise.all([adminOverview(), getFlags()]);
   const stats = [
     { label: "Users", value: totals.users },

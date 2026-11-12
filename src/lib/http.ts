@@ -78,7 +78,11 @@ export function withApi<C = unknown>(handler: Handler<C>, opts: { csrf?: boolean
   };
 }
 
-/** Client IP from Vercel/proxy headers. */
+/**
+ * Client IP for rate limits and audit. The one place that reads it, so a move off Vercel changes one line.
+ * Trust model: Vercel overwrites `x-forwarded-for` with the real client address (a client cannot spoof it there).
+ * Behind another proxy, that proxy must overwrite the header too, or the per-IP limits can be dodged.
+ */
 export function clientIp(req: Request): string {
   return (req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "0.0.0.0").slice(0, 64);
 }

@@ -58,3 +58,6 @@ export function envFlags(e: Pick<Env, "APP_FLAGS"> = env()): Record<string, stri
 
 export const adminEmails = (e: Env = env()) =>
   (e.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+
+/** E2E-only routes (/api/dev/*: the mail outbox holds sign-in links). Never on a Vercel production deployment, whatever E2E_OUTBOX says. */
+export const devRoutesEnabled = () => process.env.E2E_OUTBOX === "1" && process.env.VERCEL_ENV !== "production";

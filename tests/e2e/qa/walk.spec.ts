@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signInViaUI, uniq, watch } from "./helpers";
+import { newVisitorIp, signInViaUI, uniq, watch } from "./helpers";
 
 const PUBLIC = ["/", "/pricing", "/docs", "/docs/errors", "/errors", "/compare/conductor", "/legal/privacy", "/legal/terms", "/sign-in"];
 const APP = [
@@ -15,6 +15,7 @@ const APP = [
       const problems = watch(page, { ignoreHydration: true });
       const hrefs = new Set<string>();
       for (const path of PUBLIC) {
+        await newVisitorIp(page);
         const res = await page.goto(path);
         expect(res?.status(), path).toBeLessThan(400);
         expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `overflow ${path}`).toBeLessThanOrEqual(0);

@@ -3,7 +3,7 @@ import { getBridge } from '@/lib/bridge';
 import { getDb } from '@/lib/db';
 import { appUrl, env, secretOr } from '@/lib/env';
 import { authApiKey } from '@/lib/auth/session';
-import { HttpError } from '@/lib/http';
+import { clientIp, HttpError } from '@/lib/http';
 import { canActivateFile, isBillableFile } from '@/lib/billing/metering';
 import { enforceBadKeyLimit, enforceIpLimit, guardKey } from '@/lib/security/abuse';
 import { apiError } from './errors';
@@ -17,7 +17,7 @@ export const syncWaitMs = () => Number(process.env.SYNC_WAIT_MS) || product.abus
 
 /** Production wiring: Better Auth org keys (key metadata.environment picks test or production), kit rate limiter, the Mongo or memory bridge. */
 export async function defaultDeps(req: Request): Promise<V1Deps & { secret: string }> {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const ip = clientIp(req);
   return {
     bridge: await getBridge(),
     baseUrl: appUrl(),
