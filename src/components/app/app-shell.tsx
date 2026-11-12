@@ -120,7 +120,7 @@ export function AppShell({ org, user, isAdmin, productName, banners, children }:
 
   return (
     <div className="flex min-h-dvh flex-col bg-surface lg:flex-row">
-      <aside className="sticky top-0 hidden h-dvh w-full max-w-xs shrink-0 flex-col border-r border-border bg-surface-sunken px-3 py-4 lg:flex lg:w-1/5 xl:w-1/6 xl:min-w-64">
+      <aside className="sticky top-0 hidden h-dvh w-full max-w-xs shrink-0 flex-col border-r-4 border-double border-border-strong bg-surface-sunken px-3 py-4 lg:flex lg:w-1/5 xl:w-1/6 xl:min-w-64">
         <div className="mb-4 px-3">
           <Link href="/app" aria-label={`${productName} requests`} className="inline-flex min-h-11 items-center rounded-sm focus-visible:focus-ring"><Wordmark by={false} /></Link>
         </div>

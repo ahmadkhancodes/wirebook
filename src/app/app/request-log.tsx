@@ -38,10 +38,10 @@ export function logHref(q: LogQuery, extra: Record<string, string | undefined> =
 export function LedgerTable({ rows, selected, query }: { rows: Job[]; selected?: string; query: LogQuery }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse figures caption-2">
+      <table className="ledger-cols w-full border-collapse figures caption-2">
         <caption className="sr-only">Requests, newest first</caption>
         <thead>
-          <tr className="border-b border-border bg-surface-raised text-left font-sans caption-4 text-text-subtle">
+          <tr className="border-b-4 border-double border-border-strong bg-surface-sunken text-left font-sans caption-4 text-text-subtle">
             <th scope="col" className="whitespace-nowrap px-3 py-2 font-semibold">Time (UTC)</th>
             <th scope="col" className="hidden px-3 py-2 font-semibold 2xl:table-cell">Request</th>
             <th scope="col" className="px-3 py-2 font-semibold">Call</th>
@@ -101,7 +101,7 @@ export function DetailPane({ job }: { job: Job }) {
       <div>
         <h3 className="index-label mb-2 text-text-subtle">Timeline</h3>
         <ol className="relative flex flex-col gap-4">
-          <span aria-hidden className="absolute top-2 bottom-2 left-1 w-0.5 bg-action" />
+          <span aria-hidden className="absolute top-2 bottom-2 left-1 w-1 border-x border-action" />
           {events.filter((e) => e[1] && e[2]).map(([t, , label], i, all) => (
             <li key={label} className="relative flex flex-col pl-6 caption-4">
               <span aria-hidden className={`absolute top-1 left-0 size-3 border-2 border-action ${i === all.length - 1 ? "bg-action" : "bg-surface-raised"}`} />

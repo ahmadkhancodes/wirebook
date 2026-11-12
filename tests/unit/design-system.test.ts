@@ -17,18 +17,32 @@ function files(dir: string, out: string[] = []): string[] {
 const source = files("src").map((p) => [p, readFileSync(p, "utf8")] as const);
 
 describe("design system", () => {
-  it("loads the Archivo / IBM Plex pairing and no banned or old faces", () => {
-    expect(fonts).toMatch(/Archivo/);
-    expect(fonts).toMatch(/IBM_Plex_Sans/);
-    expect(fonts).toMatch(/IBM_Plex_Mono/);
-    expect(fonts).not.toMatch(/\b(Inter|Geist|Roboto|Spectral|Public_Sans)\b/);
+  it("loads the Ledger pairing (Bitter, Libre Franklin, JetBrains Mono) and no banned or old faces", () => {
+    expect(fonts).toMatch(/\bBitter\b/);
+    expect(fonts).toMatch(/Libre_Franklin/);
+    expect(fonts).toMatch(/JetBrains_Mono/);
+    expect(fonts).not.toMatch(/\b(Inter|Geist|Roboto|Spectral|Public_Sans|Archivo|IBM_Plex_Sans|IBM_Plex_Mono)\b/);
   });
 
-  it("uses the signal orange accent on cool steel, not cream paper or indigo", () => {
-    expect(css).toMatch(/--action:\s*var\(--signal-500\)/);
-    expect(css).toMatch(/--signal-500:\s*#c0461a/i);
+  it("uses forest ink on mint ledger paper, not cream, indigo or the old steel and orange", () => {
+    expect(css).toMatch(/--surface:\s*var\(--paper-50\)/);
+    expect(css).toMatch(/--paper-50:\s*#f1f7f2/i);
+    expect(css).toMatch(/--action:\s*var\(--forest-500\)/);
+    expect(css).toMatch(/--forest-500:\s*#1a5c3c/i);
     expect(css).not.toMatch(/#f7f8f4/i);
     expect(css).not.toMatch(/#(6366f1|4f46e5|7c3aed|8b5cf6)/i);
+  });
+
+  it("has no trace of the previous brand tokens anywhere in src", () => {
+    // Signal orange, steel and graphite from the "Work order" look, and the green-black OG/icon colours before it.
+    const old = /#(c0461a|9c3712|fceee7|e8a27f|17191e|f1f2f4|dcdfe4|4d5360|767d89|14201a|e8f1e4|c9d3c6|181818)\b|--signal-|signal-on-dark|\bArchivo\b|IBM Plex|IBM_Plex|"wdth"/i;
+    for (const [p, s] of source) expect(s, p).not.toMatch(old);
+    expect(readFileSync("src/lib/mail/templates.ts", "utf8")).toMatch(/#1a5c3c/);
+  });
+
+  it("draws the ledger motifs: double rules and column rulings", () => {
+    expect(css).toMatch(/@utility footing \{[^}]*3px double/);
+    expect(css).toMatch(/\.ledger-cols/);
   });
 
   it("caps radius at 4px and has no background gradients", () => {

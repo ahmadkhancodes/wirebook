@@ -18,14 +18,14 @@ export const sampleWire: WireStop[] = [
 ];
 
 /**
- * The signature move: a signal orange wire with a node per stop. Horizontal from md up, vertical on phones.
+ * The signature move: the wire drawn as a ledger double rule, with a posting mark per stop. Horizontal from md up, vertical on phones.
  * The line draws once (scaleX), nodes appear in order; reduced motion shows it drawn.
  */
 export function Wire({ stops = sampleWire, className }: { stops?: WireStop[]; className?: string }) {
   return (
     <ol aria-label="Path of one request, example" className={cn("relative grid gap-0 md:grid-cols-4", className)}>
-      <span aria-hidden className="wire-draw absolute top-2 right-0 left-0 hidden h-0.5 bg-action md:block" />
-      <span aria-hidden className="absolute top-2 bottom-2 left-1 w-0.5 bg-action md:hidden" />
+      <span aria-hidden className="wire-draw absolute top-1 right-0 left-0 hidden h-1 border-y border-action md:block" />
+      <span aria-hidden className="absolute top-2 bottom-2 left-1 w-1 border-x border-action md:hidden" />
       {stops.map((s, i) => (
         <li key={s.place} className="wire-node relative flex flex-col gap-1 pb-6 pl-8 last:pb-0 md:pt-8 md:pr-6 md:pb-0 md:pl-0" style={{ ["--i" as string]: i }}>
           <span aria-hidden className={cn("absolute top-0.5 left-0 size-3 border-2 border-action md:top-0.5", i === stops.length - 1 ? "bg-action" : "bg-surface-raised")} />

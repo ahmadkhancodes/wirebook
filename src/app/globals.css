@@ -1,58 +1,55 @@
 @import "tailwindcss";
 
 /*
- * Wirebook tokens (docs/design-brief.md section 6). Cool steel neutrals, graphite ink, one hi-vis signal orange.
- * Components reference role tokens only. Light only (founder decision, 12 Nov 2026).
+ * Wirebook tokens (docs/design-brief.md section 6): "Ledger". Pale mint ledger paper, deep forest-green ink,
+ * green column rulings and double rules. Components reference role tokens only. Light only.
  */
 :root {
-  --font-sans-family: var(--font-kit-sans), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-sans-family: var(--font-kit-sans), "Franklin Gothic", "Segoe UI", ui-sans-serif, sans-serif;
   --font-mono-family: var(--font-kit-mono), ui-monospace, monospace;
-  --font-display-family: var(--font-kit-display), var(--font-kit-sans), ui-sans-serif, sans-serif;
+  --font-display-family: var(--font-kit-display), Rockwell, Georgia, serif;
 
-  /* raw ramp: steel and graphite */
-  --n-0: #ffffff;
-  --n-50: #f7f8f9;
-  --n-100: #f1f2f4; /* steel band */
-  --n-200: #dcdfe4; /* hairline */
-  --n-300: #b9bec8;
-  --n-400: #8e95a1;
-  --n-500: #767d89; /* control edge, 4.2:1 */
-  --n-600: #4d5360; /* subtle text, 7.7:1 */
-  --n-700: #33373f;
-  --n-800: #23262c;
-  --n-900: #17191e; /* graphite ink */
-  --signal-50: #fceee7;
-  --signal-300: #e8a27f; /* orange on graphite, 8.3:1 */
-  --signal-500: #c0461a; /* hi-vis signal, white text 5.1:1 */
-  --signal-600: #9c3712;
+  /* raw ramp: ledger paper and forest ink */
+  --paper-0: #fbfdfb; /* sheet */
+  --paper-50: #f1f7f2; /* ledger paper */
+  --paper-100: #e2eee5; /* column band */
+  --rule-200: #b9cfc0; /* pale green ruling, decorative */
+  --rule-400: #8aa897; /* unlit words on forest, 5.2:1 */
+  --rule-500: #6a8475; /* control edge, 3.7:1 on paper */
+  --ink-600: #46604f; /* subtle text, 6.3:1 on paper */
+  --ink-900: #123524; /* forest ink, 12.4:1 on paper */
+  --forest-50: #d8eadd;
+  --forest-200: #a9d4b6; /* mint on forest, 8.2:1 */
+  --forest-500: #1a5c3c; /* action, white text 7.9:1 */
+  --forest-700: #12462d;
 
   /* role tokens */
-  --surface: var(--n-0);
-  --surface-raised: var(--n-0);
-  --surface-sunken: var(--n-100);
-  --surface-inverse: var(--n-900);
-  --text: var(--n-900);
-  --text-subtle: var(--n-600);
-  --text-muted: var(--n-600);
+  --surface: var(--paper-50);
+  --surface-raised: var(--paper-0);
+  --surface-sunken: var(--paper-100);
+  --surface-inverse: var(--ink-900);
+  --text: var(--ink-900);
+  --text-subtle: var(--ink-600);
+  --text-muted: var(--ink-600);
   --text-inverse: #ffffff;
-  --text-inverse-subtle: var(--n-300);
-  --border: var(--n-200);
-  --border-strong: var(--n-500);
-  --action: var(--signal-500);
-  --action-hover: var(--signal-600);
+  --text-inverse-subtle: var(--forest-50);
+  --border: var(--rule-200);
+  --border-strong: var(--rule-500);
+  --action: var(--forest-500);
+  --action-hover: var(--forest-700);
   --action-text: #ffffff;
-  --action-surface: var(--signal-50);
-  --signal-on-dark: var(--signal-300);
-  --focus: var(--signal-500);
-  --success: #17723a;
-  --success-surface: #e6f4ea;
-  --warning: #845100;
-  --warning-surface: #fff4db;
-  --danger: #b4173a; /* crimson, kept apart from the orange accent */
+  --action-surface: var(--forest-50);
+  --mint-on-dark: var(--forest-200);
+  --focus: var(--forest-500);
+  --success: #16683f;
+  --success-surface: #e3f2e7;
+  --warning: #7a4e00;
+  --warning-surface: #fbf1d6;
+  --danger: #a3242b; /* ledger red ink */
   --danger-text: #ffffff;
-  --danger-surface: #fce9ed;
-  --highlight: #fff1a8;
-  --shadow-color: 220 13% 10%;
+  --danger-surface: #fbe8e7;
+  --highlight: #f4e7a1;
+  --shadow-color: 150 49% 14%;
   color-scheme: light;
 }
 
@@ -80,7 +77,7 @@
   --color-action-hover: var(--action-hover);
   --color-action-text: var(--action-text);
   --color-action-surface: var(--action-surface);
-  --color-signal-on-dark: var(--signal-on-dark);
+  --color-mint-on-dark: var(--mint-on-dark);
   --color-text-inverse-subtle: var(--text-inverse-subtle);
   --color-focus: var(--focus);
   --color-success: var(--success);
@@ -118,13 +115,13 @@
   --spacing-72: 288px;
   --spacing-96: 384px;
 
-  /* Radius system: 2px controls, 4px panels, nothing larger. */
+  /* Radius system: 2px tags, 3px controls, square sheets. Nothing larger. */
   --radius-xs: 2px;
   --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
-  --radius-2xl: 4px;
+  --radius-md: 3px; /* buttons and inputs */
+  --radius-lg: 0px; /* ledger sheets and tables are square */
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
 
   --ease-out-kit: cubic-bezier(0.22, 1, 0.36, 1);
   --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
@@ -132,13 +129,13 @@
 }
 
 /* ---- Named type styles (playbook §5). Use these, never loose size+weight pairs. ---- */
-@utility display-1 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 4.5rem; line-height: 4.5rem; font-weight: 600; letter-spacing: -0.035em; text-wrap: balance; }
-@utility heading-1 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 3.75rem; line-height: 3.75rem; font-weight: 600; letter-spacing: -0.03em; text-wrap: balance; }
-@utility heading-2 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 3rem; line-height: 3rem; font-weight: 600; letter-spacing: -0.025em; text-wrap: balance; }
-@utility heading-3 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
-@utility heading-4 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
-@utility heading-5 { font-family: var(--font-display-family); font-variation-settings: "wdth" 108; font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
-@utility heading-6 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; text-wrap: balance; }
+@utility display-1 { font-family: var(--font-display-family); font-size: 4.5rem; line-height: 4.5rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-1 { font-family: var(--font-display-family); font-size: 3.75rem; line-height: 3.75rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-2 { font-family: var(--font-display-family); font-size: 3rem; line-height: 3rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-3 { font-family: var(--font-display-family); font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-4 { font-family: var(--font-display-family); font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-5 { font-family: var(--font-display-family); font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+@utility heading-6 { font-family: var(--font-display-family); font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; text-wrap: balance; }
 @utility title-1 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 500; }
 @utility title-2 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
 @utility title-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
@@ -182,8 +179,8 @@
 /* Scroll reveal (rise 32px + fade, once). Reduced motion: opacity only. */
 .kit-reveal { opacity: 0; transform: translateY(32px); transition: opacity 700ms var(--ease-out-kit), transform 700ms var(--ease-out-kit); }
 .kit-reveal[data-visible="true"] { opacity: 1; transform: none; }
-/* Tagline reveal: unlit words are steel grey (AA for large text on graphite), lit words take the paragraph colour. */
-.kit-word { color: var(--n-400); transition: color 500ms var(--ease-out-kit); }
+/* Tagline reveal: unlit words are pale green (AA on forest), lit words take the paragraph colour. */
+.kit-word { color: var(--rule-400); transition: color 500ms var(--ease-out-kit); }
 .kit-word[data-on="true"] { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .kit-reveal { transform: none; transition: opacity 300ms var(--ease-out-kit); }
@@ -191,9 +188,18 @@
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
-/* ---- Work order signature: tabular mono figures, the wire, footed totals, ticks. ---- */
+/* ---- Ledger signature: lining tabular numerals, column rulings, footed totals with a double rule. ---- */
 @utility figures { font-family: var(--font-mono-family); font-feature-settings: "tnum" 1, "zero" 1; }
-@utility footing { border-top: 2px solid var(--text); }
+@utility footing { border-top: 1px solid var(--text); border-bottom: 3px double var(--text); }
+/* Slab numerals for amounts, prices and big figures: lining, tabular. */
+@utility numerals { font-family: var(--font-display-family); font-variant-numeric: lining-nums tabular-nums; font-feature-settings: "lnum" 1, "tnum" 1; }
+/* The ledger's double rule: under headings, totals and section heads. */
+@utility rule-double { border-bottom: 3px double var(--text); }
+@utility rule-double-top { border-top: 3px double var(--text); }
+/* A column ruling: the vertical double line between the folio column and the entries. */
+@utility rule-column { border-right: 3px double var(--rule-500); }
+/* Ruled sheet: faint horizontal ledger lines every 24px (an SVG tile, not a gradient). */
+@utility ruled { background-color: var(--surface-raised); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='24'%3E%3Crect y='23' width='8' height='1' fill='%23dbe8de'/%3E%3C/svg%3E"); }
 /* Section index label: mono, small, spaced. "01 Problem". */
 @utility index-label { font-family: var(--font-mono-family); font-size: 0.75rem; line-height: 1rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
 /* Kept for old call sites: a plain left gutter, no decoration. */
@@ -210,7 +216,7 @@
   .wire-draw { animation: none; transform: none; }
   .wire-node { animation: none; opacity: 1; }
 }
-@utility wordmark { font-family: var(--font-display-family); font-variation-settings: "wdth" 118; font-size: 1.25rem; line-height: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+@utility wordmark { font-family: var(--font-display-family); font-size: 1.375rem; line-height: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
 @utility wordmark-by { font-family: var(--font-mono-family); font-size: 0.625rem; line-height: 0.75rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
 .code-block { font-family: var(--font-mono-family); font-size: 0.8125rem; line-height: 1.375rem; white-space: pre; }
 
@@ -229,3 +235,6 @@
     cursor: not-allowed;
   }
 }
+
+/* Ledger column rulings: every cell after the first gets a pale green vertical rule. */
+.ledger-cols :is(td, th) + :is(td, th) { border-left: 1px solid var(--border); }

@@ -15,5 +15,5 @@ test("hero headline is left aligned in the display face", async ({ page }) => {
   const h1 = page.getByRole("heading", { level: 1 });
   const style = await h1.evaluate((el) => ({ align: getComputedStyle(el).textAlign, font: getComputedStyle(el).fontFamily }));
   expect(style.align).not.toBe("center");
-  expect(style.font.toLowerCase()).toContain("archivo");
+  expect(style.font.toLowerCase()).toContain("bitter");
 });
