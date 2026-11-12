@@ -63,8 +63,8 @@ test("public pages render with metadata and no horizontal overflow at 375px", as
 test("landing shows the request log ledger, the dated benchmark and the Intuit notice", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("QuickBooks Desktop");
-  const log = page.getByRole("group", { name: "Sample request log" });
-  await expect(log).toContainText("sample data");
+  const log = page.getByRole("group", { name: "Example request log" });
+  await expect(log).toContainText("example");
   await expect(log).toContainText("outcome unknown");
   await expect(page.getByText("checked 3 Nov 2026").first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Get a free API key" }).first()).toHaveAttribute("href", "/sign-in");

@@ -66,7 +66,7 @@ test("connect flow turns green only as the server observes each step; request lo
   await expect(page.getByRole("table")).toBeVisible();
   await expect(page.getByRole("table").getByText("Outcome unknown")).toBeVisible();
   await page.goto("/app?state=failed");
-  const open = page.getByRole("link", { name: /Open request/ }).first();
+  const open = page.getByRole("link", { name: /open request/i }).first();
   await open.click();
   await expect(page.getByRole("alert").filter({ hasText: "duplicate_name" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Timeline" })).toBeVisible();
@@ -75,7 +75,7 @@ test("connect flow turns green only as the server observes each step; request lo
   await page.goto("/app?env=production");
   await expect(page.getByRole("heading", { name: "No production requests yet" })).toBeVisible();
   await page.goto("/app?state=failed");
-  await page.getByRole("link", { name: /Open request/ }).first().click();
+  await page.getByRole("link", { name: /open request/i }).first().click();
   await page.waitForURL(/req=/);
   const picked = new URL(page.url()).searchParams.get("req")!;
   await page.goto(`/app?req=${picked}`);

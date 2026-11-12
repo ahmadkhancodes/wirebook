@@ -40,7 +40,14 @@ function Passkeys() {
     setError(null);
     setOk(null);
     const label = name.trim() || undefined;
-    const res = await authClient.passkey.addPasskey({ name: label });
+    let res: Awaited<ReturnType<typeof authClient.passkey.addPasskey>> | undefined;
+    try {
+      res = await authClient.passkey.addPasskey({ name: label });
+    } catch {
+      // WebAuthn unsupported or blocked: never leave the button spinning
+      setBusy(false);
+      return setError("This browser could not create a passkey. Use another device or browser, or keep signing in with the email link.");
+    }
     setBusy(false);
     if (res?.error) return setError(authError(res.error, "The passkey was not added. Your device may have canceled the request."));
     setName("");
@@ -256,10 +263,11 @@ function Sessions({ currentSessionId }: { currentSessionId: string }) {
     <Panel
       title="Active sessions"
       description="Devices currently signed in to your account."
-      actions={<Button variant="secondary" size="sm" onClick={revokeOthers} loading={busy === "others"} disabled={others === 0}>Sign out other sessions</Button>}
+      actions={<Button variant="secondary" size="sm" onClick={revokeOthers} loading={busy === "others"} disabled={others === 0} aria-describedby={others === 0 && !list.loading ? "no-other-sessions" : undefined}>Sign out other sessions</Button>}
     >
       <div className="flex flex-col gap-4">
         {msg ? <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "caption-2 text-success" : "caption-2 text-danger"}>{msg.text}</p> : null}
+        {!list.loading && !list.error && others === 0 ? <p id="no-other-sessions" className="caption-2 text-text-subtle">This is the only device signed in, so there is nothing to sign out.</p> : null}
         {list.loading ? <Skeleton className="h-24 w-full" /> : list.error ? (
           <ErrorState title="Sessions did not load" body={list.error} action={<Button onClick={list.reload}>Try again</Button>} />
         ) : (

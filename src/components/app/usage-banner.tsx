@@ -30,7 +30,7 @@ export function UsageBanner({ usage, entitlement }: { usage: UsageState[]; entit
         >
           You have used {fmt(worst.used)} of {fmt(worst.limit)} {METER_LABELS[worst.meter].plural}
           {METER_LABELS[worst.meter].period ? ` ${METER_LABELS[worst.meter].period}` : ""}.
-          {worst.meter === "files" ? " Request volume is not capped, only active files are counted." : ""}
+          {worst.meter === "files" ? " Only active real company files count toward this limit; API calls have a separate daily fair-use cap." : ""}
         </Notice>
       ) : null}
     </div>

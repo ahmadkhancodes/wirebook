@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { authError, useAsync , hardNavigate } from "@/components/app/api";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { ErrorState, Skeleton } from "@/components/ui/states";
 import { authClient } from "@/lib/auth/client";
 
@@ -27,10 +27,14 @@ export function AcceptInvite({ id, email }: { id: string; email: string }) {
   }
   if (inv.error || !inv.data) {
     return (
-      <ErrorState
-        title="We cannot open this invitation"
-        body={<>{inv.error ?? "It may have expired."} You are signed in as {email}. Ask the person who invited you to send a new one to that address.</>}
-      />
+      <div className="flex flex-col gap-6">
+        <h1 className="heading-5 text-text">Join an organization</h1>
+        <ErrorState
+          title="We cannot open this invitation"
+          body={<>{inv.error ?? "It may have expired."} You are signed in as {email}. Ask the person who invited you to send a new one to that address.</>}
+          action={<ButtonLink href="/app" variant="secondary">Go to your dashboard</ButtonLink>}
+        />
+      </div>
     );
   }
   const i = inv.data;
