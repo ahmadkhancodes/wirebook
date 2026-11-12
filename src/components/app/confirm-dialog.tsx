@@ -38,13 +38,14 @@ export function ConfirmDialog({
       aria-labelledby={`${id}-t`}
       onClose={() => { setTyped(""); onClose(); }}
       onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}
-      className="m-auto w-full max-w-md rounded-lg border border-border bg-surface p-0 text-text backdrop:bg-surface-inverse/60"
+      className="m-auto w-full max-w-md rounded-lg border border-border bg-surface-raised p-0 text-text shadow-xl shadow-text/20 backdrop:bg-surface-inverse/60"
     >
       <form
         method="dialog"
         className="flex flex-col gap-4 p-6"
         onSubmit={(e) => { e.preventDefault(); if (ready && !busy) onConfirm(); }}
       >
+        <p aria-hidden className="index-label flex items-center gap-2 text-text-subtle"><span className="size-2 bg-action" />Confirm</p>
         <h2 id={`${id}-t`} className="heading-6 text-text">{title}</h2>
         {children ? <div className="body-6 text-text-subtle">{children}</div> : null}
         {typeToConfirm ? (

@@ -12,7 +12,7 @@ const WIDTHS = [375, 1440];
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   const problems: string[] = [];
   {
     for (const width of WIDTHS) {

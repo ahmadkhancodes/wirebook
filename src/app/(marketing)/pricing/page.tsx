@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Section } from "@/components/ui/layout";
+import { Section, SectionHead } from "@/components/ui/layout";
 import { PricingTable } from "@/components/marketing/pricing-table";
 import { Faq } from "@/components/marketing/faq";
 import { footedExample, money, rates } from "@/lib/pricing";
@@ -29,22 +29,24 @@ export default function PricingPage() {
   const ex = footedExample(10);
   return (
     <>
-      <Section labelledBy="pricing-title">
-        <h1 className="sr-only">{title}</h1>
-        <PricingTable title="Same job. Half the price. Every price on this page." />
+      <Section pad="md" labelledBy="pricing-title" className="border-b border-border">
+        <PricingTable headingLevel={1} title="Same job. Half the price. Every price on this page." />
       </Section>
-      <Section tone="raised" labelledBy="total-title">
-        <h2 id="total-title" className="heading-4 text-text">The arithmetic, footed</h2>
-        <div className="figures mt-8 max-w-xl text-text">
-          <p className="flex justify-between gap-4 py-2 caption-1"><span>{ex.files} files × {money(rates.perFile)}</span><span>{money(ex.ours)}</span></p>
-          <p className="footing flex justify-between gap-4 pt-3 body-2"><span>{product.name}, per month</span><strong>{money(ex.ours)}</strong></p>
-          <p className="mt-6 flex justify-between gap-4 caption-2 text-text-subtle"><span>The same {ex.files} files at {money(rates.benchmark)}</span><span>{money(ex.theirs)}</span></p>
+      <Section tone="sunken" pad="lg" labelledBy="total-title">
+        <SectionHead index="02" label="Arithmetic" id="total-title" title="The arithmetic, footed" intro="Ten active company files on Production, monthly. Sample files and files with no successful request that month are not on the bill." />
+        <div className="mt-8 grid md:mt-12 lg:grid-cols-12 lg:gap-8">
+          <div className="figures rounded-lg border border-border bg-surface-raised p-6 text-text lg:col-span-6 lg:col-start-4">
+            <p className="flex justify-between gap-4 border-b border-dashed border-border pb-3 caption-1"><span>{ex.files} files × {money(rates.perFile)}</span><span>{money(ex.ours)}</span></p>
+            <p className="flex justify-between gap-4 border-b border-dashed border-border py-3 caption-1 text-text-subtle"><span>Sample company files</span><span>$0.00</span></p>
+            <p className="footing mt-4 flex justify-between gap-4 pt-3 body-1"><span>{product.name}, per month</span><span>{money(ex.ours)}</span></p>
+            <p className="mt-6 flex justify-between gap-4 caption-2 text-text-subtle"><span>The same {ex.files} files at {money(rates.benchmark)}</span><span>{money(ex.theirs)}</span></p>
+          </div>
+          <p className="mt-4 caption-2 text-text-subtle lg:col-span-3 lg:mt-0">
+            {product.benchmark.name} lists {money(rates.benchmark)} per company file per month ({product.benchmark.host}, checked {product.benchmark.checked}). {product.fullName} charges {money(rates.perFile)}.
+          </p>
         </div>
-        <p className="mt-4 max-w-xl caption-2 text-text-subtle">
-          {product.benchmark.name} lists {money(rates.benchmark)} per company file per month ({product.benchmark.host}, checked {product.benchmark.checked}). {product.fullName} charges {money(rates.perFile)}.
-        </p>
       </Section>
-      <Faq title="Billing questions" items={billingFaq} />
+      <Faq index="03" title="Billing questions" items={billingFaq} />
     </>
   );
 }

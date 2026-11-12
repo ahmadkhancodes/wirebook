@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { product } from "@/config/product";
 import { buttonClass } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
+import { Wordmark } from "./wordmark";
 
 const STAGGER_MS = 60;
 
@@ -62,8 +63,8 @@ export function SiteHeader() {
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const linkClass = (href: string) =>
     cn(
-      "inline-flex min-h-11 items-center rounded-sm px-3 button-sm transition-colors duration-300 ease-out-kit hover:bg-surface-raised hover:text-text focus-visible:focus-ring",
-      isCurrent(href) ? "text-text" : "text-text-subtle",
+      "inline-flex min-h-11 items-center rounded-sm px-3 button-sm underline-offset-8 transition-colors duration-300 ease-out-kit hover:text-text focus-visible:focus-ring",
+      isCurrent(href) ? "text-text underline decoration-action decoration-2" : "text-text-subtle",
     );
 
   const panelItems = [
@@ -73,13 +74,12 @@ export function SiteHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-surface px-4 sm:px-6">
-      <div className="relative z-50 mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4">
-        <Link href="/" className="inline-flex min-h-11 flex-col justify-center rounded-sm focus-visible:focus-ring" aria-label={`${product.fullName} home`}>
-          <span className="wordmark -ml-2 border-y border-border bg-surface-sunken px-2 text-text">wirebook</span>
-          <span className="wordmark-by mt-1 text-text-subtle">by BufferSol</span>
+    <header className="sticky top-0 z-50 border-b border-border bg-surface px-4 sm:px-6 lg:px-8">
+      <div className="relative z-50 mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 lg:px-0">
+        <Link href="/" className="inline-flex min-h-11 items-center rounded-sm focus-visible:focus-ring" aria-label={`${product.fullName} home`}>
+          <Wordmark />
         </Link>
-        <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Primary" className="hidden flex-1 items-center gap-1 pl-8 md:flex">
           {product.nav.map((n) => (
             <Link key={n.href} href={n.href} aria-current={isCurrent(n.href) ? "page" : undefined} className={linkClass(n.href)}>
               {n.label}
@@ -96,7 +96,7 @@ export function SiteHeader() {
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => (open ? close() : setOpenFor(pathname))}
-            className="inline-flex size-11 items-center justify-center rounded-sm text-text transition-colors duration-300 ease-out-kit hover:bg-surface-raised focus-visible:focus-ring md:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-sm text-text transition-colors duration-300 ease-out-kit hover:bg-surface-sunken focus-visible:focus-ring md:hidden"
           >
             <span aria-hidden className="relative block size-6">
               <span className={cn("absolute left-1 right-1 top-2 h-0.5 rounded-sm bg-current transition-transform duration-300 ease-out-kit", open && "translate-y-1 rotate-45")} />

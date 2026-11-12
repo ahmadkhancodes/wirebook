@@ -62,8 +62,8 @@ export function ConnectSteps({ token, company, username, password, initial }: { 
         {steps.map((s, i) => {
           const active = i === current;
           return (
-            <li key={s.id} aria-current={active ? "step" : undefined} className="flex gap-4 border-b border-border p-5 last:border-b-0">
-              <span aria-hidden className={`mt-0.5 flex size-[28px] shrink-0 self-start items-center justify-center rounded-full border figures caption-4 ${s.done ? "border-success bg-success-surface text-success" : active ? "border-text text-text" : "border-border text-text-muted"}`}>
+            <li key={s.id} aria-current={active ? "step" : undefined} className="flex gap-4 border-b border-border p-4 last:border-b-0">
+              <span aria-hidden className={`mt-0.5 flex size-8 shrink-0 self-start items-center justify-center rounded-xs border-2 figures caption-4 ${s.done ? "border-success bg-success-surface text-success" : active ? "border-action bg-action-surface text-text" : "border-border text-text-subtle"}`}>
                 {s.done ? <Check size={16} weight="bold" /> : i + 1}
               </span>
               <div className="flex min-w-0 flex-1 flex-col gap-3">

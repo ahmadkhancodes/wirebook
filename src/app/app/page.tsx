@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { LedgerTable, DetailPane, day, logHref, type LogQuery } from "./request-log";
 import { PageHeader } from "@/components/app/page-header";
-import { buttonClass } from "@/components/ui/button";
+import { buttonClass, segmentClass, segmentGroupClass } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/states";
+import { inputClass } from "@/components/ui/field";
+import { RequestLog } from "@/components/marketing/ledger/request-log";
 import { requireOrg } from "@/lib/auth/session";
 import { getBridge } from "@/lib/bridge";
 import { OBJECTS } from "@/lib/v1/objects";
@@ -55,32 +57,34 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
         title="Requests"
         description="Every call to your company files, newest first. Open one to see its timeline and, if it failed, why."
         actions={
-          <nav aria-label="Environment" className="flex gap-1 rounded-md border border-border p-0.5">
+          <nav aria-label="Environment" className={segmentGroupClass}>
             {(["test", "production"] as const).map((e) => (
               <Link key={e} href={logHref({ ...query, env: e })} aria-current={env === e ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-sm px-3 py-1.5 sm:min-h-0 caption-4 font-semibold uppercase tracking-wider focus-visible:focus-ring ${env === e ? "bg-action text-action-text" : "text-text-subtle hover:text-text"}`}>{e}</Link>
+                className={segmentClass(env === e, { mono: true })}>
+                <span aria-hidden className={`size-2 ${e === "test" ? "bg-success" : "bg-danger"}`} />{e}
+              </Link>
             ))}
           </nav>
         }
       />
-      <section aria-label="Request log" className="overflow-hidden rounded-lg border border-border bg-surface">
-        <form method="get" className="flex flex-wrap items-end gap-3 border-b border-border bg-surface-raised p-3">
+      <section aria-label="Request log" className="overflow-hidden rounded-lg border border-border bg-surface-raised">
+        <form method="get" className="flex flex-wrap items-end gap-3 border-b border-border bg-surface-sunken p-3">
           {env !== "test" ? <input type="hidden" name="env" value={env} /> : null}
-          <label className="flex flex-col gap-1 caption-4 text-text-subtle">Status
-            <select name="state" defaultValue={state ?? ""} className="min-h-11 rounded-md border border-border-strong bg-surface px-2 text-text body-6">
+          <label className="flex w-full flex-col gap-1 caption-4 font-medium text-text sm:w-auto">Status
+            <select name="state" defaultValue={state ?? ""} className={`${inputClass} pr-8`}>
               <option value="">All</option>
               {STATES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
             </select>
           </label>
-          <label className="flex flex-col gap-1 caption-4 text-text-subtle">Object
-            <select name="object" defaultValue={object ?? ""} className="min-h-11 rounded-md border border-border-strong bg-surface px-2 text-text body-6">
+          <label className="flex w-full flex-col gap-1 caption-4 font-medium text-text sm:w-auto">Object
+            <select name="object" defaultValue={object ?? ""} className={`${inputClass} pr-8`}>
               <option value="">All</option>
               {Object.keys(OBJECTS).map((o) => <option key={o} value={o}>{o}</option>)}
               <option value="raw">raw qbXML</option>
             </select>
           </label>
-          <label className="flex min-w-40 flex-1 flex-col gap-1 caption-4 text-text-subtle">Request id
-            <input name="q" defaultValue={q ?? ""} placeholder="req_..." autoComplete="off" className="min-h-11 rounded-md border border-border-strong bg-surface px-3 text-text body-6 figures" />
+          <label className="flex min-w-40 flex-1 flex-col gap-1 caption-4 font-medium text-text">Request id
+            <input name="q" defaultValue={q ?? ""} placeholder="req_..." autoComplete="off" className={`${inputClass} figures`} />
           </label>
           <button className={buttonClass("secondary")} type="submit">Apply</button>
           {filtered ? <Link href={logHref({ env })} className={buttonClass("tertiary")}>Clear</Link> : null}
@@ -97,6 +101,7 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
                 title={`No ${env} requests yet`}
                 body={<>Requests appear here the moment you call <code>/v1/qbd</code> with a {env} key. Create a connect link for your first company file, then list its customers.</>}
                 action={<Link href="/docs/getting-started" className={buttonClass("primary")}>Open the quickstart</Link>}
+                example={<RequestLog env={env === "production" ? "Production" : "Test"} className="rounded-none border-0" compact />}
               />
             )}
           </div>
@@ -104,9 +109,9 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
           <div className={selected ? "grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]" : ""}>
             <div className="min-w-0">
               <LedgerTable rows={page} selected={selected?.id} query={query} />
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t-[3px] border-double border-text px-4 py-3 figures caption-4 text-text">
+              <div className="footing flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 figures caption-4 text-text">
                 <span>{page.length} shown</span><span>{ok} succeeded</span><span>{bad} failed</span><span className="text-text-subtle">{day(page[0]!.createdAt)}</span>
-                {more && last ? <Link href={logHref(query, { before: `${new Date(last.createdAt).toISOString()}~${last.id}` })} className="ml-auto text-text underline underline-offset-4">Older requests</Link> : null}
+                {more && last ? <Link href={logHref(query, { before: `${new Date(last.createdAt).toISOString()}~${last.id}` })} className="ml-auto inline-flex min-h-11 items-center rounded-sm font-sans font-semibold text-text underline decoration-action decoration-2 underline-offset-4 focus-visible:focus-ring">Older requests</Link> : null}
               </div>
             </div>
             {selected ? <DetailPane job={selected} /> : null}

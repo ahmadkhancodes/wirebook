@@ -19,7 +19,7 @@ export function DocsNav({ groups, current }: { groups: NavGroup[]; current: stri
           id="docs-select"
           value={current}
           onChange={(e) => router.push(`/docs/${e.target.value}`)}
-          className="body-5 min-h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-text focus-visible:focus-ring"
+          className="body-5 min-h-11 w-full rounded-sm border border-border-strong bg-surface-raised px-3 text-text focus-visible:focus-ring"
         >
           {groups.map((g) => (
             <optgroup key={g.title} label={g.title}>
@@ -33,7 +33,7 @@ export function DocsNav({ groups, current }: { groups: NavGroup[]; current: stri
       <nav aria-label="Documentation" className="hidden flex-col gap-6 lg:flex">
         {groups.map((g) => (
           <div key={g.title} className="flex flex-col gap-1">
-            <p className="caption-3 text-text-muted">{g.title}</p>
+            <p className="index-label pb-1 text-text-subtle">{g.title}</p>
             <ul className="flex flex-col">
               {g.items.map((i) => (
                 <li key={i.slug}>
@@ -41,8 +41,8 @@ export function DocsNav({ groups, current }: { groups: NavGroup[]; current: stri
                     href={`/docs/${i.slug}`}
                     aria-current={i.slug === current ? "page" : undefined}
                     className={cn(
-                      "body-5 flex min-h-11 items-center rounded-md px-3 focus-visible:focus-ring",
-                      i.slug === current ? "bg-surface-raised text-text" : "text-text-subtle hover:bg-surface-raised hover:text-text",
+                      "relative body-6 flex min-h-11 items-center rounded-sm px-3 transition-colors duration-300 ease-out-kit focus-visible:focus-ring lg:min-h-10",
+                      i.slug === current ? "bg-surface-sunken font-semibold text-text before:absolute before:top-2 before:bottom-2 before:left-0 before:w-0.5 before:bg-action" : "text-text-subtle hover:bg-surface-sunken hover:text-text",
                     )}
                   >
                     {i.title}
