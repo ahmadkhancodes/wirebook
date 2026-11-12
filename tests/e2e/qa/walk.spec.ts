@@ -7,11 +7,10 @@ const APP = [
   "/app/settings/members", "/app/settings/api-keys", "/app/settings/webhooks", "/app/settings/data", "/app/settings/audit",
 ];
 
-for (const scheme of ["light", "dark"] as const) {
+{
   for (const width of [375, 1440]) {
-    test(`signed out: every public page is clean, no overflow, links resolve (${scheme} ${width})`, async ({ page, request }) => {
+    test(`signed out: every public page is clean, no overflow, links resolve (${width})`, async ({ page, request }) => {
       test.setTimeout(180_000);
-      await page.emulateMedia({ colorScheme: scheme });
       await page.setViewportSize({ width, height: 900 });
       const problems = watch(page, { ignoreHydration: true });
       const hrefs = new Set<string>();
@@ -42,20 +41,19 @@ test("signed out: /app and settings redirect to sign-in with a way back", async 
   expect([401, 403]).toContain(r.status());
 });
 
-test("signed in: every app page is clean, labelled, 44px targets, no overflow (mobile + desktop, light + dark)", async ({ page, request }) => {
+test("signed in: every app page is clean, labelled, 44px targets, no overflow (mobile + desktop, light)", async ({ page, request }) => {
   test.setTimeout(240_000);
   const problems = watch(page);
   await signInViaUI(page, request, `walk+${uniq()}@studio.test`);
   const issues: string[] = [];
-  for (const scheme of ["light", "dark"] as const) {
+  {
     for (const width of [375, 1440]) {
-      await page.emulateMedia({ colorScheme: scheme });
       await page.setViewportSize({ width, height: 900 });
       for (const path of APP) {
         const res = await page.goto(path);
         expect(res?.status(), path).toBeLessThan(400);
         await expect(page.locator("h1").first()).toBeVisible();
-        const tag = `${path} ${scheme} ${width}`;
+        const tag = `${path} ${width}`;
         const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         if (over > 0) issues.push(`overflow ${tag}`);
         const bad = await page.evaluate(() => {

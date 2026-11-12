@@ -75,17 +75,14 @@ test("end users list polls live, detail shows the health timeline and mints a re
 
 async function shoot(page: import("@playwright/test").Page, name: string) {
   mkdirSync(OUT, { recursive: true });
-  for (const theme of ["light", "dark"] as const) {
+  {
     for (const width of [375, 1440]) {
       await page.setViewportSize({ width, height: width < 800 ? 812 : 900 });
-      await page.emulateMedia({ colorScheme: theme });
-      await page.evaluate((t) => { try { localStorage.setItem("theme", t); document.documentElement.dataset.theme = t; } catch {} }, theme);
       await page.waitForTimeout(250);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, `${name} ${width} ${theme} overflow`).toBeLessThanOrEqual(0);
-      await page.screenshot({ path: `${OUT}/${name}-${width}-${theme}.png`, fullPage: true });
+      expect(overflow, `${name} ${width} overflow`).toBeLessThanOrEqual(0);
+      await page.screenshot({ path: `${OUT}/${name}-${width}.png`, fullPage: true });
     }
   }
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
 }

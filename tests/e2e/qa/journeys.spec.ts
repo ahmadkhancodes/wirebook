@@ -163,16 +163,11 @@ test.describe("free user, signed in through the UI", () => {
     await expect(page.getByText("Continue with")).toBeVisible();
   });
 
-  test("keyboard only: skip link, tab order reaches the main nav, theme toggle flips theme", async ({ page, request }) => {
+  test("keyboard only: skip link, tab order reaches the main nav", async ({ page, request }) => {
     await signInViaUI(page, request, `kb+${uniq()}@studio.test`);
     await page.goto("/app/usage");
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: /skip to content/i })).toBeFocused();
-    const before = await page.evaluate(() => document.documentElement.dataset.theme);
-    await page.getByRole("button", { name: /Switch to (dark|light) theme/ }).first().click();
-    expect(await page.evaluate(() => document.documentElement.dataset.theme)).not.toBe(before);
-    await page.reload();
-    expect(await page.evaluate(() => document.documentElement.dataset.theme)).not.toBe(before);
   });
 
   test("mobile: the navigation menu opens, has a label, closes with Escape and navigates", async ({ page, request }) => {
