@@ -21,6 +21,7 @@ interface Props {
   usage: UsageState[];
   preselect: { plan: PlanId; interval: Interval } | null;
   returnedSession: string | null;
+  canceled?: boolean;
 }
 
 const money = (cents: number) =>
@@ -89,6 +90,7 @@ export function BillingClient(p: Props) {
 
   return (
     <div className="flex flex-col gap-6">
+      {p.canceled && !activated ? <Notice title="Checkout was canceled">Nothing was charged. You can pick a plan again whenever you are ready.</Notice> : null}
       {verifying ? <Notice title="Confirming your payment">This takes a few seconds.</Notice> : null}
       {activated ? <Notice tone="success" title="Your plan is active">You are now on {activated}. A receipt is on its way to your email.</Notice> : null}
       {error ? (
