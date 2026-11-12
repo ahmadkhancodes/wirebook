@@ -1,48 +1,52 @@
 import type { ReactNode } from "react";
-import { Section } from "@/components/ui/layout";
+import { Section, SectionHead } from "@/components/ui/layout";
 import { cn } from "@/components/ui/cn";
 
 export type FeatureSpan = 2 | 3 | 4 | 6;
 export interface Feature {
   title: string;
   body: ReactNode;
-  /** Columns out of 6 on desktop. Default 2. Mix spans so rows are never three equal cards. */
+  /** Kept for old call sites. Wide items (4 or 6) get a row of their own with the fragment beside the copy. */
   span?: FeatureSpan;
   visual?: ReactNode;
 }
 
-const spans: Record<FeatureSpan, string> = {
-  2: "md:col-span-2",
-  3: "md:col-span-3",
-  4: "md:col-span-4",
-  6: "md:col-span-6",
-};
-
-/** Bento grid on a 6-column track. Items with a visual put it above the copy. */
-export function Features({ title, intro, items }: { title: ReactNode; intro?: ReactNode; items: Feature[] }) {
+/**
+ * A spec sheet, not a card grid: wide items are full rows (copy left, the real UI fragment right),
+ * narrow items pair up underneath in two uneven columns. Hairlines between, no boxes around copy.
+ */
+export function Features({ index = "02", title, intro, items }: { index?: string; title: ReactNode; intro?: ReactNode; items: Feature[] }) {
+  const wide = items.filter((f) => (f.span ?? 2) >= 4);
+  const narrow = items.filter((f) => (f.span ?? 2) < 4);
   return (
-    <Section tone="raised" labelledBy="features-title">
-      <div className="flex max-w-2xl flex-col gap-4">
-        <h2 id="features-title" className="heading-4 text-text">{title}</h2>
-        {intro ? <p className="body-3 text-text-subtle">{intro}</p> : null}
-      </div>
-      <ul className="mt-12 grid gap-4 md:mt-16 md:grid-cols-6">
-        {items.map((f) => (
-          <li
-            key={f.title}
-            className={cn(
-              "flex min-w-0 flex-col justify-between gap-6 rounded-lg border border-border bg-surface p-6 transition-colors duration-300 ease-out-kit hover:border-border-strong md:p-8",
-              spans[f.span ?? 2],
-            )}
-          >
-            {f.visual ? <div className="min-w-0 overflow-hidden rounded-md border border-border bg-surface-raised">{f.visual}</div> : null}
-            <div className="flex flex-col gap-2">
+    <Section pad="lg" labelledBy="features-title">
+      <SectionHead index={index} label="Product" id="features-title" title={title} intro={intro} />
+      <ul className="mt-8 md:mt-16">
+        {wide.map((f, i) => (
+          <li key={f.title} className="grid gap-6 border-t border-border py-8 lg:grid-cols-12 lg:gap-8 lg:py-12">
+            <div className={cn("flex flex-col gap-2 lg:col-span-4 lg:col-start-4", i % 2 === 1 && "lg:order-2 lg:col-start-9")}>
               <h3 className="heading-6 text-text">{f.title}</h3>
-              <p className="body-3 text-text-subtle">{f.body}</p>
+              <p className="body-6 text-text-subtle">{f.body}</p>
             </div>
+            {f.visual ? (
+              <div className={cn("min-w-0 overflow-hidden rounded-lg border border-border bg-surface-raised lg:col-span-5", i % 2 === 1 && "lg:order-1 lg:col-start-4")}>{f.visual}</div>
+            ) : null}
           </li>
         ))}
       </ul>
+      {narrow.length ? (
+        <ul className="grid lg:grid-cols-12 lg:gap-x-8">
+          {narrow.map((f, i) => (
+            <li key={f.title} className={cn("flex min-w-0 flex-col gap-4 border-t border-border py-8", i % 2 === 0 ? "lg:col-span-5 lg:col-start-4" : "lg:col-span-4")}>
+              <div className="flex flex-col gap-2">
+                <h3 className="heading-6 text-text">{f.title}</h3>
+                <p className="body-6 text-text-subtle">{f.body}</p>
+              </div>
+              {f.visual ? <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface-raised">{f.visual}</div> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </Section>
   );
 }

@@ -11,7 +11,7 @@ export function StateMark({ state }: { state: RequestState }) {
   const cls = state === "succeeded" ? "text-success" : state === "failed" ? "text-danger" : state === "outcome_unknown" ? "text-warning" : "text-text-muted";
   const Icon = state === "succeeded" ? CheckCircle : state === "failed" ? XCircle : state === "outcome_unknown" ? Question : Clock;
   return (
-    <span className={`inline-flex items-center gap-1.5 caption-4 font-semibold ${cls}`}>
+    <span className={`inline-flex items-center gap-2 font-sans caption-4 font-semibold ${cls}`}>
       <Icon size={16} weight="bold" aria-hidden />
       <span className="max-sm:sr-only">{STATE_LABEL[state]}</span>
     </span>
@@ -38,10 +38,10 @@ export function logHref(q: LogQuery, extra: Record<string, string | undefined> =
 export function LedgerTable({ rows, selected, query }: { rows: Job[]; selected?: string; query: LogQuery }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse figures text-[13.5px] leading-5">
+      <table className="w-full border-collapse figures caption-2">
         <caption className="sr-only">Requests, newest first</caption>
         <thead>
-          <tr className="border-b border-border text-left caption-4 text-text-subtle">
+          <tr className="border-b border-border bg-surface-raised text-left font-sans caption-4 text-text-subtle">
             <th scope="col" className="whitespace-nowrap px-3 py-2 font-semibold">Time (UTC)</th>
             <th scope="col" className="hidden px-3 py-2 font-semibold 2xl:table-cell">Request</th>
             <th scope="col" className="px-3 py-2 font-semibold">Call</th>
@@ -50,21 +50,22 @@ export function LedgerTable({ rows, selected, query }: { rows: Job[]; selected?:
           </tr>
         </thead>
         <tbody>
-          {rows.map((j, i) => {
+          {rows.map((j) => {
             const failed = j.state === "failed";
             const sel = j.id === selected;
             return (
-              <tr key={j.id} aria-current={sel ? "true" : undefined} className={`${failed ? "bg-danger-surface" : i % 2 ? "bg-surface-sunken" : ""} ${sel ? "outline outline-2 -outline-offset-2 outline-text" : ""}`}>
-                <td className="whitespace-nowrap px-3 py-1.5 align-top">
-                  <Link href={logHref(query, { req: j.id })} className="text-text underline-offset-4 hover:underline focus-visible:focus-ring" aria-label={`${clock(j.createdAt)}, open request ${j.id}`}>{clock(j.createdAt)}</Link>
+              <tr key={j.id} aria-current={sel ? "true" : undefined} className={`border-b border-border transition-colors duration-300 ease-out-kit last:border-b-0 ${sel ? "bg-action-surface" : failed ? "bg-danger-surface" : "hover:bg-surface-sunken"}`}>
+                <td className="relative whitespace-nowrap px-3 py-2 align-top">
+                  {sel ? <span aria-hidden className="absolute top-0 bottom-0 left-0 w-0.5 bg-action" /> : null}
+                  <Link href={logHref(query, { req: j.id })} className="rounded-xs text-text underline decoration-border-strong underline-offset-4 hover:decoration-action focus-visible:focus-ring" aria-label={`${clock(j.createdAt)}, open request ${j.id}`}>{clock(j.createdAt)}</Link>
                 </td>
-                <td className="hidden whitespace-nowrap px-3 py-1.5 align-top text-text-subtle 2xl:table-cell">{j.id.slice(0, 16)}</td>
-                <td className="px-3 py-1.5 align-top text-text">
+                <td className="hidden whitespace-nowrap px-3 py-2 align-top text-text-subtle 2xl:table-cell">{j.id.slice(0, 16)}</td>
+                <td className="px-3 py-2 align-top text-text">
                   <span className="whitespace-nowrap"><span className="sm:hidden">{j.meta?.method ?? "–"} {(j.meta?.path ?? j.op).replace(/^\/v1\/(qbd\/)?/, "")}</span><span className="max-sm:hidden">{j.meta?.method ?? "–"} {j.meta?.path ?? j.op}</span></span>
                   {failed && j.error ? <span className="block font-sans caption-4 text-danger">{j.error.userFacingMessage}</span> : null}
                 </td>
-                <td className="whitespace-nowrap px-3 py-1.5 align-top"><StateMark state={j.state} /></td>
-                <td className="hidden whitespace-nowrap px-3 py-1.5 text-right align-top text-text-subtle xl:table-cell">{ms(j.durationMs)}</td>
+                <td className="whitespace-nowrap px-3 py-2 align-top"><StateMark state={j.state} /></td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-right align-top text-text-subtle xl:table-cell">{ms(j.durationMs)}</td>
               </tr>
             );
           })}
@@ -83,9 +84,9 @@ export function DetailPane({ job }: { job: Job }) {
   ];
   const waited = job.sentAt ? new Date(job.sentAt).getTime() - new Date(job.createdAt).getTime() : undefined;
   return (
-    <aside aria-labelledby="detail-h" className="flex flex-col gap-4 border-t border-border bg-surface p-4 lg:border-l lg:border-t-0">
+    <aside aria-labelledby="detail-h" className="flex flex-col gap-4 border-t border-border bg-surface-raised p-4 lg:border-l lg:border-t-0">
       <div className="flex items-start justify-between gap-3">
-        <h2 id="detail-h" className="title-2 text-text">{job.meta?.method ?? ""} {job.meta?.path ?? job.op}</h2>
+        <h2 id="detail-h" className="figures title-4 break-all text-text">{job.meta?.method ?? ""} {job.meta?.path ?? job.op}</h2>
         <StateMark state={job.state} />
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 caption-4">
@@ -98,10 +99,12 @@ export function DetailPane({ job }: { job: Job }) {
         {job.meta?.idempotencyKey ? <><dt className="text-text-subtle">Idempotency key</dt><dd className="figures break-all text-text">{job.meta.idempotencyKey}</dd></> : null}
       </dl>
       <div>
-        <h3 className="caption-4 mb-1 font-semibold uppercase tracking-wider text-text-subtle">Timeline</h3>
-        <ol className="flex flex-col">
-          {events.filter((e) => e[1] && e[2]).map(([t, , label]) => (
-            <li key={label} className="grid grid-cols-[4.5rem_1fr] gap-3 border-b border-border py-2 caption-4 last:border-b-0">
+        <h3 className="index-label mb-2 text-text-subtle">Timeline</h3>
+        <ol className="relative flex flex-col gap-4">
+          <span aria-hidden className="absolute top-2 bottom-2 left-1 w-0.5 bg-action" />
+          {events.filter((e) => e[1] && e[2]).map(([t, , label], i, all) => (
+            <li key={label} className="relative flex flex-col pl-6 caption-4">
+              <span aria-hidden className={`absolute top-1 left-0 size-3 border-2 border-action ${i === all.length - 1 ? "bg-action" : "bg-surface-raised"}`} />
               <time className="figures text-text-subtle">{t}</time>
               <span className="text-text">{label}</span>
             </li>
@@ -111,15 +114,15 @@ export function DetailPane({ job }: { job: Job }) {
       <div className="flex flex-wrap gap-2">
         <CopyButton value={curlFor(job, appUrl())} label="Copy as curl" />
         <CopyButton value={job.id} label="Copy request id" />
-        {job.endUserId ? <Link href={`/app/end-users/${job.endUserId}`} className="inline-flex min-h-9 items-center px-2 caption-4 text-text underline underline-offset-4 focus-visible:focus-ring">Open company file</Link> : null}
+        {job.endUserId ? <Link href={`/app/end-users/${job.endUserId}`} className="inline-flex min-h-11 items-center rounded-sm px-2 caption-4 font-semibold text-text underline decoration-action underline-offset-4 focus-visible:focus-ring">Open company file</Link> : null}
       </div>
       <Payload job={job} />
       {job.error ? (
-        <div role="alert" className="rounded-md border border-danger bg-danger-surface p-3 caption-4">
+        <div role="alert" className="rounded-lg border border-danger bg-danger-surface p-3 caption-4">
           <p className="font-semibold text-danger">{job.error.code}</p>
           <p className="mt-1 text-text">{job.error.message}</p>
           <p className="mt-1 text-text-subtle">{job.error.userFacingMessage}</p>
-          <Link href={job.error.guideUrl} className="mt-2 inline-block text-text underline underline-offset-4">Read the guide{job.error.retryable ? " (safe to retry)" : ""}</Link>
+          <Link href={job.error.guideUrl} className="mt-2 inline-flex min-h-11 items-center rounded-sm font-semibold text-text underline decoration-action decoration-2 underline-offset-4 focus-visible:focus-ring">Read the guide{job.error.retryable ? " (safe to retry)" : ""}</Link>
         </div>
       ) : null}
     </aside>
@@ -131,20 +134,20 @@ const pretty = (v: unknown) => { try { return JSON.stringify(v, null, 2); } catc
 /** Request body and result, only while retention still holds them. */
 function Payload({ job }: { job: Job }) {
   if (job.purgedAt) {
-    return <p className="rounded-md border border-border bg-surface-sunken p-3 caption-4 text-text-subtle">The request and response bodies were deleted on {day(job.purgedAt)} by your retention setting. The timeline and status above stay for 90 days.</p>;
+    return <p className="rounded-lg border border-border bg-surface-sunken p-3 caption-4 text-text-subtle">The request and response bodies were deleted on {day(job.purgedAt)} by your retention setting. The timeline and status above stay for 90 days.</p>;
   }
   const hasBody = job.body !== undefined && job.body !== null && Object.keys(job.body as object).length > 0;
   return (
     <div className="flex flex-col gap-2">
       {hasBody ? (
-        <details className="rounded-md border border-border">
-          <summary className="min-h-9 cursor-pointer px-3 py-2 caption-4 font-semibold text-text focus-visible:focus-ring">Request body</summary>
+        <details className="rounded-lg border border-border">
+          <summary className="min-h-11 cursor-pointer px-3 py-2 caption-4 font-semibold text-text focus-visible:focus-ring">Request body</summary>
           <pre className="max-h-72 overflow-auto border-t border-border p-3 figures caption-4 text-text"><code>{pretty(job.body)}</code></pre>
         </details>
       ) : null}
       {job.result ? (
-        <details className="rounded-md border border-border">
-          <summary className="min-h-9 cursor-pointer px-3 py-2 caption-4 font-semibold text-text focus-visible:focus-ring">Result ({job.result.length} {job.result.length === 1 ? "row" : "rows"})</summary>
+        <details className="rounded-lg border border-border">
+          <summary className="min-h-11 cursor-pointer px-3 py-2 caption-4 font-semibold text-text focus-visible:focus-ring">Result ({job.result.length} {job.result.length === 1 ? "row" : "rows"})</summary>
           <pre className="max-h-72 overflow-auto border-t border-border p-3 figures caption-4 text-text"><code>{pretty(job.result)}</code></pre>
         </details>
       ) : null}

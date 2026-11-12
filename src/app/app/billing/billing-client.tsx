@@ -4,7 +4,7 @@ import { api } from "@/components/app/api";
 import { Meter } from "@/components/app/meter";
 import { Panel } from "@/components/app/page-header";
 import { formatDate } from "@/components/app/api";
-import { Button } from "@/components/ui/button";
+import { Button, segmentClass, segmentGroupClass } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { Badge, Notice } from "@/components/ui/states";
 import { planById, product, type Interval, type Plan, type PlanId } from "@/config/product";
@@ -134,17 +134,14 @@ export function BillingClient(p: Props) {
       <section aria-labelledby="plans-h" className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <h2 id="plans-h" className="title-2 text-text">Plans</h2>
-          <div role="group" aria-label="Billing interval" className="inline-flex rounded-md border border-border-strong p-1">
+          <div role="group" aria-label="Billing interval" className={segmentGroupClass}>
             {(["month", "year"] as const).map((i) => (
               <button
                 key={i}
                 type="button"
                 aria-pressed={interval === i}
                 onClick={() => setInterval(i)}
-                className={cn(
-                  "button-sm min-h-11 rounded-sm px-3 py-1 transition-colors sm:min-h-8 duration-300 focus-visible:focus-ring",
-                  interval === i ? "bg-action text-action-text" : "text-text-subtle hover:text-text",
-                )}
+                className={segmentClass(interval === i)}
               >
                 {i === "month" ? "Monthly" : "Yearly"}
               </button>

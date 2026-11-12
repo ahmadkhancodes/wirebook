@@ -35,9 +35,9 @@ export function TaglineReveal({ text, label }: { text: string; label?: string })
   }, [words.length]);
 
   return (
-    <Section>
-      {label ? <p className="caption-3 mb-6 text-text-subtle">{label}</p> : null}
-      <p ref={ref} className="heading-4 md:heading-1 max-w-5xl text-text">
+    <Section tone="inverse" pad="lg">
+      {label ? <p className="index-label mb-6 text-text-inverse-subtle">{label}</p> : null}
+      <p ref={ref} className="heading-4 md:heading-1 max-w-5xl text-text-inverse">
         {words.map((w, i) => (
           <span key={i} className="kit-word" data-on={i < active}>
             {w}{" "}

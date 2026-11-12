@@ -1,55 +1,58 @@
 @import "tailwindcss";
 
 /*
- * Universal kit tokens (docs/factory/DESIGN_PLAYBOOK.md §3, §5, §6).
- * PLACEHOLDER THEME: deliberately plain greys + one muted accent. Each product replaces ONLY the
- * values in the two `:root` blocks below (from its docs/DESIGN.md). Components reference role tokens only.
+ * Wirebook tokens (docs/design-brief.md section 6). Cool steel neutrals, graphite ink, one hi-vis signal orange.
+ * Components reference role tokens only. Light only (founder decision, 12 Nov 2026).
  */
 :root {
   --font-sans-family: var(--font-kit-sans), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --font-mono-family: var(--font-kit-mono), ui-monospace, monospace;
-  --font-display-family: var(--font-kit-display), Georgia, serif;
+  --font-display-family: var(--font-kit-display), var(--font-kit-sans), ui-sans-serif, sans-serif;
 
-  /* raw ramp: ledger paper and ink (green-tinted neutrals) */
+  /* raw ramp: steel and graphite */
   --n-0: #ffffff;
-  --n-50: #f7f8f4; /* paper */
-  --n-100: #e8f1e4; /* band */
-  --n-200: #c9d3c6; /* rule */
-  --n-300: #a9b6ad;
-  --n-400: #7f9086;
-  --n-500: #4a5a50; /* ink-muted */
-  --n-600: #2e4036; /* primary-hover */
-  --n-700: #24332b;
-  --n-800: #1b2820;
-  --n-900: #14201a; /* ink */
-  --n-1000: #0e1411;
-  --accent-500: #24489a; /* carbon: links and focus */
-  --accent-600: #1b3977;
+  --n-50: #f7f8f9;
+  --n-100: #f1f2f4; /* steel band */
+  --n-200: #dcdfe4; /* hairline */
+  --n-300: #b9bec8;
+  --n-400: #8e95a1;
+  --n-500: #767d89; /* control edge, 4.2:1 */
+  --n-600: #4d5360; /* subtle text, 7.7:1 */
+  --n-700: #33373f;
+  --n-800: #23262c;
+  --n-900: #17191e; /* graphite ink */
+  --signal-50: #fceee7;
+  --signal-300: #e8a27f; /* orange on graphite, 8.3:1 */
+  --signal-500: #c0461a; /* hi-vis signal, white text 5.1:1 */
+  --signal-600: #9c3712;
 
-  /* role tokens: light */
-  --surface: var(--n-50);
-  --surface-raised: #ffffff;
+  /* role tokens */
+  --surface: var(--n-0);
+  --surface-raised: var(--n-0);
   --surface-sunken: var(--n-100);
   --surface-inverse: var(--n-900);
   --text: var(--n-900);
-  --text-subtle: var(--n-500);
-  --text-muted: var(--n-500);
-  --text-inverse: var(--n-50);
+  --text-subtle: var(--n-600);
+  --text-muted: var(--n-600);
+  --text-inverse: #ffffff;
+  --text-inverse-subtle: var(--n-300);
   --border: var(--n-200);
   --border-strong: var(--n-500);
-  --action: var(--n-900); /* primary: ledger ink, not a hue */
-  --action-hover: var(--n-600);
-  --action-text: var(--n-50);
-  --focus: var(--accent-500);
-  --success: #1f7a45;
-  --success-surface: #e3f3e8;
-  --warning: #7a5200;
-  --warning-surface: #fff3d6;
-  --danger: #b3261e; /* redpencil */
+  --action: var(--signal-500);
+  --action-hover: var(--signal-600);
+  --action-text: #ffffff;
+  --action-surface: var(--signal-50);
+  --signal-on-dark: var(--signal-300);
+  --focus: var(--signal-500);
+  --success: #17723a;
+  --success-surface: #e6f4ea;
+  --warning: #845100;
+  --warning-surface: #fff4db;
+  --danger: #b4173a; /* crimson, kept apart from the orange accent */
   --danger-text: #ffffff;
-  --danger-surface: #fbe9e7;
+  --danger-surface: #fce9ed;
   --highlight: #fff1a8;
-  --shadow-color: 150 25% 10%;
+  --shadow-color: 220 13% 10%;
   color-scheme: light;
 }
 
@@ -76,6 +79,9 @@
   --color-action: var(--action);
   --color-action-hover: var(--action-hover);
   --color-action-text: var(--action-text);
+  --color-action-surface: var(--action-surface);
+  --color-signal-on-dark: var(--signal-on-dark);
+  --color-text-inverse-subtle: var(--text-inverse-subtle);
   --color-focus: var(--focus);
   --color-success: var(--success);
   --color-success-surface: var(--success-surface);
@@ -103,12 +109,22 @@
   --spacing-16: 64px;
   --spacing-20: 80px;
   --spacing-24: 96px;
+  /* Layout sizes: widths and heights of boxes only, never padding or gaps. */
+  --spacing-28: 112px;
+  --spacing-40: 160px;
+  --spacing-44: 176px;
+  --spacing-48: 192px;
+  --spacing-64: 256px;
+  --spacing-72: 288px;
+  --spacing-96: 384px;
 
-  --radius-sm: 3px;
-  --radius-md: 6px;
-  --radius-lg: 6px;
-  --radius-xl: 6px;
-  --radius-2xl: 6px;
+  /* Radius system: 2px controls, 4px panels, nothing larger. */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
 
   --ease-out-kit: cubic-bezier(0.22, 1, 0.36, 1);
   --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
@@ -116,11 +132,12 @@
 }
 
 /* ---- Named type styles (playbook §5). Use these, never loose size+weight pairs. ---- */
-@utility heading-1 { font-family: var(--font-display-family); font-size: 3.5rem; line-height: 4rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
-@utility heading-2 { font-family: var(--font-display-family); font-size: 2.5rem; line-height: 3rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
-@utility heading-3 { font-family: var(--font-display-family); font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
-@utility heading-4 { font-family: var(--font-display-family); font-size: 1.75rem; line-height: 2.25rem; font-weight: 500; letter-spacing: -0.01em; text-wrap: balance; }
-@utility heading-5 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; text-wrap: balance; }
+@utility display-1 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 4.5rem; line-height: 4.5rem; font-weight: 600; letter-spacing: -0.035em; text-wrap: balance; }
+@utility heading-1 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 3.75rem; line-height: 3.75rem; font-weight: 600; letter-spacing: -0.03em; text-wrap: balance; }
+@utility heading-2 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 3rem; line-height: 3rem; font-weight: 600; letter-spacing: -0.025em; text-wrap: balance; }
+@utility heading-3 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
+@utility heading-4 { font-family: var(--font-display-family); font-variation-settings: "wdth" 112; font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+@utility heading-5 { font-family: var(--font-display-family); font-variation-settings: "wdth" 108; font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
 @utility heading-6 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; text-wrap: balance; }
 @utility title-1 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 500; }
 @utility title-2 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
@@ -157,40 +174,45 @@
         -webkit-font-smoothing: antialiased;
   }
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  ::selection { background: var(--action); color: var(--action-text); }
+  ::selection { background: var(--highlight); color: var(--text); }
+  a { text-decoration-color: var(--action); text-decoration-thickness: 1px; }
   code, kbd, pre, samp { font-family: var(--font-mono-family); }
 }
 
 /* Scroll reveal (rise 32px + fade, once). Reduced motion: opacity only. */
 .kit-reveal { opacity: 0; transform: translateY(32px); transition: opacity 700ms var(--ease-out-kit), transform 700ms var(--ease-out-kit); }
 .kit-reveal[data-visible="true"] { opacity: 1; transform: none; }
-.kit-word { opacity: 0.3; transition: opacity 500ms var(--ease-out-kit); }
-.kit-word[data-on="true"] { opacity: 1; }
+/* Tagline reveal: unlit words are steel grey (AA for large text on graphite), lit words take the paragraph colour. */
+.kit-word { color: var(--n-400); transition: color 500ms var(--ease-out-kit); }
+.kit-word[data-on="true"] { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .kit-reveal { transform: none; transition: opacity 300ms var(--ease-out-kit); }
-  .kit-word { opacity: 1; transition: none; }
+  .kit-word { color: inherit; transition: none; }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
-/* ---- Ledger signature: tabular mono figures, perforated gutter, double rule footing, ticks. ---- */
+/* ---- Work order signature: tabular mono figures, the wire, footed totals, ticks. ---- */
 @utility figures { font-family: var(--font-mono-family); font-feature-settings: "tnum" 1, "zero" 1; }
-@utility footing { border-top: 3px double var(--text); }
-@utility perf {
-  position: relative;
-  &::before { content: ""; position: absolute; left: 16px; top: 0; bottom: 0; border-left: 1px dotted var(--border); }
-  &::after {
-    content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 6px;
-    background: radial-gradient(circle, var(--border) 2.5px, transparent 3px) 0 0 / 6px 24px repeat-y;
-  }
-}
+@utility footing { border-top: 2px solid var(--text); }
+/* Section index label: mono, small, spaced. "01 Problem". */
+@utility index-label { font-family: var(--font-mono-family); font-size: 0.75rem; line-height: 1rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+/* Kept for old call sites: a plain left gutter, no decoration. */
+@utility perf { position: relative; }
 .kit-tick path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: kit-draw 200ms var(--ease-out-kit) forwards; animation-delay: calc(var(--i, 0) * 60ms + 60ms); }
 @keyframes kit-draw { to { stroke-dashoffset: 0; } }
+/* The wire draws once (transform only: scaleX from the left). */
+.wire-draw { transform-origin: left center; transform: scaleX(0); animation: wire-draw 900ms var(--ease-out-kit) 150ms forwards; }
+@keyframes wire-draw { to { transform: scaleX(1); } }
+.wire-node { opacity: 0; animation: wire-node 300ms var(--ease-out-kit) forwards; animation-delay: calc(var(--i, 0) * 220ms + 250ms); }
+@keyframes wire-node { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .kit-tick path { animation: none; stroke-dashoffset: 0; }
+  .wire-draw { animation: none; transform: none; }
+  .wire-node { animation: none; opacity: 1; }
 }
-@utility wordmark { font-family: var(--font-display-family); font-size: 1.375rem; line-height: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
-@utility wordmark-by { font-size: 0.625rem; line-height: 0.75rem; font-weight: 500; letter-spacing: 0.08em; font-variant-caps: all-small-caps; }
-.code-block { font-family: var(--font-mono-family); font-size: 0.84375rem; line-height: 1.375rem; white-space: pre; }
+@utility wordmark { font-family: var(--font-display-family); font-variation-settings: "wdth" 118; font-size: 1.25rem; line-height: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+@utility wordmark-by { font-family: var(--font-mono-family); font-size: 0.625rem; line-height: 0.75rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+.code-block { font-family: var(--font-mono-family); font-size: 0.8125rem; line-height: 1.375rem; white-space: pre; }
 
 /* Tailwind v4 no longer sets a pointer cursor on buttons. Anything you can click shows the hand. */
 @layer base {

@@ -54,7 +54,7 @@ export function BarChart({ title, unit, points, limit, limitLabel, id }: { title
         ) : null}
       </svg>
       <details className="caption-4 text-text-subtle">
-        <summary className="min-h-9 cursor-pointer py-2 focus-visible:focus-ring">Show the numbers</summary>
+        <summary className="min-h-11 cursor-pointer py-2 focus-visible:focus-ring">Show the numbers</summary>
         <table className="mt-2 w-full max-w-sm figures">
           <caption className="sr-only">{title}</caption>
           <thead><tr className="text-left"><th scope="col" className="py-1 pr-4 font-semibold">Period</th><th scope="col" className="py-1 text-right font-semibold">{unit}</th></tr></thead>

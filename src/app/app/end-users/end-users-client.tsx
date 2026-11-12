@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api, formatDate } from "@/components/app/api";
 import { DataTable, Td } from "@/components/app/data-table";
-import { buttonClass } from "@/components/ui/button";
+import { buttonClass, segmentClass, segmentGroupClass } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { STATUS_HELP, type EndUserView } from "@/lib/health/view";
 import { StatusBadge } from "./status-badge";
@@ -27,10 +27,10 @@ export function EndUsersClient({ env, initial }: { env: "test" | "production"; i
 
   return (
     <div className="flex flex-col gap-4">
-      <nav aria-label="Environment" className="flex w-fit gap-1 rounded-md border border-border p-0.5">
+      <nav aria-label="Environment" className={segmentGroupClass}>
         {(["test", "production"] as const).map((e) => (
           <Link key={e} href={e === "test" ? "/app/end-users" : "/app/end-users?env=production"} aria-current={env === e ? "page" : undefined}
-            className={`inline-flex min-h-11 items-center rounded-sm px-3 py-1.5 caption-4 font-semibold sm:min-h-8 uppercase tracking-wider focus-visible:focus-ring ${env === e ? "bg-action text-action-text" : "text-text-subtle hover:text-text"}`}>{e}</Link>
+            className={segmentClass(env === e, { mono: true })}><span aria-hidden className={`size-2 ${e === "test" ? "bg-success" : "bg-danger"}`} />{e}</Link>
         ))}
       </nav>
       {failed && !rows ? (

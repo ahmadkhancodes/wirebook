@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BarChart } from "@/components/app/charts";
 import { fmt } from "@/components/app/labels";
 import { PageHeader, Panel } from "@/components/app/page-header";
+import { EmptyState } from "@/components/ui/states";
 import { buttonClass } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/states";
 import { requireOrg } from "@/lib/auth/session";
@@ -35,17 +36,17 @@ export default async function UsagePage() {
       <>
         <PageHeader title="Usage" description={`API requests and active company files for ${ctx.org.name}. Days and months are UTC.`} />
         <div className="flex flex-col gap-6">
-          <dl className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border border-border bg-surface p-6"><dt className="title-4 text-text-subtle">Requests today</dt><dd className="heading-4 tabular-nums text-text">{fmt(today)}</dd><p className="caption-2 text-text-subtle">of {fmt(cap)} a day on {plan.name}, test and production together</p></div>
-            <div className="rounded-lg border border-border bg-surface p-6"><dt className="title-4 text-text-subtle">Active files this month</dt><dd className="heading-4 tabular-nums text-text">{fmt(summary.files)}</dd><p className="caption-2 text-text-subtle">{summary.capped ? `of ${summary.included} included on ${plan.name}` : "billed per active production file"}</p></div>
-            <div className="rounded-lg border border-border bg-surface p-6"><dt className="title-4 text-text-subtle">Projected this month</dt><dd className="heading-4 tabular-nums text-text">{`$${(summary.monthlyCents / 100).toFixed(2)}`}</dd><p className="caption-2 text-text-subtle"><Link href="/app/billing" className="underline underline-offset-4">See billing</Link></p></div>
+          <dl className="grid overflow-hidden rounded-lg border border-border bg-surface-raised sm:grid-cols-3 sm:divide-x sm:divide-border max-sm:divide-y max-sm:divide-border">
+            <div className="flex flex-col gap-1 p-4 sm:p-6"><dt className="index-label text-text-subtle">Requests today</dt><dd className="figures heading-4 text-text">{fmt(today)}</dd><p className="caption-2 text-text-subtle">of {fmt(cap)} a day on {plan.name}, test and production together</p></div>
+            <div className="flex flex-col gap-1 p-4 sm:p-6"><dt className="index-label text-text-subtle">Active files this month</dt><dd className="figures heading-4 text-text">{fmt(summary.files)}</dd><p className="caption-2 text-text-subtle">{summary.capped ? `of ${summary.included} included on ${plan.name}` : "billed per active production file"}</p></div>
+            <div className="flex flex-col gap-1 p-4 sm:p-6"><dt className="index-label text-text-subtle">Projected this month</dt><dd className="figures heading-4 text-text">{`$${(summary.monthlyCents / 100).toFixed(2)}`}</dd><p className="caption-2 text-text-subtle"><Link href="/app/billing" className="inline-flex min-h-11 items-center rounded-sm font-semibold text-text underline decoration-action underline-offset-4 focus-visible:focus-ring sm:min-h-0">See billing</Link></p></div>
           </dl>
           {none ? (
-            <div className="rounded-lg border border-border bg-surface-raised p-8">
-              <h2 className="heading-6 text-text">No usage yet</h2>
-              <p className="mt-2 max-w-xl body-6 text-text-subtle">Charts fill in as soon as your key makes its first request. Create a connect link for a sample company file and list its customers.</p>
-              <Link href="/docs/getting-started" className={`${buttonClass("primary")} mt-4`}>Open the quickstart</Link>
-            </div>
+            <EmptyState
+              title="No usage yet"
+              body="Charts fill in as soon as your key makes its first request. Create a connect link for a sample company file and list its customers."
+              action={<Link href="/docs/getting-started" className={buttonClass("primary")}>Open the quickstart</Link>}
+            />
           ) : null}
           <Panel title="Requests per day" description={`Last 30 days. The dashed line is the daily cap of the ${plan.name} plan; reaching it answers 429 daily_cap_reached until 00:00 UTC.`}>
             <div className="px-6 pb-6"><BarChart id="chart-requests" title="Requests per day" unit="requests" points={days} limit={cap} limitLabel={`Daily cap ${fmt(cap)}`} /></div>

@@ -3,7 +3,8 @@ import {
   CompareStrip, Faq, Features, FinalCta, FitSection, Hero, HowItWorks, PricingTeaser, ProblemSection, TaglineReveal,
   type FaqItem, type Feature, type Step,
 } from "@/components/marketing";
-import { RequestLog, StateLabel, Tick } from "@/components/marketing/ledger/request-log";
+import { EnvTag, RequestLog, StateLabel, Tick } from "@/components/marketing/ledger/request-log";
+import { Wire } from "@/components/marketing/product/wire";
 import { product } from "@/config/product";
 import { socialImages } from "@/lib/seo";
 import { money, rates } from "@/lib/pricing";
@@ -19,15 +20,19 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title, description, images: socialImages().twitter },
 };
 
-const K = ({ children }: { children: string }) => <span className="text-focus">{children}</span>;
-const S = ({ children }: { children: string }) => <span className="text-success">{children}</span>;
+const K = ({ children }: { children: string }) => <span className="text-signal-on-dark">{children}</span>;
+const S = ({ children }: { children: string }) => <span className="text-text-inverse">{children}</span>;
 
 const sdkSnippet = (
   <code>
     <K>const</K> invoice = <K>await</K> wirebook.invoices.create({"{"}{"\n"}
-    {"  "}customerId: <S>&quot;cust_8F2A&quot;</S>, refNumber: <S>&quot;INV-1042&quot;</S>,{"\n"}
-    {"  "}lines: [{"{"} item: <S>&quot;Framing labour&quot;</S>, qty: 12, rate: 107.04 {"}"}]{"\n"}
-    {"}"}, {"{"} idempotencyKey: <S>&quot;acme-inv-1042&quot;</S> {"}"}) <span className="text-text-subtle">{"// 201 in 2.1 s"}</span>
+    {"  "}customerId: <S>&quot;cust_8F2A&quot;</S>,{"\n"}
+    {"  "}refNumber: <S>&quot;INV-1042&quot;</S>,{"\n"}
+    {"  "}lines: [{"{"}{"\n"}
+    {"    "}item: <S>&quot;Framing labour&quot;</S>,{"\n"}
+    {"    "}qty: 12, rate: 107.04{"\n"}
+    {"  "}{"}"}]{"\n"}
+    {"}"}, {"{"} idempotencyKey: <S>&quot;harlan-inv-1042&quot;</S> {"}"});{"\n"}<span className="text-text-inverse-subtle">{"// 201 Created in 2.1 s"}</span>
   </code>
 );
 
@@ -43,8 +48,8 @@ const frag = "flex flex-col gap-2 p-4";
 function Replayed() {
   return (
     <div className={`${frag} figures caption-4`}>
-      <p className="flex items-center justify-between gap-2 text-text"><span>POST invoices · acme-inv-1042</span><StateLabel state="succeeded" /></p>
-      <p className="flex items-center justify-between gap-2 border-t border-border pt-2 text-text"><span>POST invoices · acme-inv-1042</span><span className="rounded-full border border-border-strong px-2 caption-3 text-text">replayed</span></p>
+      <p className="flex items-center justify-between gap-2 text-text"><span>POST invoices · harlan-inv-1042</span><StateLabel state="succeeded" /></p>
+      <p className="flex items-center justify-between gap-2 border-t border-border pt-2 text-text"><span>POST invoices · harlan-inv-1042</span><span className="rounded-xs border border-border-strong px-2 caption-4 text-text">replayed</span></p>
       <p className="border-t border-border pt-2 font-sans caption-5 text-text-subtle">Example. Same key, same body: one invoice.</p>
     </div>
   );
@@ -53,7 +58,7 @@ function Replayed() {
 function ErrorFragment() {
   return (
     <pre tabIndex={0} className="code-block overflow-x-auto p-4 text-text">
-      {`{ "type": "invalid_reference",\n  "code": "3140",\n  "userFacingMessage": "CustomerRef does not match a customer.",\n  "guideUrl": "/errors/3140",\n  "retryable": false,\n  "requestId": "req_01JC9P8" }`}
+      {`{ "type": "invalid_reference",\n  "code": "3140",\n  "userFacingMessage": "No such customer.",\n  "guideUrl": "/errors/3140",\n  "retryable": false,\n  "requestId": "req_01JC9P8" }`}
     </pre>
   );
 }
@@ -78,7 +83,7 @@ function Timeline() {
 const rail = ["Download the connector file", "Allow access in QuickBooks", "Paste the password", "Connected"];
 function Rail() {
   return (
-    <ol className="perf flex flex-col py-2 pr-4 pl-10">
+    <ol className="flex flex-col px-4 py-2">
       {rail.map((r, i) => (
         <li key={r} className="flex items-center gap-2 border-b border-border py-2 caption-4 text-text last:border-b-0">
           <span className="text-success"><Tick index={i} /></span>{r}
@@ -91,10 +96,10 @@ function Rail() {
 
 function SdkTabs() {
   return (
-    <div className={`${frag} figures caption-4 text-text`}>
+    <div className={`${frag} figures overflow-x-auto caption-4 whitespace-nowrap text-text`}>
       <p><span className="text-text-subtle">TypeScript </span>await wirebook.customers.list()</p>
       <p><span className="text-text-subtle">Python </span>wirebook.customers.list()</p>
-      <p className="break-all"><span className="text-text-subtle">cURL </span>curl -H &quot;Authorization: Bearer sk_test_…&quot; /v1/qbd/customers</p>
+      <p><span className="text-text-subtle">cURL </span>curl /v1/qbd/customers -H &quot;Authorization: Bearer sk_test_…&quot;</p>
     </div>
   );
 }
@@ -102,8 +107,8 @@ function SdkTabs() {
 function KeyPanel() {
   return (
     <div className={`${frag} figures caption-4 text-text`}>
-      <p className="flex items-center justify-between gap-2"><span>sk_test_••••••••••••</span><span className="rounded-full border border-success bg-success-surface px-2 caption-3 text-success">Test</span></p>
-      <p className="flex items-center justify-between gap-2 border-t border-border pt-2"><span>sk_live_••••••••••••</span><span className="rounded-full border border-danger bg-danger-surface px-2 caption-3 text-danger">Production</span></p>
+      <p className="flex items-center justify-between gap-2"><span>sk_test_••••••••••••</span><EnvTag env="Test" /></p>
+      <p className="flex items-center justify-between gap-2 border-t border-border pt-2"><span>sk_live_••••••••••••</span><EnvTag env="Production" /></p>
       <p className="border-t border-border pt-2 font-sans caption-5 text-text-subtle">Mockup. Shown once, stored as a SHA-256 hash.</p>
     </div>
   );
@@ -122,12 +127,12 @@ const steps: Step[] = [
   {
     title: "Create a key and an end user",
     body: "Sign up, create an sk_test_ key, add your customer and get a connect link valid for 24 hours.",
-    visual: <div className="rounded-md border border-border bg-surface-raised p-4 figures caption-4 text-text">POST /v1/connect-links<br />{"{ \"externalId\": \"acme-42\" }"}<br /><span className="text-text-subtle">connect link: valid 24 hours</span></div>,
+    visual: <div className="rounded-lg border border-border bg-surface-raised p-4 figures caption-4 text-text">POST /v1/connect-links<br />{"{ \"externalId\": \"harlan-42\" }"}<br /><span className="text-text-subtle">connect link: valid 24 hours</span></div>,
   },
   {
     title: "Your customer connects",
     body: "They open the link on the QuickBooks PC, download a .qwc file, choose Yes, always allow access even if QuickBooks isn't running, and paste the password. The status turns Connected.",
-    visual: <div className="rounded-md border border-border bg-surface-raised"><Rail /></div>,
+    visual: <div className="rounded-lg border border-border bg-surface-raised"><Rail /></div>,
   },
   {
     title: "Call the API",
@@ -137,7 +142,7 @@ const steps: Step[] = [
         <span className="mt-3 block border-t border-border pt-3 caption-2">Requests run when QuickBooks next checks in, so this is polling, not real time. If the connector is not running you get a 202 queued, and a guide after 30 seconds.</span>
       </>
     ),
-    visual: <pre tabIndex={0} className="code-block overflow-x-auto rounded-md border border-border bg-surface-raised p-4 text-text">{`curl -X POST /v1/qbd/invoices \\\n  -H "Idempotency-Key: acme-inv-1042" \\\n  -d @invoice.json\n\n202 queued\n201 succeeded in 2.1 s`}</pre>,
+    visual: <pre tabIndex={0} className="code-block overflow-x-auto rounded-lg bg-surface-inverse p-4 text-text-inverse">{`curl -X POST /v1/qbd/invoices \\\n  -H "Idempotency-Key: harlan-inv-1042" \\\n  -d @invoice.json\n\n202 queued\n201 succeeded in 2.1 s`}</pre>,
   },
 ];
 
@@ -156,6 +161,30 @@ const faq: FaqItem[] = [
   { q: "Is Intuit involved?", a: product.intuitNotice },
 ];
 
+/** The hero's product picture: one work order on the wire, the SDK call that sent it, and the log it lands in. */
+function HeroProduct() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-lg border border-border bg-surface-raised">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-4 py-2 caption-4 text-text-subtle">
+          <span className="index-label text-text">Work order</span>
+          <span className="figures text-text">req_01JC9Q4</span>
+          <span className="hidden sm:inline">POST invoices · Harlan Mechanical · <span className="figures">1,284.48</span></span>
+          <span className="ml-auto inline-flex items-center gap-2 text-success"><Tick /><span className="figures caption-4">201 in 2.1 s</span></span>
+        </div>
+        <div className="px-4 py-6 md:px-6"><Wire /></div>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-12">
+        <div className="min-w-0 overflow-hidden rounded-lg bg-surface-inverse lg:col-span-5">
+          <p className="border-b border-text-subtle px-4 py-2 caption-4 text-text-inverse-subtle">TypeScript SDK</p>
+          <pre tabIndex={0} className="code-block overflow-x-auto p-4 text-text-inverse-subtle">{sdkSnippet}</pre>
+        </div>
+        <RequestLog className="lg:col-span-7" />
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
     <>
@@ -166,7 +195,7 @@ export default function HomePage() {
         secondaryCta={{ href: "/docs", label: "Read the docs →" }}
         risk="No card. Unlimited sample company files."
         proof={<><strong className="font-semibold text-text">{product.benchmark.name} lists <span className="figures">{money(rates.benchmark)}</span> per company file per month</strong> ({product.benchmark.host}, checked {product.benchmark.checked}). {product.fullName} charges <span className="figures text-text">{money(rates.perFile)}</span>. Every price is published.</>}
-        visual={<RequestLog code={sdkSnippet} />}
+        visual={<HeroProduct />}
       />
       <ProblemSection
         title="QuickBooks Desktop has no cloud API"
