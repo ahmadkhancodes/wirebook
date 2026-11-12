@@ -6,8 +6,8 @@ export interface Column { key: string; label: string; align?: "left" | "right"; 
 /** Table with a sticky header and tabular numerals. Wraps in a scroll container so phones never overflow the page. */
 export function DataTable({ caption, columns, children, maxHeight = false }: { caption: string; columns: Column[]; children: ReactNode; maxHeight?: boolean }) {
   return (
-    <div className={cn("w-full overflow-auto rounded-lg border border-border bg-surface-raised", maxHeight && "max-h-dvh")}>
-      <table className="w-full border-collapse text-left tabular-nums">
+    <div className={cn("w-full overflow-auto border border-border-strong bg-surface-raised", maxHeight && "max-h-dvh")}>
+      <table className="ledger-cols w-full border-collapse text-left tabular-nums">
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr>
@@ -15,7 +15,7 @@ export function DataTable({ caption, columns, children, maxHeight = false }: { c
               <th
                 key={c.key}
                 scope="col"
-                className={cn("sticky top-0 z-10 whitespace-nowrap border-b border-border bg-surface-sunken px-4 py-2 caption-4 text-text-subtle", c.align === "right" && "text-right", c.className)}
+                className={cn("sticky top-0 z-10 whitespace-nowrap border-b-4 border-double border-b-border-strong bg-surface-sunken px-4 py-2 caption-4 text-text-subtle", c.align === "right" && "text-right", c.className)}
               >
                 {c.label}
               </th>

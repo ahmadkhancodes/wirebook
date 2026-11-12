@@ -75,7 +75,7 @@ export function footing(rows: LogRow[]): string[] {
   ];
 }
 
-/** Environment tag: a square stencil label, Test in green, Production in crimson. Never colour alone: the word is the label. */
+/** Environment tag: a square stencil label, Test in green, Production in ledger red. Never colour alone: the word is the label. */
 export function EnvTag({ env }: { env: "Test" | "Production" }) {
   return (
     <span className={cn("index-label inline-flex items-center gap-1 rounded-xs border px-2 py-0.5", env === "Test" ? "border-success text-success" : "border-danger text-danger")}>
@@ -85,10 +85,10 @@ export function EnvTag({ env }: { env: "Test" | "Production" }) {
   );
 }
 
-/** The request log as a dispatch board: every job, its customer, its amount and where it stands. */
+/** The request log as a ledger page: every job, its customer, its amount and where it stands. */
 export function RequestLog({ rows = sampleRows, code, env = "Test", className, compact }: { rows?: LogRow[]; code?: ReactNode; env?: "Test" | "Production"; className?: string; /** Drop the customer column, for narrow slots. */ compact?: boolean }) {
   return (
-    <div role="group" aria-label="Example request log" className={cn("min-w-0 overflow-hidden rounded-lg border border-border bg-surface-raised", className)}>
+    <div role="group" aria-label="Example request log" className={cn("min-w-0 overflow-hidden border border-border-strong bg-surface-raised", className)}>
       <div className="flex items-center gap-3 border-b border-border bg-surface-sunken px-4 py-2 caption-4 text-text-subtle">
         <EnvTag env={env} />
         <span className="title-5 text-text">Request log</span>
@@ -96,9 +96,9 @@ export function RequestLog({ rows = sampleRows, code, env = "Test", className, c
       </div>
       {code ? <div className="overflow-x-auto border-b border-border px-4 py-3 text-text"><pre className="code-block" tabIndex={0}>{code}</pre></div> : null}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse caption-2">
+        <table className="ledger-cols w-full border-collapse caption-2">
           <thead>
-            <tr className="border-b border-border text-left text-text-subtle">
+            <tr className="border-b-4 border-double border-border-strong text-left text-text-subtle">
               <th scope="col" className="py-2 pr-2 pl-4 caption-4">Request</th>
               <th scope="col" className={cn("hidden px-2 py-2 caption-4", !compact && "md:table-cell")}>Customer</th>
               <th scope="col" className="hidden px-2 py-2 caption-4 sm:table-cell">Operation</th>
@@ -113,7 +113,7 @@ export function RequestLog({ rows = sampleRows, code, env = "Test", className, c
                 <td className="figures py-2 pr-2 pl-4 whitespace-nowrap text-text-subtle">{r.id}</td>
                 <td className={cn("hidden px-2 py-2 whitespace-nowrap text-text", !compact && "md:table-cell")}>{r.party}</td>
                 <td className="figures hidden px-2 py-2 whitespace-nowrap text-text sm:table-cell">{r.operation}</td>
-                <td className="figures hidden px-2 py-2 text-right whitespace-nowrap text-text sm:table-cell">{r.amount}</td>
+                <td className="numerals hidden px-2 py-2 text-right whitespace-nowrap text-text sm:table-cell">{r.amount}</td>
                 <td className="px-2 py-2 whitespace-nowrap">
                   <StateLabel state={r.state} index={i} />
                   {r.note ? <span className="mt-1 block max-w-48 caption-5 whitespace-normal text-danger sm:max-w-none">{r.note}</span> : null}

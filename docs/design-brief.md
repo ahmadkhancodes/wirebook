@@ -1,4 +1,4 @@
-# Design brief: Wirebook by BufferSol (redesign, 12 Nov 2026)
+# Design brief: Wirebook by BufferSol ("Ledger" identity, 12 Nov 2026)
 
 Replaces the "Ledger and Terminal" system in `docs/DESIGN.md` sections 4 to 8. The founder judged the old look as generic AI output. This brief is the gate required by `docs/factory/DESIGN_PLAYBOOK.md` section 1: no UI code was written before it. Light mode only.
 
@@ -49,76 +49,83 @@ For vertical SaaS teams whose customers keep books in QuickBooks Desktop, Wirebo
 
 Layout type: **A**, classic hero plus sections, because the buyer evaluates and needs price and proof early. Pricing (A) and compare (D) pages stay separate.
 
-## 5. Concept: "Work order"
+## 5. Concept: "Ledger" (identity v3, 12 Nov 2026)
 
-Every request is a work order dispatched to a job site: it is written up (your API call), queued, picked up when the Web Connector checks in, and signed off by QuickBooks. The UI borrows from the documents and signage of the buyer's customers, not from fintech or AI tools: a dispatch board, a work order slip with a job number, a hi-vis signal colour for "this needs you", stencil-plain labels. It stays a developer tool: mono figures, status codes and real JSON.
+Seven BufferSol siblings had drifted into one house look. Each now gets its own company identity. Wirebook's is **the accounting ledger**: the book QuickBooks itself replaced, which every bookkeeper and every developer who has touched accounting recognises at a glance. Every request is an entry; the request log is a ledger page; totals are footed with a single rule above and a double rule below. It stays a developer tool: mono IDs, status codes and real JSON sit inside the ledger columns.
 
-**Signature move: the wire.** A single signal-orange line that runs from "Your app" through "Wirebook" and "Web Connector" to "QuickBooks company file", with the request's timestamps on it. It appears once per page where it carries meaning: the hero (a request travelling the wire), the "how it works" stages and the request detail in the app. Nowhere else.
+What changed from v2 ("Work order"): white surfaces, graphite ink, signal orange, Archivo and IBM Plex are gone. Kept: the real-product hero (the wire, the SDK call, the request log), the section order, every claim and price, the bans, the a11y rules.
+
+Not a sibling's look: Postslot is terracotta on cream with a serif and stamps; Stepclimb is navy on blue-grey with orange; DockCrate is teal on concrete; Hotrail is cobalt on white; Inboxwire is black and lime; Straightpin is grey newsprint and yellow. Wirebook alone is green on mint, slab numerals, ruled columns.
+
+**Signature moves**
+1. **Double rules** close every section head, page header, rate card and total (`rule-double`, `footing`, `border-double`).
+2. **Column rulings**: a folio column with a slab numeral (`01`) and a double vertical ruling before the entries; every table gets pale green vertical rulings (`.ledger-cols`).
+3. **The wire as a double rule**: the request's path from "Your app" to QuickBooks is drawn as a ledger double line with square posting marks (hero, how it works, request detail).
+4. **Ruled sheet**: the hero's product sheet carries faint 24px ledger lines (an SVG tile, not a gradient).
 
 ## 6. Visual system
 
 ### Palette (role tokens in `src/app/globals.css`; components never use raw hex)
 
-Cool steel neutrals instead of cream, graphite ink, one hi-vis accent. Orange is used by no competitor in the audit and not by any BufferSol sister product (dark green, teal, navy).
-
 | Role | Value | Use | Contrast |
 |---|---|---|---|
-| `surface` | #FFFFFF | Page | |
-| `surface-raised` | #FFFFFF | Panels | |
-| `surface-sunken` | #F1F2F4 | Steel bands, table heads, rail | |
-| `surface-inverse` | #17191E | One graphite band per page, code panels | |
-| `text` | #17191E graphite | Body | 17.6:1 on white |
-| `text-subtle` | #4D5360 | Secondary | 7.7:1 on white, 6.9:1 on sunken |
-| `border` | #DCDFE4 | Decorative hairlines | decorative only |
-| `border-strong` | #767D89 | Inputs, control edges | 4.2:1 on white |
-| `action` | #C0461A signal orange | Primary buttons, the wire, current nav marker | white text 5.1:1 |
-| `action-hover` | #9C3712 | | white text 7.0:1 |
-| `action-surface` | #FCEEE7 | Selected rows, current nav. Graphite text only (orange on it is 4.48:1) | graphite 15.5:1 |
-| `focus` | #C0461A | Focus ring (3:1 rule for UI) | 5.1:1 on white |
-| `link` | #17191E with orange underline | Inline links | |
-| `success` / `-surface` | #17723A / #E6F4EA | Succeeded, Connected | 5.3:1 on its surface |
-| `warning` / `-surface` | #845100 / #FFF4DB | Asleep, outcome unknown | 6.1:1 |
-| `danger` / `-surface` | #B4173A / #FCE9ED | Failed, Broken. Crimson, kept apart from the orange accent | 5.8:1 |
+| `surface` | #F1F7F2 ledger paper | Page | |
+| `surface-raised` | #FBFDFB sheet | Panels, tables, cards | |
+| `surface-sunken` | #E2EEE5 column band | Alternating bands, table heads, app rail | |
+| `surface-inverse` | #123524 forest | The tagline band, code panels | |
+| `text` | #123524 forest ink | Body, rules | 12.4:1 on paper, 13.0:1 on sheet, 11.3:1 on band |
+| `text-subtle` | #46604F | Secondary | 6.3:1 on paper, 5.8:1 on band, 6.7:1 on sheet |
+| `text-inverse-subtle` | #D8EADD | Secondary on forest | 10.7:1 |
+| `mint-on-dark` | #A9D4B6 | Code keywords on forest | 8.2:1 |
+| `border` | #B9CFC0 | Column rulings, hairlines | decorative only |
+| `border-strong` | #6A8475 | Inputs, sheet edges, column double rulings | 3.7:1 on paper (UI 3:1) |
+| `action` | #1A5C3C forest green | Primary buttons, links underline, focus, current nav | white text 7.9:1; 7.3:1 on paper |
+| `action-hover` | #12462D | | white text 10.8:1 |
+| `action-surface` | #D8EADD | Selected rows, featured plan | forest text 10.7:1, action text 6.3:1 |
+| `success` / `-surface` | #16683F / #E3F2E7 | Succeeded, Connected | 5.9:1 |
+| `warning` / `-surface` | #7A4E00 / #FBF1D6 | Asleep, outcome unknown | 6.4:1 |
+| `danger` / `-surface` | #A3242B / #FBE8E7 | Failed, Production tag. Ledger red ink | 6.3:1; white on danger 7.4:1 |
+| `highlight` | #F4E7A1 | Text selection | |
 
-Status is never colour alone: glyph plus word, always.
+Status is never colour alone: glyph plus word, always. Unlit tagline words are #8AA897 on forest (5.2:1).
 
-### Type (all `next/font/google`)
+### Type (all `next/font/google`, see `src/app/fonts.ts`)
 
-- **Display: Archivo**, variable with the width axis, set semi expanded (`wdth` 112) at 600. A grotesk with the plain, wide stance of equipment nameplates and site signage. H1 to H4 and the wordmark only.
-- **Text: IBM Plex Sans** 400/500/600. Engineered, legible at 13 to 14px in dense tables, unmistakably not Inter.
-- **Figures and code: IBM Plex Mono** 400/500 with tabular figures and slashed zero. Every ID, amount, timestamp and status code.
+- **Display and numerals: Bitter** 500/600/700, a sturdy slab. Headings H1 to H6, the wordmark, and every amount via the `numerals` utility (lining, tabular figures).
+- **Text: Libre Franklin** 400/500/600, an American gothic of the bookkeeping era; reads well at 13 to 14px in dense tables.
+- **Code and IDs: JetBrains Mono** 400/500 (`figures` utility, tabular, slashed zero). Not preloaded.
 
-Scale (Tailwind steps only): H1 60/60 desktop, 36/40 mobile; H2 48/48; H3 36/40; H4 30/36; H5 24/32; H6 20/28; body 16/24 and 14/20; caption 12/16. Headings `text-wrap: balance`, body `pretty`. Sentence case. No italics, no 900.
+Scale unchanged (Tailwind steps only): H1 60/60 desktop, 36/40 mobile; display 72/72 at xl; H2 48/48; H3 36/40; H4 30/36; H5 24/32; H6 20/28; body 16/24 and 14/20; caption 12/16. Headings `balance`, body `pretty`, sentence case, tracking -0.015em on large slab sizes.
 
-### Shape and rules
+### Shape, rules, grid
 
-- Radius: **2px** on buttons, inputs, badges; **4px** on panels and tables; 0 on section bands. No pills (status badges are 2px tags with a square glyph). Nested radius rule: inner = outer minus gap, else square.
-- Depth from 1px hairlines and steel bands, not shadows. One shadow, for popovers and dialogs.
-- Grid: 12 columns, 1280 container. Section headings sit in a left 3 column "label" track with a mono index (`01 Problem`) and content in the right 9 columns, like a spec sheet. The hero breaks the grid: copy in 5 columns, the product bleeds to the right edge.
-- Rhythm varies on purpose: hero (tight top, white), problem (steel band, dense table), tagline (graphite band, the only dark block), what you get (white, two column spec list, not cards), how it works (the wire, three stages in a row), pricing teaser (receipt), compare (table), FAQ (two column), final CTA (orange rule, not a box).
+- Radius: **3px** buttons and inputs (`rounded-md`), **2px** tags (`rounded-xs`/`sm`), **0** on sheets, tables and panels (`rounded-lg` maps to 0). Never one radius everywhere, never pills.
+- Depth from rulings and bands, not shadows. One shadow for popovers and dialogs.
+- Grid: 12 columns, 1280 container. Section heads: folio in 3 columns, closed by a double vertical ruling; title and intro in 9; a double rule under the head. Hero: a running head over a double rule, claim in 7 columns, a double column ruling, the published prices footed in 5 columns, the product sheet full width below.
+- Section rhythm still varies: hero (paper), problem (band, error ledger), tagline (forest), what you get (paper, spec list), how it works (band, the wire), pricing (paper, footed receipt), compare (band, ruled table), fit, questions, final CTA (a double rule, not a box).
 
 ### Density, imagery, motion, icons
 
-- Density: marketing medium; app dense (36px rows, 14px text, sticky table heads, tabular numerals); connect flow low (one task per screen, 16px+, 48px targets).
-- Imagery: only real product UI built as React components with believable data (contractor and distributor customer names, uneven amounts, real error codes). No illustrations, no photos, no logos we do not have.
-- Motion: the wire draws once in the hero (stroke dash, 600ms, `cubic-bezier(0.22,1,0.36,1)`), ticks draw on log rows, the tagline words light up on scroll. Transform and opacity only. `prefers-reduced-motion`: everything appears drawn.
-- Icons: Phosphor, regular weight, 16 to 20px, `currentColor`. No icon tiles.
+Unchanged from v2: marketing medium, app dense (36px rows, sticky heads, tabular numerals), connect flow low with 48px targets. Only real product UI as React components with believable data. Motion: the wire draws once (scaleX, 900ms, `cubic-bezier(0.22,1,0.36,1)`), ticks draw, tagline words light on scroll; reduced motion shows everything drawn. Phosphor icons, regular, 16 to 20px.
 
 ### App UI
 
-- Shell: a steel left rail (sunken surface) with the wordmark, org switcher, grouped nav; the current item is an orange square marker plus bold text and `aria-current`. Top of the content area has a thin page header row: title (H5), one primary action on the right.
-- Tables: 4px panel, steel head row, row hover tint, mono figures right aligned.
-- Forms: label above, 44px inputs with a 2px radius and a strong border, orange focus ring, hint or inline error below.
-- Empty states: a short title, one sentence, one primary action and an example of what will appear (a ghost row with realistic data, labelled "example").
-- Loading: skeletons shaped like the table rows. Errors: crimson panel that says what failed and what to do next.
+- Shell: the rail is the column band (`surface-sunken`) closed by a double vertical ruling; current item is a forest marker, bold text and `aria-current`.
+- Page header: H5 slab title, one line of purpose, one primary action, closed by a double rule.
+- Tables and panels: square sheets with a `border-strong` edge, column-band head row over a double rule, pale green column rulings, mono IDs, slab amounts right aligned.
+- Forms: label above, 44px inputs, 3px radius, forest focus ring.
+
+### E-mail, OG, icons
+
+E-mails: paper background, sheet card with a double top rule, slab-style wordmark over a double rule, forest button. OG image: paper, forest ink, a double rule under the running head. Favicon and Apple icon: paper "W" on forest, 3px corners. `themeColor` is the paper.
 
 ## 7. Bans checked on every page
 
-Centred hero over a glow; purple/indigo; Inter/Geist/system everywhere; three identical icon cards; "everything you need" grids; emoji and stock art; glassmorphism; one radius everywhere; "New" pills; uniform section rhythm; invented stats; "streamline", "seamless", "supercharge". Also the old tell: cream paper plus serif plus ink buttons.
+Centred hero over a glow; purple/indigo; Inter/Geist/system everywhere; three identical icon cards; "everything you need" grids; emoji and stock art; glassmorphism; one radius everywhere; "New" pills; uniform section rhythm; invented stats; "streamline", "seamless", "supercharge". Also the old looks: cream paper plus serif plus ink buttons (v1), white plus graphite plus signal orange (v2). `tests/unit/design-system.test.ts` fails if any old token, hex or face comes back.
 
 ## 8. Section plan (home)
 
-1. Hero: H1 "QuickBooks Desktop, as a normal API"; sub with REST, SDKs, connect flow and the price; one CTA "Get a free API key"; docs link as text; risk line "No card. Unlimited sample company files."; proof line with the dated competitor price. Visual: the wire plus the request log.
+1. Hero: running head over a double rule; H1 "QuickBooks Desktop, as a normal API"; sub with REST, SDKs, connect flow and the price; one CTA "Get a free API key"; docs link as text; risk line "No card. Unlimited sample company files."; proof column: the published Conductor and Wirebook prices footed with their difference, plus the dated source. Visual: the ledger entry (the wire) plus the SDK call and the request log.
 2. 01 Problem: the four error strings everyone has met.
 3. Tagline reveal on graphite.
 4. 02 What you get: a spec list (benefit, detail, UI fragment) in two columns of uneven height.

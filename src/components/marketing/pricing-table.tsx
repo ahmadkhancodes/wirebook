@@ -48,12 +48,12 @@ export function PricingTable({ id = "pricing", title, headingLevel = 2 }: { id?:
     <div id={id}>
       <div className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-8">
         <div className="flex flex-col gap-4 lg:col-span-8">
-          <p className="index-label flex items-center gap-2 text-text-subtle"><span aria-hidden className="size-2 bg-action" />Rate card</p>
+          <p className="index-label text-text-subtle">Rate card · per active company file</p>
           {title ? <Heading id={`${id}-title`} className="heading-4 md:heading-2 text-text">{title}</Heading> : null}
         </div>
         {saving ? (
           <div className="flex flex-col gap-2 lg:col-span-4 lg:items-end">
-            <div role="group" aria-label="Billing interval" className="inline-flex w-fit rounded-sm border border-text bg-surface">
+            <div role="group" aria-label="Billing interval" className="inline-flex w-fit rounded-md border border-text bg-surface-raised">
               {options.map((o) => (
                 <button
                   key={o.id}
@@ -74,7 +74,7 @@ export function PricingTable({ id = "pricing", title, headingLevel = 2 }: { id?:
         ) : null}
       </div>
 
-      <ul className="mt-8 grid overflow-hidden rounded-lg border border-border bg-surface-raised md:mt-12 md:grid-cols-2 lg:grid-cols-4">
+      <ul className="mt-8 grid border-t-4 border-b-4 border-double border-text bg-surface-raised md:mt-12 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan, i) => {
           const d = display(plan, interval);
           const href = `/sign-in?plan=${plan.id}&interval=${d?.interval ?? interval}`;
@@ -82,7 +82,7 @@ export function PricingTable({ id = "pricing", title, headingLevel = 2 }: { id?:
             <li
               key={plan.id}
               className={cn(
-                "relative flex flex-col border-border p-6",
+                "relative flex flex-col border-border px-4 py-6 sm:px-6",
                 i > 0 && "border-t md:border-t-0",
                 i % 2 === 1 && "md:border-l",
                 i >= 2 && "md:border-t lg:border-t-0",
@@ -90,16 +90,15 @@ export function PricingTable({ id = "pricing", title, headingLevel = 2 }: { id?:
                 plan.featured && "bg-action-surface",
               )}
             >
-              {plan.featured ? <span aria-hidden className="absolute top-0 right-0 left-0 h-1 bg-action" /> : null}
-              <div className="flex min-h-12 flex-col gap-1">
+                            <div className="flex min-h-12 flex-col gap-1 border-b border-border pb-3">
                 <PlanHeading className="heading-6 text-text">{plan.name}</PlanHeading>
-                <p className="index-label text-text-subtle">{plan.featured ? "Best for 4 files" : "\u00a0"}</p>
+                <p className={cn("index-label", plan.featured ? "text-action" : "text-text-subtle")}>{plan.featured ? "Best for 4 files" : "\u00a0"}</p>
               </div>
               <p className="mt-2 min-h-10 body-6 text-text-subtle">{plan.tagline}</p>
-              <p className="figures mt-6 text-text">
-                <span className="heading-3 tracking-tight">{d ? d.amount : "$0"}</span>
+              <p className="numerals mt-6 w-fit border-b-4 border-double border-text pb-1 text-text">
+                <span className="heading-3">{d ? d.amount : "$0"}</span>
               </p>
-              <p className="body-6 text-text">{d ? d.unit : "free, no card"}</p>
+              <p className="mt-2 body-6 text-text">{d ? d.unit : "free, no card"}</p>
               <p className="mt-1 caption-2 text-text-subtle">{d ? d.billed : "Unlimited sample company files"}</p>
               <Link href={href} className={cn(buttonClass(plan.featured ? "primary" : "secondary", "md"), "mt-6 w-full")}>{plan.cta}</Link>
               <ul className="mt-6 flex flex-col gap-2 border-t border-border pt-6">

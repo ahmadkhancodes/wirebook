@@ -15,35 +15,27 @@ export default function OpengraphImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#14201a",
-          color: "#f7f8f4",
+          background: "#f1f7f2",
+          color: "#123524",
           padding: 80,
           fontFamily: "Georgia, serif",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: 3,
-              background: "#e8f1e4",
-              color: "#14201a",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 40,
-              fontWeight: 700,
-            }}
-          >
-            {product.name.charAt(0)}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
+            <div style={{ fontSize: 40, fontWeight: 700 }}>{product.fullName}</div>
+            <div style={{ fontSize: 24, color: "#46604f" }}>QuickBooks Desktop API</div>
           </div>
-          <div style={{ fontSize: 36, fontWeight: 600 }}>{product.fullName}</div>
+          <div style={{ display: "flex", height: 2, background: "#123524" }} />
+          <div style={{ display: "flex", height: 2, marginTop: 4, background: "#123524" }} />
         </div>
-        <div style={{ display: "flex", fontSize: 72, fontWeight: 600, lineHeight: 1.1, letterSpacing: -2, maxWidth: 1000 }}>
+        <div style={{ display: "flex", fontSize: 72, fontWeight: 600, lineHeight: 1.1, letterSpacing: -1, maxWidth: 1000 }}>
           {product.tagline}
         </div>
-        <div style={{ display: "flex", fontSize: 28, color: "#c9d3c6" }}>{product.host}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28, color: "#46604f", borderTop: "2px solid #b9cfc0", paddingTop: 20 }}>
+          <span>{product.host}</span>
+          <span style={{ color: "#1a5c3c" }}>Ledger of every request</span>
+        </div>
       </div>
     ),
     { ...size },

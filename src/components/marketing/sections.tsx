@@ -5,9 +5,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { plans, product } from "@/config/product";
 import { footedExample, money, rates } from "@/lib/pricing";
 
-const mono = (children: ReactNode) => <span className="figures text-text">{children}</span>;
+const mono = (children: ReactNode) => <span className="numerals title-2 text-text">{children}</span>;
 
-/** Problem: the error strings every Web Connector team has met, as a dense reference table on a steel band. */
+/** Problem: the error strings every Web Connector team has met, as a dense reference table on the column band. */
 export interface ErrorLine {
   code: string;
   meaning: string;
@@ -25,7 +25,7 @@ export function ProblemSection({ title, intro, errors }: { title: ReactNode; int
           <dl>
             {errors.map((e) => (
               <div key={e.code} className="grid gap-1 border-b border-border px-4 py-3 last:border-b-0 sm:grid-cols-12 sm:gap-4">
-                <dt className="figures caption-1 text-danger sm:col-span-3">{e.code}</dt>
+                <dt className="figures caption-1 text-danger sm:col-span-3 sm:border-r sm:border-border">{e.code}</dt>
                 <dd className="body-6 text-text sm:col-span-9">{e.meaning}</dd>
               </div>
             ))}
@@ -63,7 +63,7 @@ export function PricingTeaser() {
             <caption className="sr-only">Wirebook prices</caption>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.label} className="border-b border-dashed border-border">
+                <tr key={r.label} className="border-b border-border">
                   <th scope="row" className="py-3 pr-4 align-top">
                     <span className="block body-5 text-text">{r.label}</span>
                     {r.note ? <span className="block caption-5 text-text-subtle">{r.note}</span> : null}
@@ -73,8 +73,8 @@ export function PricingTeaser() {
               ))}
             </tbody>
           </table>
-          <div className="figures footing mt-4 flex flex-col gap-1 pt-3 caption-4 text-text">
-            <p className="flex justify-between gap-4"><span>{ex.files} files × {money(rates.perFile)}</span><strong>{money(ex.ours)} per month</strong></p>
+          <div className="figures footing mt-4 flex flex-col gap-1 py-3 caption-4 text-text">
+            <p className="flex justify-between gap-4"><span>{ex.files} files × {money(rates.perFile)}</span><strong className="numerals body-1">{money(ex.ours)} per month</strong></p>
             <p className="flex justify-between gap-4 text-text-subtle"><span>The same {ex.files} files at {money(rates.benchmark)} ({product.benchmark.name}, checked {product.benchmark.checked})</span><span>{money(ex.theirs)}</span></p>
           </div>
         </div>
@@ -106,10 +106,10 @@ export function CompareStrip() {
         intro="Need one schema across QuickBooks Online, Xero and NetSuite? Use a unified API such as Apideck. We only do QuickBooks Desktop, and we do it for half the price."
       />
       <div className="mt-8 overflow-x-auto rounded-lg border border-border bg-surface-raised md:mt-12">
-        <table className="w-full min-w-xl border-collapse text-left">
+        <table className="ledger-cols w-full min-w-xl border-collapse text-left">
           <caption className="sr-only">Competitor prices, dated and sourced</caption>
           <thead>
-            <tr className="border-b border-border bg-surface-sunken text-text-subtle">
+            <tr className="border-b-4 border-double border-text bg-surface-sunken text-text-subtle">
               <th scope="col" className="px-4 py-2 caption-4">Option</th>
               <th scope="col" className="px-4 py-2 caption-4">Published price</th>
               <th scope="col" className="px-4 py-2 caption-4">Source</th>
@@ -127,7 +127,7 @@ export function CompareStrip() {
             ))}
             <tr className="bg-action-surface">
               <th scope="row" className="px-4 py-3 body-4 text-text">{product.fullName}</th>
-              <td className="figures px-4 py-3 caption-1 text-text">{money(rates.perFile)} per active file per month</td>
+              <td className="numerals px-4 py-3 body-4 text-text">{money(rates.perFile)} per active file per month</td>
               <td className="px-4 py-3 caption-2 text-text">This site</td>
             </tr>
           </tbody>
@@ -144,11 +144,11 @@ export function FitSection({ yes, no }: { yes: ReactNode; no: ReactNode }) {
     <Section pad="md" labelledBy="fit-title">
       <SectionHead index="06" label="Fit" id="fit-title" title="Who it is for, and who it is not" />
       <div className="mt-8 grid gap-8 md:mt-12 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
-        <div className="flex flex-col gap-3 border-t-2 border-text pt-4 lg:col-span-5 lg:col-start-4">
+        <div className="flex flex-col gap-3 border-t-4 border-double border-text pt-4 lg:col-span-5 lg:col-start-4">
           <h3 className="title-3 text-text">A good fit</h3>
           <div className="body-6 text-text-subtle">{yes}</div>
         </div>
-        <div className="flex flex-col gap-3 border-t-2 border-border pt-4 lg:col-span-4">
+        <div className="flex flex-col gap-3 border-t-4 border-double border-border pt-4 lg:col-span-4">
           <h3 className="title-3 text-text">Not a fit</h3>
           <div className="body-6 text-text-subtle">{no}</div>
         </div>

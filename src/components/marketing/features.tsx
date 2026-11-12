@@ -23,7 +23,7 @@ export function Features({ index = "02", title, intro, items }: { index?: string
       <SectionHead index={index} label="Product" id="features-title" title={title} intro={intro} />
       <ul className="mt-8 md:mt-16">
         {wide.map((f, i) => (
-          <li key={f.title} className="grid gap-6 border-t border-border py-8 lg:grid-cols-12 lg:gap-8 lg:py-12">
+          <li key={f.title} className="grid gap-6 border-t border-border py-8 first:border-t-0 lg:grid-cols-12 lg:gap-8 lg:py-12">
             <div className={cn("flex flex-col gap-2 lg:col-span-4 lg:col-start-4", i % 2 === 1 && "lg:order-2 lg:col-start-9")}>
               <h3 className="heading-6 text-text">{f.title}</h3>
               <p className="body-6 text-text-subtle">{f.body}</p>

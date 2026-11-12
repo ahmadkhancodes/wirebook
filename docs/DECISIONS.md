@@ -94,3 +94,9 @@ Standing decisions are in docs/factory/BATCH1_PLAN.md (Mongo instead of Postgres
 - **SDK names:** `@wirebook/sdk` (npm) and `wirebook` (PyPI). MANUAL_STEPS item 5 updated.
 - **Revoke is final:** a revoked company file cannot be reconnected; create a new end user with a new `externalId`. Avoids a password-version scheme.
 - **Mail failures never fail the request** (`sendMailSafe`); the cost is a silent no-send, covered by the `mail_send_failed` log.
+
+## 12 Nov 2026: own visual identity "Ledger"
+- **Why:** seven sibling products shared one look by accident. Wirebook takes the accounting ledger: mint paper #F1F7F2, forest ink #123524, forest action #1A5C3C, double rules and column rulings as the structure. Details and contrast pairs in `docs/design-brief.md` sections 5 to 7.
+- **Type:** Bitter (slab, headings and amounts), Libre Franklin (text), JetBrains Mono (IDs, code). Replaces Archivo and IBM Plex. A slab, not a serif, so it stays apart from Postslot.
+- **Radius:** 0 on sheets and tables, 3px controls, 2px tags. `rounded-lg` now maps to 0 so every existing panel became a square sheet without touching each call site.
+- **Guard:** `tests/unit/design-system.test.ts` fails if any v2 token (signal orange, steel, graphite), old OG/icon colour or old face name reappears in `src/`.

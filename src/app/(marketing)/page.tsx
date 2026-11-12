@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title, description, images: socialImages().twitter },
 };
 
-const K = ({ children }: { children: string }) => <span className="text-signal-on-dark">{children}</span>;
+const K = ({ children }: { children: string }) => <span className="text-mint-on-dark">{children}</span>;
 const S = ({ children }: { children: string }) => <span className="text-text-inverse">{children}</span>;
 
 const sdkSnippet = (
@@ -161,15 +161,45 @@ const faq: FaqItem[] = [
   { q: "Is Intuit involved?", a: product.intuitNotice },
 ];
 
-/** The hero's product picture: one work order on the wire, the SDK call that sent it, and the log it lands in. */
+/** The hero's proof: the two published prices, footed like a ledger. Every figure comes from product.ts and pricing.ts. */
+function PriceLedger() {
+  // Rates are in cents. Always two decimals so the figures line up on the point.
+  const cents = (n: number) => `$${(n / 100).toFixed(2)}`;
+  return (
+    <table className="w-full border-collapse text-left">
+      <caption className="pb-3 text-left index-label text-text-subtle">Per company file, per month</caption>
+      <tbody>
+        <tr className="border-b border-border">
+          <th scope="row" className="py-3 pr-4 align-baseline body-6 font-normal text-text-subtle">{product.benchmark.name}<span className="block caption-5">{product.benchmark.host}</span></th>
+          <td className="numerals py-3 text-right align-baseline title-1 text-text-subtle">{cents(rates.benchmark)}</td>
+        </tr>
+        <tr className="border-b border-border">
+          <th scope="row" className="py-3 pr-4 align-baseline body-4 text-text">{product.fullName}</th>
+          <td className="numerals py-3 text-right align-baseline heading-5 text-text">{cents(rates.perFile)}</td>
+        </tr>
+        <tr className="footing">
+          <th scope="row" className="py-3 pr-4 align-baseline body-6 font-normal text-text">Difference</th>
+          <td className="numerals py-3 text-right align-baseline heading-5 text-action">{cents(rates.benchmark - rates.perFile)}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colSpan={2} className="pt-4 caption-2 text-text-subtle">{product.benchmark.name} lists {money(rates.benchmark)} per company file per month ({product.benchmark.host}, checked {product.benchmark.checked}). Every {product.name} price is published.</td>
+        </tr>
+      </tfoot>
+    </table>
+  );
+}
+
+/** The hero's product picture: one ledger entry on the wire, the SDK call that sent it, and the log it lands in. */
 function HeroProduct() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-lg border border-border bg-surface-raised">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-4 py-2 caption-4 text-text-subtle">
-          <span className="index-label text-text">Work order</span>
+      <div className="ruled border border-border-strong">
+        <div className="rule-double flex flex-wrap items-center gap-x-4 gap-y-1 bg-surface-raised px-4 py-2 caption-4 text-text-subtle">
+          <span className="index-label text-text">Ledger entry</span>
           <span className="figures text-text">req_01JC9Q4</span>
-          <span className="hidden sm:inline">POST invoices · Harlan Mechanical · <span className="figures">1,284.48</span></span>
+          <span className="hidden sm:inline">POST invoices · Harlan Mechanical · <span className="numerals">1,284.48</span></span>
           <span className="ml-auto inline-flex items-center gap-2 text-success"><Tick /><span className="figures caption-4">201 in 2.1 s</span></span>
         </div>
         <div className="px-4 py-6 md:px-6"><Wire /></div>
@@ -190,11 +220,12 @@ export default function HomePage() {
     <>
       <Hero
         title={<>QuickBooks Desktop,<br />as a normal API</>}
-        subtitle={<>REST, typed TypeScript and Python SDKs, and a connect flow your customers can finish alone. <span className="figures text-text">{money(rates.perFile)}</span> per company file.</>}
+        subtitle={<>REST, typed TypeScript and Python SDKs, and a connect flow your customers can finish alone. <span className="numerals text-text">{money(rates.perFile)}</span> per company file.</>}
         primaryCta={product.cta}
         secondaryCta={{ href: "/docs", label: "Read the docs →" }}
         risk="No card. Unlimited sample company files."
-        proof={<><strong className="font-semibold text-text">{product.benchmark.name} lists <span className="figures">{money(rates.benchmark)}</span> per company file per month</strong> ({product.benchmark.host}, checked {product.benchmark.checked}). {product.fullName} charges <span className="figures text-text">{money(rates.perFile)}</span>. Every price is published.</>}
+        proof={<PriceLedger />}
+        head={["QuickBooks Desktop API", <span key="r">Rates published · checked {product.benchmark.checked}</span>]}
         visual={<HeroProduct />}
       />
       <ProblemSection
