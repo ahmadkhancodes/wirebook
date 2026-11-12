@@ -39,3 +39,25 @@ Also fixed: three existing specs had gone stale against shipped copy and failed 
 
 ## Handy and hardened pass (12 Nov 2026)
 Added: `tests/unit/handy-hardening.test.ts` (CSV escaping, CSP pins, bundle secret scan) and a Playwright journey in `dashboard.spec.ts` (checklist, `/` shortcut, CSV export needs a session and answers `text/csv`). lint, typecheck, 301 unit tests and build green. **The Playwright suite could not be run in this environment: no Chromium is installed and there is no network to download it** (every browser test fails at launch, with or without these changes). Run `npx playwright install chromium && npx playwright test` before merging; the new journey is untested in a browser.
+
+## Post-redesign regression pass (12 Nov 2026)
+After the dark-mode removal, the Ledger redesign and the hardening round. Specs in `tests/e2e/qa2/`, run against `next start` with the memory DB and outbox mail; unit guards in `tests/unit/qa2-regression.test.ts`. Not deployed.
+
+**Journeys covered**
+- `audit.spec.ts`: every page in the sitemap (all docs, all 27 error pages, legal, compare) plus the 404, unknown docs/error slugs, a bogus connect token and sign-in, then every signed-in screen (including unknown request/end-user ids and onboarding), each at 375 and 1440. Per page it checks: horizontal scroll, a dark class on `<html>`, any colour (text, background, border) outside the Ledger tokens, old fonts, clipped text, text under 10px, WCAG contrast (4.5, or 3 for large text) against the nearest opaque background, pointer cursor on enabled controls, unlabelled controls, images without alt, disabled buttons without a reason, console errors/warnings, failed requests, 5xx.
+- `journeys.spec.ts`: new visitor at both widths (every header, hero, pricing and footer link resolves, external links https only, hero CTA); sign-in redirect keeps `?next`, a signed-in visitor on `/sign-in` is sent into the app, sign-out ends the session; checkout return (canceled, success, unknown session); a user at the Developer limit (three real company files connected through the Web Connector simulator, the 4th connect link is refused with 402 `file_limit_reached`, billing and banner state).
+- `interact.spec.ts`: on every signed-in page every internal link resolves and every enabled, non-destructive button changes the page, fires a request or downloads (a dead button fails the test), with no console error or CSP violation; Escape closes the API key dialog; the shell's tab stops all show a focus indicator; OG, Twitter image and icons return PNGs.
+
+**Defects found and fixed**
+| # | What the user saw | Fix | Regression test |
+|---|---|---|---|
+| 1 | Returning from Stripe with `?checkout=canceled` showed the billing page with no word on what happened. | "Checkout was canceled. Nothing was charged." notice (`billing/page.tsx`, `billing-client.tsx`). | `journeys.spec.ts` (checkout return), `qa2-regression.test.ts` |
+| 2 | A user with exactly 3 of 3 real files was told "You are over your limit"; they are at it, not over it, and the 4th file is what is refused. | Banner says "You have reached your limit" at the limit and "over" only above it (`usage-banner.tsx`). | `journeys.spec.ts` (plan limit), `qa2-regression.test.ts` |
+
+Checked and found clean: no off-palette colour, old font or dark class on any public or signed-in page; contrast passes everywhere; e-mails use only design tokens and no dark-mode query (unit test); OG, Twitter, favicon and Apple icons render; no dead link or dead button; no CSP violation; no hydration warning in this run; Escape and focus order behave.
+
+**Open**
+- **Low:** the End users page opens on the Test tab. A user whose files are all production sees "No test company files yet" until they press Production (the empty state names the environment, so it is not misleading).
+- **Low:** save buttons on Profile and Data retention are disabled until the form changes, with no hint text (the label already says what they do).
+- **Info:** the "by BufferSol" mark in the wordmark is 10px; legible but the smallest text on the site.
+- Still open from the earlier pass: sign-in hydration #418 (rare), empty 405 bodies on `/v1`, invitee onboarding detour, `/status` and `/sdk` not built. Lighthouse and Stripe checkout return with a real session were not run here.

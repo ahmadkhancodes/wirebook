@@ -25,7 +25,7 @@ export function UsageBanner({ usage, entitlement }: { usage: UsageState[]; entit
       {worst ? (
         <Notice
           tone={worst.level === "over" ? "danger" : "warning"}
-          title={worst.level === "over" ? "You are over your limit" : "You are close to your limit"}
+          title={worst.level === "near" ? "You are close to your limit" : worst.used > worst.limit ? "You are over your limit" : "You have reached your limit"}
           action={link("Upgrade")}
         >
           You have used {fmt(worst.used)} of {fmt(worst.limit)} {METER_LABELS[worst.meter].plural}
