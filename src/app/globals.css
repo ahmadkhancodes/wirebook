@@ -219,3 +219,19 @@
 @utility wordmark { font-family: var(--font-display-family); font-size: 1.375rem; line-height: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
 @utility wordmark-by { font-size: 0.625rem; line-height: 0.75rem; font-weight: 500; letter-spacing: 0.08em; font-variant-caps: all-small-caps; }
 .code-block { font-family: var(--font-mono-family); font-size: 0.84375rem; line-height: 1.375rem; white-space: pre; }
+
+/* Tailwind v4 no longer sets a pointer cursor on buttons. Anything you can click shows the hand. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select,
+  label[for],
+  input:is([type="checkbox"], [type="radio"], [type="submit"], [type="button"], [type="file"]):not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
