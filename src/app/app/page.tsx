@@ -2,6 +2,8 @@ import Link from "next/link";
 import { LedgerTable, DetailPane, day, logHref, type LogQuery } from "./request-log";
 import { PageHeader } from "@/components/app/page-header";
 import { buttonClass, segmentClass, segmentGroupClass } from "@/components/ui/button";
+import { GettingStarted, type Step } from "@/components/app/getting-started";
+import { SearchShortcut } from "@/components/app/search-shortcut";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { inputClass } from "@/components/ui/field";
 import { RequestLog } from "@/components/marketing/ledger/request-log";
@@ -44,6 +46,19 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
   } catch {
     failed = true;
   }
+  let steps: Step[] | null = null;
+  if (!failed && rows.length === 0 && !before && !state && !object && !q) {
+    try {
+      const users = await (await getBridge()).users.list({ projectId, limit: 20 });
+      steps = [
+        { title: "Create a test API key", body: "Keys are shown once. Test keys only reach QuickBooks sample files.", href: "/app/settings/api-keys", cta: "Create key", done: false },
+        { title: "Connect a company file", body: "Make a connect link; whoever runs QuickBooks follows four steps on its page.", href: "/app/end-users", cta: "Add company file", done: users.length > 0 },
+        { title: "Make your first request", body: "List customers with the quickstart snippet. It shows up here within seconds.", href: "/docs/getting-started", cta: "Open quickstart", done: false },
+      ];
+    } catch {
+      steps = null;
+    }
+  }
   const more = rows.length > PAGE;
   const page = rows.slice(0, PAGE);
   const last = page.at(-1);
@@ -67,6 +82,7 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
           </nav>
         }
       />
+      <SearchShortcut selector="#request-search" />
       <section aria-label="Request log" className="overflow-hidden rounded-lg border border-border bg-surface-raised">
         <form method="get" className="flex flex-wrap items-end gap-3 border-b border-border bg-surface-sunken p-3">
           {env !== "test" ? <input type="hidden" name="env" value={env} /> : null}
@@ -84,7 +100,7 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
             </select>
           </label>
           <label className="flex min-w-40 flex-1 flex-col gap-1 caption-4 font-medium text-text">Request id
-            <input name="q" defaultValue={q ?? ""} placeholder="req_..." autoComplete="off" className={`${inputClass} figures`} />
+            <input id="request-search" name="q" defaultValue={q ?? ""} placeholder="req_... (press /)" autoComplete="off" className={`${inputClass} figures`} />
           </label>
           <button className={buttonClass("secondary")} type="submit">Apply</button>
           {filtered ? <Link href={logHref({ env })} className={buttonClass("tertiary")}>Clear</Link> : null}
@@ -97,12 +113,15 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
             {filtered ? (
               <EmptyState title="No requests match" body="Nothing in this environment fits those filters. Clear them to see everything." action={<Link href={logHref({ env })} className={buttonClass("secondary")}>Clear filters</Link>} />
             ) : (
+              <>
+              {steps ? <div className="mb-6"><GettingStarted steps={steps} /></div> : null}
               <EmptyState
                 title={`No ${env} requests yet`}
                 body={<>Requests appear here the moment you call <code>/v1/qbd</code> with a {env} key. Create a connect link for your first company file, then list its customers.</>}
                 action={<Link href="/docs/getting-started" className={buttonClass("primary")}>Open the quickstart</Link>}
                 example={<RequestLog env={env === "production" ? "Production" : "Test"} className="rounded-none border-0" compact />}
               />
+              </>
             )}
           </div>
         ) : (
@@ -111,6 +130,7 @@ export default async function RequestLogPage({ searchParams }: { searchParams: P
               <LedgerTable rows={page} selected={selected?.id} query={query} />
               <div className="footing flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 figures caption-4 text-text">
                 <span>{page.length} shown</span><span>{ok} succeeded</span><span>{bad} failed</span><span className="text-text-subtle">{day(page[0]!.createdAt)}</span>
+                <a href={`/api/requests/export?env=${env}`} download className="inline-flex min-h-11 items-center rounded-sm font-sans font-semibold text-text underline decoration-action decoration-2 underline-offset-4 focus-visible:focus-ring">Export CSV</a>
                 {more && last ? <Link href={logHref(query, { before: `${new Date(last.createdAt).toISOString()}~${last.id}` })} className="ml-auto inline-flex min-h-11 items-center rounded-sm font-sans font-semibold text-text underline decoration-action decoration-2 underline-offset-4 focus-visible:focus-ring">Older requests</Link> : null}
               </div>
             </div>

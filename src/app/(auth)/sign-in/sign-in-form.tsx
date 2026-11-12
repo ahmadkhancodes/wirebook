@@ -46,7 +46,7 @@ export function SignInForm({ callbackURL, expiredLink }: { callbackURL: string; 
       setError(
         code === "DISPOSABLE_EMAIL" ? "Use a work or personal address. Throwaway email domains are not accepted."
         : code === "SIGNUPS_CLOSED" ? "Sign-ups are paused for a moment. Try again later."
-        : code === "RATE_LIMITED" ? "Too many attempts from here. Wait ten minutes and try again."
+        : code === "RATE_LIMITED" ? "Too many sign-in attempts for this address or network. Wait ten minutes and try again."
         : authError(err, "We could not send the link. Check the address and try again."),
       );
       return;
