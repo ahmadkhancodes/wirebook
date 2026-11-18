@@ -46,7 +46,7 @@ export const product = {
   companyUrl: "https://buffersoltech.com",
   host: "wirebook.buffersoltech.com",
   url: process.env.NEXT_PUBLIC_APP_URL ?? "https://wirebook.buffersoltech.com",
-  supportEmail: "contact@buffersoltech.com",
+  supportEmail: "wirebook@buffersoltech.com",
   legalEmail: "contact@buffersoltech.com",
   mailFrom: "Wirebook <hello@wirebook.buffersoltech.com>",
   description:
